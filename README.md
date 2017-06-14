@@ -239,4 +239,4 @@ BioGears has Publications papers and abstracts on several systems and clinical s
 Additional Information
 ======================
 
-For more detailed documentation including model discussions and implementation details can be found at BioGearsEngine.com
+For more detailed documentation including model discussions and implementation details can be found at www.BioGearsEngine.com
