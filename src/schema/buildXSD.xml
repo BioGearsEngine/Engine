@@ -1,0 +1,114 @@
+<?xml version="1.0"?>
+<!-- ====================================================================== 
+     Jul 24, 2006 1:35:16 PM                                                        
+
+     Integrated Data Model Schema 
+     Runs XJC to create bindings for schema definitions
+                   
+     abray                                                                
+     ====================================================================== -->
+<project name="DataModel.bind" basedir="../" default="all">
+    <description>
+            Runs XJC to create bindings for schema definitions
+    </description>
+    
+    <property environment="env"/>
+    <condition property="env" value="msvc">
+       <not>  
+          <isset property="env"/>
+       </not>
+    </condition>
+    <property file="${basedir}/build.properties"/>
+    <property file="${basedir}/build.properties.${env}"/>
+
+    <!-- ================================= 
+          target: default              
+         ================================= -->
+
+    <condition property="unixos" value="osx">
+        <equals arg1="${env}" arg2="xcode"/>
+    </condition>
+
+    <condition property="unixos" value="linux">
+        <or>
+            <equals arg1="${env}" arg2="unixMake"/>
+            <equals arg1="${env}" arg2="raspberryPi"/>
+        </or>
+    </condition>
+    
+    <target name="all" depends="compile"/>
+
+	<target name="currentJAXB">
+		<uptodate property="java.current" targetfile="${biogears.bind}/java_schema_built">
+		    <srcfiles dir="${biogears.bind}/xsd/" includes="*.xsd"/>
+			<srcfiles dir="${biogears.bind}/xsd/biogears/" includes="*.xsd"/>
+			<srcfiles dir="${biogears.bind}/xsd/cdm/" includes="*.xsd"/>
+		</uptodate>
+	</target>
+	
+	<target name="currentCPP">
+		<uptodate property="cpp.current" targetfile="${biogears.bind}/cpp_schema_built">
+		    <srcfiles dir="${biogears.bind}/xsd/" includes="*.xsd"/>
+			<srcfiles dir="${biogears.bind}/xsd/biogears/" includes="*.xsd"/>
+			<srcfiles dir="${biogears.bind}/xsd/cdm/" includes="*.xsd"/>
+		</uptodate>
+	</target>
+	
+	<target name="compile" depends="compileJava,compileCPP"/>
+
+    <target name="compileJava" depends="compileJava-win,compileJava-unix" description="--> Runs XJC to create bindings for schema definitions"/>
+    
+    <!-- If you have your own data model based on the Common Data Model simpley change the root schema file to yours instead of BioGears -->
+
+    <target name="compileJava-win" depends="currentJAXB" if ="win" unless="java.current">
+        <mkdir dir="${biogears.bind}/build/"/>
+		<mkdir dir="${biogears.bind}/java/"/>
+        <delete dir="${biogears.bind}/java/mil/tatrc/physiology/datamodel/bind"/>
+        <exec executable="cmd.exe" dir="${biogears.bind}" failonerror="true">
+            <arg line="/c xjc.exe -d ./java -p mil.tatrc.physiology.datamodel.bind ./xsd/BioGearsDataModel.xsd"/>
+        </exec>
+        <touch file="${biogears.bind}/java_schema_built"/>
+        <antcall target="refreshBinXSD" />
+    </target>
+    
+    <target name="compileJava-unix" depends="currentJAXB" if ="unix" unless="java.current">
+        <mkdir dir="${biogears.bind}/build/"/>
+		<mkdir dir="${biogears.bind}/java/"/>
+        <delete dir="${biogears.bind}/java/mil/tatrc/physiology/datamodel/bind"/>
+        <exec executable="xjc" dir="${biogears.bind}" failonerror="true">
+            <arg line=" -d ./java -p mil.tatrc.physiology.datamodel.bind ./xsd/BioGearsDataModel.xsd"/>
+        </exec>
+        <touch file="${biogears.bind}/java_schema_built"/>
+        <antcall target="refreshBinXSD" />
+    </target>
+	
+    <target name="compileCPP" depends="currentCPP,compileCPP-win,compileCPP-unix" description="--> Runs Code Systhesis to create bindings for schema definitions"/>
+
+    <target name="compileCPP-win" if="win" unless="cpp.current">
+        <exec executable="cmd.exe" dir="${biogears.bind}" failonerror="true">
+            <arg line="/c buildXSD.bat"/>
+        </exec>
+        <touch file="${biogears.bind}/cpp_schema_built"/>
+        <antcall target="refreshBinXSD" />
+    </target>
+    
+    <target name="compileCPP-unix" if="unix" unless="cpp.current">
+        <exec executable="/bin/bash" dir="${biogears.bind}" failonerror="true">
+            <arg line="buildXSD.sh"/>
+            <arg line="${unixos}"/>
+        </exec>
+        <touch file="${biogears.bind}/cpp_schema_built"/>
+        <antcall target="refreshBinXSD" />
+    </target>
+	
+	<target name="refreshBinXSD">        
+	    <delete dir="${biogears.bin}/xsd" failonerror="false"/><!-- concurrent builds could prevent deletion, and I am ok with that -->
+		<copy todir="${biogears.bin}/xsd">
+			<fileset dir="${biogears.bind}/xsd/">
+				<include name="**/*.xsd"/>
+			</fileset>
+		</copy>
+	</target>
+
+</project>
+

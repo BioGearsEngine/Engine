@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<PhysiologyEngineDynamicStabilization xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.1-beta" xsi:schemaLocation="">
+    <TrackingStabilization>Off</TrackingStabilization>
+    <RestingStabilizationCriteria>
+        <ConvergenceTime value="15.0" unit="s"/>
+        <MinimumReactionTime value="25.0" unit="s"/>
+        <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+        <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+        <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+        <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+        <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+        <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+        <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+        <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+        <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+        <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+    </RestingStabilizationCriteria>
+    <FeedbackStabilizationCriteria>
+        <ConvergenceTime value="15.0" unit="s"/>
+        <MinimumReactionTime value="25.0" unit="s"/>
+        <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+        <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+        <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+        <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+        <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+        <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+        <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+        <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+        <PropertyConvergence Name="LeftAfferentArterioleResistance" PercentDifference="0.25"/>
+        <PropertyConvergence Name="RightAfferentArterioleResistance" PercentDifference="0.25"/>
+        <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+        <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+    </FeedbackStabilizationCriteria>
+    <ConditionStabilization Name="ConsumeMeal">
+        <Criteria>
+            <ConvergenceTime value="15.0" unit="s"/>
+            <MinimumReactionTime value="25.0" unit="s"/>
+            <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+            <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+            <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+            <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+            <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+            <PropertyConvergence Name="LeftAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="RightAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+        </Criteria>
+    </ConditionStabilization>
+    <ConditionStabilization Name="ImpairedAlveolarExchange">
+        <Criteria>
+            <ConvergenceTime value="15.0" unit="s"/>
+            <MinimumReactionTime value="25.0" unit="s"/>
+            <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+            <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+            <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+            <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+            <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+            <PropertyConvergence Name="LeftAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="RightAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+        </Criteria>
+    </ConditionStabilization>
+    <ConditionStabilization Name="ChronicPericardialEffusion">
+        <Criteria>
+            <ConvergenceTime value="15.0" unit="s"/>
+            <MinimumReactionTime value="25.0" unit="s"/>
+            <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+            <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+            <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+            <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+            <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+            <PropertyConvergence Name="LeftAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="RightAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+        </Criteria>
+    </ConditionStabilization>
+    <ConditionStabilization Name="ChronicVentricularSystolicDysfunction">
+        <Criteria>
+            <ConvergenceTime value="15.0" unit="s"/>
+            <MinimumReactionTime value="25.0" unit="s"/>
+            <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+            <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+            <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+            <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+            <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+            <PropertyConvergence Name="LeftAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="RightAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+        </Criteria>
+    </ConditionStabilization>
+    <ConditionStabilization Name="ChronicObstructivePulmonaryDisease">
+        <Criteria>
+            <ConvergenceTime value="15.0" unit="s"/>
+            <MinimumReactionTime value="25.0" unit="s"/>
+            <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+            <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+            <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+            <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+            <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+            <PropertyConvergence Name="LeftAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="RightAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+        </Criteria>
+    </ConditionStabilization>
+    <ConditionStabilization Name="ChronicAnemia">
+        <Criteria>
+            <ConvergenceTime value="15.0" unit="s"/>
+            <MinimumReactionTime value="25.0" unit="s"/>
+            <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+            <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+            <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+            <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+            <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+            <PropertyConvergence Name="LeftAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="RightAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+        </Criteria>
+    </ConditionStabilization>
+    <ConditionStabilization Name="LobarPneumonia">
+        <Criteria>
+            <ConvergenceTime value="15.0" unit="s"/>
+            <MinimumReactionTime value="25.0" unit="s"/>
+            <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+            <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+            <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+            <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+            <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+            <PropertyConvergence Name="LeftAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="RightAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+        </Criteria>
+    </ConditionStabilization>
+    <ConditionStabilization Name="InitialEnvironment">
+        <Criteria>
+            <ConvergenceTime value="15.0" unit="s"/>
+            <MinimumReactionTime value="25.0" unit="s"/>
+            <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+            <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+            <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+            <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+            <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+            <PropertyConvergence Name="LeftAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="RightAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+        </Criteria>
+    </ConditionStabilization>
+    <ConditionStabilization Name="ChronicRenalStenosis">
+        <Criteria>
+            <ConvergenceTime value="15.0" unit="s"/>
+            <MinimumReactionTime value="25.0" unit="s"/>
+            <MaximumAllowedStabilizationTime value="1000.0" unit="s"/>
+            <PropertyConvergence Name="HeartRate" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CardiacOutput" PercentDifference="0.25"/>
+            <PropertyConvergence Name="DiastolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SystolicArterialPressure" PercentDifference="0.25"/>
+            <PropertyConvergence Name="TidalVolume" PercentDifference="0.25"/>
+            <PropertyConvergence Name="OxygenSaturation" PercentDifference="0.25"/>
+            <PropertyConvergence Name="EndTidalCarbonDioxideFraction" PercentDifference="0.25"/>
+            <PropertyConvergence Name="LeftAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="RightAfferentArterioleResistance" PercentDifference="0.25"/>
+            <PropertyConvergence Name="CoreTemperature" PercentDifference="0.25"/>
+            <PropertyConvergence Name="SkinTemperature" PercentDifference="0.25"/>
+        </Criteria>
+    </ConditionStabilization>
+</PhysiologyEngineDynamicStabilization>

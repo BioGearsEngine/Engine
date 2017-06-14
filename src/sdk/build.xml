@@ -1,0 +1,162 @@
+<?xml version="1.0"?>
+<project name="biogears-sdk" default="all" basedir="./" xmlns:if="ant:if" xmlns:unless="ant:unless">
+
+	<property environment="env"/>
+	
+    <condition property="env" value="msvc">
+       <not>  
+          <isset property="env"/>
+       </not>
+    </condition>
+    
+    <property environment="architecture"/>
+    
+    <condition property="architecture" value="x64">
+        <not>
+            <isset property="architecture"/>
+        </not>
+    </condition>
+    
+    <!-- Environment variables -->
+    <condition property="env" value="msvc">
+       <not>  
+          <isset property="env"/>
+       </not>
+    </condition>
+    
+    <condition property="msvc">
+        <equals arg1="${env}" arg2="msvc"/>
+    </condition>
+    
+    <condition property="mingw">
+        <equals arg1="${env}" arg2="mingw"/>
+    </condition>
+    
+    <condition property="eclipsemingw">
+        <equals arg1="${env}" arg2="eclipsemingw"/>
+    </condition>
+    
+    <condition property="xcode">
+        <equals arg1="${env}" arg2="xcode"/>
+    </condition>
+
+    <condition property="unixMake">
+        <equals arg1="${env}" arg2="unixMake"/>
+    </condition>
+
+    <condition property="raspberryPi">
+        <equals arg1="${env}" arg2="raspberryPi"/>
+    </condition>
+
+    <!-- Architecture variables -->
+    <condition property="architecture" value="x64">
+       <not>  
+          <isset property="architecture"/>
+       </not>
+    </condition>
+    
+    <condition property="x86">
+        <equals arg1="${architecture}" arg2="x86"/>
+    </condition>
+    
+    <condition property="x64">
+        <equals arg1="${architecture}" arg2="x64"/>
+    </condition>
+    
+    <condition property="architectureAppend" value="">
+        <isset property="x86"/>
+    </condition>
+    
+    <condition property="architectureAppend" value="64">
+        <isset property="x64"/>
+    </condition>
+	
+	<target name="all" depends="cmake, compile" description="Creates build targets and compiles"/>
+	
+    <!-- 
+	************* 
+	CMake Targets
+	************* 
+	-->
+	
+	<target name="cmake" depends="cmake-msvc,cmake-mingw,cmake-eclipsemingw,cmake-xcode,cmake-unixMake,cmake-raspberryPi"/>
+    <target name="cmake-msvc" description="Generates Win32 projects" if="msvc">
+        <antcall target="cmake-msvc-x86"/>
+        <antcall target="cmake-msvc-x64"/>
+    </target>
+    <target name="cmake-msvc-x86"  description="Generates Win32 projects">       
+        <exec executable="cmd.exe" dir="./cmake" failonerror="true">
+            <arg line="/c GenMSVS14x32.bat"/>
+        </exec>
+    </target>
+    <target name="cmake-msvc-x64"  description="Generates x64 projects">        
+        <exec executable="cmd.exe" dir="./cmake" failonerror="true">
+            <arg line="/c GenMSVS14x64.bat"/>
+        </exec>
+    </target>
+    <target name="cmake-mingw"  description="Generates MinGW Windows make files" if="mingw">       
+        <exec executable="cmd.exe" dir="./cmake" failonerror="true">
+            <arg line="/c GenMinGW.bat"/>
+        </exec>
+    </target>
+    <target name="cmake-eclipsemingw"  description="Generates Eclipse MinGW Windows make files" if="eclipsemingw">                
+        <exec executable="cmd.exe" dir="./cmake" failonerror="true">
+            <arg line="/c GenEclipseMinGW.bat"/>
+        </exec>
+    </target>
+    <target name="cmake-xcode" description="Generates Xcode project files" if="xcode">       
+        <exec executable="/bin/bash" dir="./cmake" failonerror="true">
+            <arg value="GenXcode.sh"/>
+        </exec>
+    </target>
+    <target name="cmake-unixMake" description="Generates Unix make files" if="unixMake">        
+        <exec executable="/bin/bash" dir="./cmake" failonerror="true">
+            <arg value="GenUnixMake.sh"/>
+        </exec>
+    </target>
+    <target name="cmake-raspberryPi" description="Generates Raspberry Pi  make files" if="raspberryPi">        
+        <exec executable="/bin/bash" dir="./cmake" failonerror="true">
+            <arg value="GenRaspberryPi.sh"/>
+        </exec>
+    </target>
+	
+	<!-- 
+	*************** 
+	Compile Targets
+	*************** 
+	-->
+
+    <target name="compile" depends="compileJava,compile-msvc,compile-unix,compile-raspberryPi" description="compiles Java and C++"/>
+	<target name="compile-msvc" if="msvc">
+		<parallel threadCount="4">		
+            <exec executable="cmd.exe" dir="./" failonerror="true">
+				<arg line="/c build-${env}.bat build debug ant x86"/>
+            </exec>
+			<exec executable="cmd.exe" dir="./" failonerror="true">
+				<arg line="/c build-${env}.bat build release ant x86"/>
+			</exec>
+			<exec executable="cmd.exe" dir="./" failonerror="true">
+				<arg line="/c build-${env}.bat build debug ant x64"/>
+			</exec>
+			<exec executable="cmd.exe" dir="./" failonerror="true">
+				<arg line="/c build-${env}.bat build release ant x64"/>
+			</exec>	 
+		</parallel>
+	</target>
+	<!-- Need a mingw -->
+	<target name="compile-unix" if="unix">
+		<exec executable="/bin/bash" dir="${biogears.src}" failonerror="true">
+			<arg line="build-${env}.sh build ${biogears.config} ant"/>
+		</exec>
+	</target>
+	<target name="compile-raspberryPi" if="raspberryPi">
+		<exec executable="/bin/bash" dir="${biogears.src}" failonerror="true">
+			<arg line="build-${env}.sh build ${biogears.config} ant"/>
+		</exec>
+	</target>
+	<target name="compileJava" description="compiles Java">	  
+		<mkdir dir="./howto/build/java"/>
+        <javac debug="true" srcdir="./howto/java" destdir="./howto/build/java" classpath="./lib/BioGears.jar" includeantruntime="false"/>		
+	</target>
+	
+</project>

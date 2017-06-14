@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+
+<!--
+
+file      : examples/cxx/tree/order/element/transactions.xsd
+copyright : not copyrighted - public domain
+
+-->
+
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:t="http://www.codesynthesis.com/transactions"
+            targetNamespace="http://www.codesynthesis.com/transactions"
+            elementFormDefault="qualified">
+
+  <xsd:complexType name="transaction">
+    <xsd:sequence>
+      <xsd:element name="account" type="xsd:unsignedInt"/>
+    </xsd:sequence>
+  </xsd:complexType>
+
+  <xsd:complexType name="balance">
+    <xsd:complexContent>
+      <xsd:extension base="t:transaction"/>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="withdraw">
+    <xsd:complexContent>
+      <xsd:extension base="t:transaction">
+        <xsd:sequence>
+          <xsd:element name="amount" type="xsd:unsignedInt"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="deposit">
+    <xsd:complexContent>
+      <xsd:extension base="t:transaction">
+        <xsd:sequence>
+          <xsd:element name="amount" type="xsd:unsignedInt"/>
+        </xsd:sequence>
+      </xsd:extension>
+    </xsd:complexContent>
+  </xsd:complexType>
+
+  <xsd:complexType name="batch">
+    <xsd:choice minOccurs="0" maxOccurs="unbounded">
+      <xsd:element name="balance" type="t:balance"/>
+      <xsd:element name="withdraw" type="t:withdraw"/>
+      <xsd:element name="deposit" type="t:deposit"/>
+      <xsd:any namespace="##other" processContents="lax"/>
+    </xsd:choice>
+  </xsd:complexType>
+
+  <xsd:element name="batch" type="t:batch"/>
+
+</xsd:schema>

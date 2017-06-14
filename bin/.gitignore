@@ -1,0 +1,6 @@
+debug/
+debug64/
+relWithDebInfo/
+relWithDebInfo64/
+release/
+release64/

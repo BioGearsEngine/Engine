@@ -1,0 +1,1 @@
+clang++ -std=c++11 -pthread *.cpp -I../include -I../include/cdm -I../include/schema -I../include/log4cpp/include -I../include/Eigen-3.3.1/ -L../lib -Wl,-rpath,../lib -lxerces-c-3.1 ../lib/DataModelBindings.dylib ../lib/CommonDataModel.dylib ../lib/BioGearsEngine.dylib -o ../bin/BioGearsEngineHowTo

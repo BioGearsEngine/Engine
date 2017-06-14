@@ -1,0 +1,44 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitConversion", "cpp\UnitConversion.vcxproj", "{EFF11E1D-27FA-48B5-BEB7-857BFB131D2F}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitConversionDriver", "cpp\UnitConversionDriver.vcxproj", "{85AF5FC7-F774-4EEE-9EF9-36BD89EEFB4E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CommonMath", "..\Math\cpp\CommonMath.vcxproj", "{7B023718-0D7A-4E61-A051-66632704FEE2}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CommonMathTest", "..\Math\cpp\CommonMathTest.vcxproj", "{9DA4EF77-5CEA-4F53-B934-BCBF27CF52DD}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "UnitConversionJavaSupport", "..\JavaSupport\cpp\UnitConversionJavaSupport.vcxproj", "{999CEFDF-5B03-4B56-A7EA-CCB5C4F12DAE}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EFF11E1D-27FA-48B5-BEB7-857BFB131D2F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EFF11E1D-27FA-48B5-BEB7-857BFB131D2F}.Debug|Win32.Build.0 = Debug|Win32
+		{EFF11E1D-27FA-48B5-BEB7-857BFB131D2F}.Release|Win32.ActiveCfg = Release|Win32
+		{EFF11E1D-27FA-48B5-BEB7-857BFB131D2F}.Release|Win32.Build.0 = Release|Win32
+		{85AF5FC7-F774-4EEE-9EF9-36BD89EEFB4E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{85AF5FC7-F774-4EEE-9EF9-36BD89EEFB4E}.Debug|Win32.Build.0 = Debug|Win32
+		{85AF5FC7-F774-4EEE-9EF9-36BD89EEFB4E}.Release|Win32.ActiveCfg = Release|Win32
+		{85AF5FC7-F774-4EEE-9EF9-36BD89EEFB4E}.Release|Win32.Build.0 = Release|Win32
+		{7B023718-0D7A-4E61-A051-66632704FEE2}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7B023718-0D7A-4E61-A051-66632704FEE2}.Debug|Win32.Build.0 = Debug|Win32
+		{7B023718-0D7A-4E61-A051-66632704FEE2}.Release|Win32.ActiveCfg = Release|Win32
+		{7B023718-0D7A-4E61-A051-66632704FEE2}.Release|Win32.Build.0 = Release|Win32
+		{9DA4EF77-5CEA-4F53-B934-BCBF27CF52DD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9DA4EF77-5CEA-4F53-B934-BCBF27CF52DD}.Debug|Win32.Build.0 = Debug|Win32
+		{9DA4EF77-5CEA-4F53-B934-BCBF27CF52DD}.Release|Win32.ActiveCfg = Release|Win32
+		{9DA4EF77-5CEA-4F53-B934-BCBF27CF52DD}.Release|Win32.Build.0 = Release|Win32
+		{999CEFDF-5B03-4B56-A7EA-CCB5C4F12DAE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{999CEFDF-5B03-4B56-A7EA-CCB5C4F12DAE}.Debug|Win32.Build.0 = Debug|Win32
+		{999CEFDF-5B03-4B56-A7EA-CCB5C4F12DAE}.Release|Win32.ActiveCfg = Release|Win32
+		{999CEFDF-5B03-4B56-A7EA-CCB5C4F12DAE}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

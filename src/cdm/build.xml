@@ -1,0 +1,45 @@
+<project name="CommonDataModel" default="all" basedir="../" xmlns:ac="antlib:net.sf.antcontrib">
+
+    <property file="${basedir}/build.properties"/>
+    <property file="${basedir}/build.properties.${env}"/>
+	   
+	<target name="all" depends="clean, compile, jar, refreshBin"/>
+		
+	<target name="clean">
+		<delete dir="${biogears.cdm}/build"/>
+		<delete file="${biogears.bin}/CommonDataModel.jar"/>
+	</target>
+
+	<target name="compile" depends="clean">  
+		<mkdir dir="${biogears.cdm}/build/java"/>
+		<javac debug="true" srcdir="${biogears.cdm}/java" destdir="${biogears.cdm}/build/java" classpath="${biogears.cots.cp}"/>		
+	</target>
+	
+	<target name="jar">
+		<delete file="${biogears.bin}/CommonDataModel.jar"/>
+	    <!-- Create the Jar-->
+		<jar destfile="${biogears.bin}/CommonDataModel.jar" excludes="**/Sun_micr.rsa **/Sun_micr.sf">
+			<fileset dir="${biogears.cdm}/build/java"/>
+		</jar>
+	</target>
+	
+	<target name="refreshBin">        	
+		<!-- Create all directories we can build to -->
+		<mkdir dir="${biogears.bin}/debug"/>
+		<mkdir dir="${biogears.bin}/release"/>
+		<mkdir dir="${biogears.bin}/relWithDebInfo"/>
+		<mkdir dir="${biogears.bin}/debug64"/>
+		<mkdir dir="${biogears.bin}/release64"/>
+		<mkdir dir="${biogears.bin}/relWithDebInfo64"/>
+		<!-- Copy all the depended libraries to these build directories -->
+		<copy file="${biogears.cdm}/cpp/utils/unitconversion/UCEDefs.txt" todir="${biogears.bin}"/>
+		<copy file="${xerces.dll.path.debug32}/${xerces.dll.name.debug32}" todir="${biogears.bin}/debug"/>
+		<copy file="${xerces.dll.path.release32}/${xerces.dll.name.release32}" todir="${biogears.bin}/release"/>	
+		<copy file="${xerces.dll.path.releasesymbols32}/${xerces.dll.name.releasesymbols32}" todir="${biogears.bin}/relWithDebInfo"/>	
+		<copy file="${xerces.dll.path.debug64}/${xerces.dll.name.debug64}" todir="${biogears.bin}/debug64"/>
+		<copy file="${xerces.dll.path.release64}/${xerces.dll.name.release64}" todir="${biogears.bin}/release64"/>	
+		<copy file="${xerces.dll.path.releasesymbols64}/${xerces.dll.name.releasesymbols64}" todir="${biogears.bin}/relWithDebInfo64"/>
+	</target>
+	
+	
+</project>	

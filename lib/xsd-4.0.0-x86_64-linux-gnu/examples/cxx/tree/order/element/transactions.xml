@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+
+<!--
+
+file      : examples/cxx/tree/order/element/transactions.xml
+copyright : not copyrighted - public domain
+
+-->
+
+<batch xmlns="http://www.codesynthesis.com/transactions"
+       xmlns:te="http://www.codesynthesis.com/transactions-extras"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.codesynthesis.com/transactions transactions.xsd">
+  <deposit>
+    <account>123456789</account>
+    <amount>1000000</amount>
+  </deposit>
+
+  <balance>
+    <account>123456789</account>
+  </balance>
+
+  <te:block>
+    <account>123456789</account>
+    <amount>500000</amount>
+  </te:block>
+
+  <withdraw>
+    <account>123456789</account>
+    <amount>500000</amount>
+  </withdraw>
+</batch>

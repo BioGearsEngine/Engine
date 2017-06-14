@@ -1,0 +1,6 @@
+# file      : examples/cxx/parser/mixed/text.map
+# copyright : not copyrighted - public domain
+
+include "anchor.hxx";
+
+anchor ::anchor;

@@ -1,0 +1,26 @@
+<project name="BioGearsEngine" default="all" basedir="../../">
+
+    <property file="${basedir}/build.properties"/>
+
+	<target name="all" depends="clean, compile, jar"/>
+		
+	<target name="clean">
+		<delete dir="${biogears.engine}/build"/>
+		<delete file="${biogears.bin}/BioGearsEngine.jar"/>
+	</target>
+
+	<target name="compile" depends="clean">
+		<mkdir dir="${biogears.engine}/build/java"/>
+		<javac debug="true" srcdir="${biogears.engine}/java" destdir="${biogears.engine}/build/java" classpath="${biogears.cots.cp}"/>		
+	</target>
+	
+	<target name="jar">
+		<delete file="${biogears.bin}/BioGearsEngine.jar"/>
+		
+	    <!-- Create the Jar-->
+		<jar destfile="${biogears.bin}/BioGearsEngine.jar" excludes="**/Sun_micr.rsa **/Sun_micr.sf">
+			<fileset dir="${biogears.engine}/build/java"/>
+		</jar>
+	</target>
+
+</project>	

@@ -1,0 +1,68 @@
+This example shows how to re-map the xsd:double and xsd:decimal XML Schema
+built-in types to double and long double C++ fundamental types in the
+C++/Tree mapping. This is achieved using type customization. For more
+information on type customization see the C++/Tree Mapping Customization
+Guide, particularly sections 1 and 4:
+
+http://wiki.codesynthesis.com/Tree/Customization_guide
+
+While by default xsd:double is mapped to double, we still customize this
+type even though we are mapping it to the same C++ type. The effect of
+this seemingly unnecessary customization is that it prevents the XSD
+compiler from including the default implementations of parsing and
+serialization operators for this type and allows us to provide our
+own.
+
+This example consists of the following files:
+
+test.xsd
+test.xml
+  Test schema and XML document.
+
+double-parsing.hxx
+decimal-parsing.hxx
+  Custom parsing code for the double and decimal types. These are
+  included at the end of the xml-schema.hxx file described below.
+
+double-serialization.hxx
+decimal-serialization.hxx
+  Custom serialization code for the double and decimal types. These
+  are included at the end of the xml-schema.hxx file described below.
+
+decimal.hxx
+  Specialization of the fundamental_p class template for the long
+  double C++ type. Note that we don't need to do the same for the
+  double type because it is already handled by the libxsd runtime
+  since it is the original type for both xsd:double and xsd:decimal.
+  This file is included at the end of the xml-schema.hxx file
+  described below.
+
+xml-schema-epilogue.hxx
+  Contains a number of #include directives that are inserted into the
+  generated xml-schema.hxx file. The included files are: decimal.hxx,
+  double-parsing.hxx, decimal-parsing.hxx, double-serialization.hxx,
+  and decimal-serialization.hxx.
+
+xml-schema.hxx
+  C++ types for XML Schema built-in types. This header file is generated
+  by the XSD compiler using the --generate-xml-schema option. The
+  --custom-type option is used to customize the xsd:double and xsd:decimal
+  types. The --hxx-epilogue-file option is used to include the contents of
+  the xml-schema-epilogue.hxx file at the end of this file. The XSD compiler
+  command line for this file is as follows:
+
+  xsd cxx-tree --generate-serialization --generate-xml-schema \
+  --custom-type double=double --custom-type "decimal=long double" \
+  --hxx-epilogue-file xml-schema-epilogue.hxx xml-schema.xsd
+
+test.hxx
+test.cxx
+  C++ types generated from test.xsd. The --extern-xml-schema option
+  is used to include xml-schema.hxx into test.hxx. The XSD compiler
+  command line for these files is as follows:
+
+  xsd cxx-tree --generate-serialization --extern-xml-schema xml-schema.xsd \
+  test.xsd
+
+driver.cxx
+  Test driver for the example.

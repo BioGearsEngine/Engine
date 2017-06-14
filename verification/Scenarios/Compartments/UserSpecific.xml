@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.0-beta" xsi:schemaLocation="">
+  <Name>UserSpecific</Name>
+  <Description>Use this to look at a specific compartment </Description>
+  <InitialParameters><PatientFile>StandardMale.xml</PatientFile></InitialParameters>
+	
+	
+	<Action xsi:type="AdvanceTimeData">
+     <Time value="30" unit="s"/>       
+  </Action>
+	
+</Scenario>

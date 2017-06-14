@@ -1,0 +1,7 @@
+# file      : examples/cxx/parser/mixin/schema.map
+# copyright : not copyrighted - public domain
+
+include "types.hxx";
+
+base ::base*;
+derived ::derived*;
