@@ -314,13 +314,10 @@
 		<ant antfile="build.xml" dir="${biogears.cdm}" target="jar" /> 
 		<ant antfile="build.xml" dir="${biogears.engine}" target="compile" /> 
 		<ant antfile="build.xml" dir="${biogears.engine}" target="jar" /> 
-		<ant antfile="build.xml" dir="${biogears.gui}" target="compile" /> 
-		<ant antfile="build.xml" dir="${biogears.gui}" target="jar" /> 
 		<!-- Create a jar with all dependencies -->
 		<delete file="../bin/BioGears.jar"/>
 	    <!-- Create the Jar-->
 		<jar destfile="../bin/BioGears.jar" excludes="**/Sun_micr.rsa **/Sun_micr.sf">
-			<zipfileset src="${biogears.bin}/BioGearsGUI.jar" includes="**/*.java **/*.class"/>		
 			<zipfileset src="${biogears.bin}/BioGearsEngine.jar" includes="**/*.java **/*.class"/>	
 			<zipfileset src="${biogears.bin}/CommonDataModel.jar" includes="**/*.java **/*.class"/>
 			<zipfileset src="${biogears.bin}/DataModelBindings.jar" includes="**/*.java **/*.class"/>
