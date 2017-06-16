@@ -239,4 +239,15 @@ BioGears has Publications papers and abstracts on several systems and clinical s
 Additional Information
 ======================
 
+Code of Conduct
+------------------
+We support the [contibutor covenant](https://github.com/BioGearsEngine/Engine/blob/master/CODE_OF_CONDUCT.md) and the scope and enforcement it details. We reserve the right of enforment that we feel is appropriate given the nature of the offense up to and including a permanent ban from the project.
+
+
+Contributing 
+-------------
+Details will be filled in shortly. In the meantime if you have a contribution or issue to post/push feel free to contact abaird@ara.com with the details. 
+
+Additional Documentation
+--------------------------
 For more detailed documentation including model discussions and implementation details can be found at www.BioGearsEngine.com
