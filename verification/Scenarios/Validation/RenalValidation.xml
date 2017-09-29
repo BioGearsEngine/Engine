@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
   <Name>Renal Validation</Name>
   <Description>Validation of Renal Data</Description>
 	<!-- <OverrideDecimalFormatting DecimalFormat="FixedMantissa" Precision="6"/> -->
@@ -70,7 +70,7 @@
 	<DataRequest xsi:type="PhysiologyDataRequestData" Name="UrineUreaNitrogenConcentration" Unit="g/L" Precision="1"/>
 	
 	<!--Compartment Data Requests-->
-	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="Bladder" Substance="Acetoacetate" Name="Concentration"  Unit="g/L" Precision="1"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="Bladder" Substance="Ketones" Name="Concentration"  Unit="g/L" Precision="1"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="Bladder" Substance="Albumin"      Name="Concentration"  Unit="mg/L" Precision="1"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="Bladder" Substance="Bicarbonate"  Name="Concentration"  Unit="mg/L" Precision="1"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="Bladder" Substance="Calcium"      Name="Concentration"  Unit="g/L" Precision="3"/>
@@ -125,7 +125,7 @@
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightUreter"                       Name="Volume"   Unit="mL" Precision="2"/>
 	
 	<!-- Substance Specific Properties -->
-	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Acetoacetate" Name="Clearance-RenalClearance" Unit="mL/min kg" Precision="1"/>
+	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Ketones" Name="Clearance-RenalClearance" Unit="mL/min kg" Precision="1"/>
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Albumin"      Name="Clearance-RenalClearance" Unit="mL/min kg" Precision="8"/>
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Albumin"      Name="Clearance-GlomerularFilterability" Precision="4"/>
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Bicarbonate"  Name="Clearance-RenalClearance" Unit="mL/min kg" Precision="5"/>
@@ -164,7 +164,7 @@
 
 	
 	<!--Initialization testing - these are not included in the table, but are helpful to initialize substances-->
-	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightTubules" Substance="Acetoacetate" Name="Concentration"  Unit="g/L" Precision="2"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightTubules" Substance="Ketones" Name="Concentration"  Unit="g/L" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightTubules" Substance="Albumin"      Name="Concentration"  Unit="g/L" Precision="4"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightTubules" Substance="Bicarbonate"  Name="Concentration"  Unit="g/L" Precision="3"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightTubules" Substance="Calcium"      Name="Concentration"  Unit="g/L" Precision="2"/>
@@ -175,7 +175,7 @@
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightTubules" Substance="Urea"         Name="Concentration"  Unit="g/L" Precision="3"/>
 	
 <!--Initialization testing - these are not included in the table, but are helpful to initialize substances-->
-	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftTubules" Substance="Acetoacetate" Name="Concentration"  Unit="g/L" Precision="2"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftTubules" Substance="Ketones" Name="Concentration"  Unit="g/L" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftTubules" Substance="Albumin"      Name="Concentration"  Unit="g/L" Precision="4"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftTubules" Substance="Bicarbonate"  Name="Concentration"  Unit="g/L" Precision="3"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftTubules" Substance="Calcium"      Name="Concentration"  Unit="g/L" Precision="2"/>
@@ -187,7 +187,7 @@
 	
 
 
-	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightBowmansCapsules" Substance="Acetoacetate" Name="Concentration"  Unit="g/L" Precision="2"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightBowmansCapsules" Substance="Ketones" Name="Concentration"  Unit="g/L" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightBowmansCapsules" Substance="Albumin"      Name="Concentration"  Unit="g/L" Precision="4"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightBowmansCapsules" Substance="Bicarbonate"  Name="Concentration"  Unit="g/L" Precision="3"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightBowmansCapsules" Substance="Calcium"      Name="Concentration"  Unit="g/L" Precision="2"/>
@@ -197,7 +197,7 @@
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightBowmansCapsules" Substance="Sodium"       Name="Concentration"  Unit="g/L" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightBowmansCapsules" Substance="Urea"         Name="Concentration"  Unit="g/L" Precision="3"/>
 
-	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightUreter" Substance="Acetoacetate" Name="Concentration"  Unit="g/L" Precision="2"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightUreter" Substance="Ketones" Name="Concentration"  Unit="g/L" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightUreter" Substance="Albumin"      Name="Concentration"  Unit="g/L" Precision="4"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightUreter" Substance="Bicarbonate"  Name="Concentration"  Unit="g/L" Precision="3"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightUreter" Substance="Calcium"      Name="Concentration"  Unit="g/L" Precision="2"/>

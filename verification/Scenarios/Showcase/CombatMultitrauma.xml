@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
     <Name>CombatMultitrauma</Name>
     <Description>Showcase scenario: Soldier with closed tension pneumothorax and severe bleeding</Description>
     <InitialParameters>
@@ -35,18 +35,20 @@
         <Comment>Insult</Comment>
         <Severity value="0.75"/>
     </Action>
-    <Action xsi:type="HemorrhageData" Compartment="RightLeg">
-        <Comment>Insult: Massive bleeding</Comment>
-        <Rate value="350" unit="mL/min"/>
+    <Action xsi:type="HemorrhageData">
+		<MCIS>
+			<IntegerList>5 4 0 0 0</IntegerList> <!--Leg hemorrhage-->
+		</MCIS>
     </Action>	
     <Action xsi:type="AdvanceTimeData">
         <Time value="1" unit="min"/>
     </Action>
     <!-- Segment 3: Non-tourniquet bleeding control -->
-    <Action xsi:type="HemorrhageData" Compartment="RightLeg">
-        <Comment>Intervention: Bleeding reduced (manual pressure applied)</Comment>
-        <Rate value="50" unit="mL/min"/>
-    </Action>	
+    <Action xsi:type="HemorrhageData">
+		<MCIS>
+			<IntegerList>3 4 0 0 0</IntegerList> <!--Stop leg hemorrhage-->
+		</MCIS>
+    </Action>
     <Action xsi:type="AdvanceTimeData">
         <Time value="1" unit="min"/>
     </Action>
@@ -58,9 +60,10 @@
         <Time value="4" unit="min"/>
     </Action>
     <!-- Segment 5: Tourniquet Application -->
-    <Action xsi:type="HemorrhageData" Compartment="RightLeg">
-        <Comment>Intervention: Bleeding stopped (tourniquet applied)</Comment>
-        <Rate value="0" unit="mL/min"/>
+    <Action xsi:type="HemorrhageData">
+		<MCIS>
+			<IntegerList>0 4 0 0 0</IntegerList> <!--Stop leg hemorrhage-->
+		</MCIS>
     </Action>
     <Action xsi:type="AdvanceTimeData">
         <Time value="0.5" unit="min"/>

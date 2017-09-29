@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
     <Name>StarvationScenario</Name>
     <Description>Patient has ingested hypertonic saline with 100g of Na per 1L of water</Description>
     <InitialParameters>
@@ -37,8 +37,8 @@
 	<DataRequest xsi:type="PhysiologyDataRequestData" Name="UrineProductionRate"               Unit="mL/min"      Precision="3"/>
 	<DataRequest xsi:type="PhysiologyDataRequestData" Name="LeftAfferentArterioleResistance"   Unit="mmHg min/mL" Precision="4"/>
 	<DataRequest xsi:type="PhysiologyDataRequestData" Name="RightAfferentArterioleResistance"  Unit="mmHg min/mL" Precision="4"/>
-	<DataRequest xsi:type="PhysiologyDataRequestData" Name="OxygenConsumptionRate"             Unit="mL/min"      Precision="0"/>
-	<DataRequest xsi:type="PhysiologyDataRequestData" Name="CarbonDioxideProductionRate"       Unit="mL/min"      Precision="0"/>
+	<DataRequest xsi:type="PhysiologyDataRequestData" Name="OxygenConsumptionRate"             Unit="mL/min"      Precision="3"/>
+	<DataRequest xsi:type="PhysiologyDataRequestData" Name="CarbonDioxideProductionRate"       Unit="mL/min"      Precision="3"/>
     
 	<DataRequest xsi:type="GasCompartmentDataRequestData" Compartment="LeftAlveoli"                            Name="Pressure"        Unit="cmH2O" Precision="0"/>
 	<DataRequest xsi:type="GasCompartmentDataRequestData" Compartment="LeftAlveoli"  Substance="Oxygen"        Name="PartialPressure" Unit="mmHg"  Precision="0"/>
@@ -59,6 +59,8 @@
 	
 	<DataRequest xsi:type="SubstanceDataRequestData"  Substance="Oxygen"         Name="AlveolarTransfer" Unit="mL/s" Precision="2"/>
 	<DataRequest xsi:type="SubstanceDataRequestData"  Substance="CarbonDioxide"  Name="AlveolarTransfer" Unit="mL/s" Precision="2"/>
+	  <DataRequest xsi:type="PhysiologyDataRequestData" Name="LiverGlycogen" Unit="g" Precision="2"/>
+  <DataRequest xsi:type="PhysiologyDataRequestData" Name="MuscleGlycogen" Unit="g" Precision="2"/>
 
 	<!-- Specific to this scenario -->
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Sodium"       Name="BloodConcentration"  Unit="g/L" Precision="2"/>
@@ -77,8 +79,6 @@
 	<DataRequest xsi:type="PhysiologyDataRequestData" Name="UrinationRate"   Unit="mL/s"    Precision="0"/>
 
 	
-	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Sodium" Name="Clearance-RenalClearance"                     Unit="mL/min kg" Precision="5"/>
-	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Sodium" Name="Clearance-RenalReabsorptionRate"              Unit="mg/min" Precision="0"/>	
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Sodium" Name="MassInBody"                         Unit="g" Precision="1"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="Bladder"     Substance="Sodium" Name="Concentration"  Unit="g/L"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightUreter"                    Name="InFlow"   Unit="mL/min" Precision="2"/>

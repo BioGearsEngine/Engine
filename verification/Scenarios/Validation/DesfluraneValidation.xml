@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
     <Name>DesfluraneScenario</Name>
     <Description>Patient breathing in Desflurane</Description>
 	<InitialParameters>
@@ -10,11 +10,13 @@
       </DrugsConfiguration>
 		</Configuration>
 	</InitialParameters>
-		<!-- Substance Specific Properties -->
+	
+		<!-- Base system data required for all scenario verification -->
     
   <DataRequests SamplesPerSecond="1">
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="VenaCava" Name="Concentration" Substance="Desflurane" Unit="ug/mL" Precision="9"/>
-  
+	
+	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Desflurane" Name="EndTidalFraction" Unit="" Precision="4"/>
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Desflurane" Name="PlasmaConcentration" Unit="ug/L" Precision="6"/>	
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Desflurane" Name="SystemicMassCleared" Unit="ug" Precision="9"/>	
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Desflurane" Name="MassInBody" Unit="ug" Precision="2"/>	
@@ -69,12 +71,23 @@
       <Configuration>
         <LeftChamber>
           <State>On</State>
-          <SubstanceFraction value="0.04"/>					
+          <SubstanceFraction value="0.05"/>					
           <Substance>Desflurane</Substance>
         </LeftChamber>
       </Configuration>
     </Action>
     <Action xsi:type="AdvanceTimeData">
-        <Time value="1000" unit="s"/>       
+        <Time value="0.5" unit="hr"/>       
+    </Action>
+	<Action xsi:type="AnesthesiaMachineConfigurationData">
+      <Configuration>
+        <LeftChamber>
+          <State>Off</State>
+        </LeftChamber>
+      </Configuration>
+    </Action>
+    <Action xsi:type="AdvanceTimeData">
+        <Time value="2" unit="hr"/>       
     </Action>
 </Scenario>
+

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
     <Name>HemorrhageCM1</Name>
-    <Description>Bleeding in the right leg and vena cava, then iv administration</Description>
+    <Description>Bleeding in the spleen and right leg, then iv administration</Description>
     <InitialParameters><PatientFile>Soldier.xml</PatientFile></InitialParameters>
     
 	<!-- Base system data required for all scenario verification -->
@@ -34,8 +34,8 @@
   <DataRequest xsi:type="PhysiologyDataRequestData" Name="SkinTemperature"                   Unit="degC"        Precision="1"/>
   
   <DataRequest xsi:type="PhysiologyDataRequestData" Name="RespiratoryExchangeRatio"          Unit="unitless"    Precision="3"/>
-  <DataRequest xsi:type="PhysiologyDataRequestData" Name="OxygenConsumptionRate"             Unit="mL/min"      Precision="0"/>
-  <DataRequest xsi:type="PhysiologyDataRequestData" Name="CarbonDioxideProductionRate"       Unit="mL/min"      Precision="0"/>
+  <DataRequest xsi:type="PhysiologyDataRequestData" Name="OxygenConsumptionRate"             Unit="mL/min"      Precision="3"/>
+  <DataRequest xsi:type="PhysiologyDataRequestData" Name="CarbonDioxideProductionRate"       Unit="mL/min"      Precision="3"/>
   
   <DataRequest xsi:type="PhysiologyDataRequestData" Name="GlomerularFiltrationRate"          Unit="mL/min"      Precision="0"/> 
   <DataRequest xsi:type="PhysiologyDataRequestData" Name="RenalBloodFlow"                    Unit="L/min"      Precision="2"/>
@@ -64,49 +64,79 @@
   <DataRequest xsi:type="SubstanceDataRequestData"  Substance="CarbonDioxide"  Name="AlveolarTransfer" Unit="mL/s" Precision="2"/>
   
   <DataRequest Substance="Epinephrine" Name="BloodConcentration" xsi:type="SubstanceDataRequestData" Unit="ug/L" Precision="6"/>
+    <DataRequest xsi:type="PhysiologyDataRequestData" Name="LiverGlycogen" Unit="g" Precision="2"/>
+  <DataRequest xsi:type="PhysiologyDataRequestData" Name="MuscleGlycogen" Unit="g" Precision="2"/>
 
 	<!-- Anything action specific data needed for verification of this scenario -->
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="SpleenVasculature"  Name="InFlow"   Unit="mL/min" Precision="3"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="SpleenVasculature"  Name="OutFlow"   Unit="mL/min" Precision="3"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightLegVasculature"  Name="InFlow"   Unit="mL/min" Precision="3"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightLegVasculature"  Name="OutFlow"   Unit="mL/min" Precision="3"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="Ground"  Name="InFlow"   Unit="mL/min" Precision="3"/>
+	
 	<DataRequest xsi:type="PhysiologyDataRequestData" Name="UrineOsmolality"	                              Unit="mOsm/kg" Precision="1"/>
 	<DataRequest xsi:type="PhysiologyDataRequestData" Name="UrineOsmolarity" 								  Unit="mOsm/L" Precision="1"/>
 	<DataRequest xsi:type="PhysiologyDataRequestData" Name="RightTubularReabsorptionFluidPermeability"      Unit="mL/s mmHg m^2" Precision="3"/>
 	<DataRequest xsi:type="PhysiologyDataRequestData" Name="LeftTubularReabsorptionFluidPermeability"       Unit="mL/s mmHg m^2" Precision="3"/>
 
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Sodium" Name="BloodConcentration"                 Unit="g/L" Precision="2"/>
-	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Sodium" Name="Clearance-RenalClearance"                     Unit="mL/min kg" Precision="5"/>
-	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Sodium" Name="Clearance-RenalReabsorptionRate"              Unit="mg/min" Precision="0"/>	
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Sodium" Name="MassInBody"                         Unit="g" Precision="1"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="Bladder" Substance="Sodium" Name="Concentration"  Unit="g/L" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightUreter"                Name="InFlow"   Unit="mL/min" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftUreter"                 Name="InFlow"   Unit="mL/min" Precision="2"/>
+	
   </DataRequests>
     
-	
+<!--MCIS Code Brief:
+	Digit 1 = Severity
+	Digit 2 = Body Region (1 = Head, 2 = Torso, 3 = Arms, 4 = Legs, 5 = Multiple (not currently supported)
+	Digit 3 = Subregion (not requied for arms or legs)
+		In Head: 6 = Vessels
+		In Torso: 	6 = Vessels, 7 = Chest, 8 = Abdomen, 9 = Pelvis (not currently supported)
+	Digit 4
+		In Vessels:  1 = Intracranial, 3-5 = Carotid/Thoracic/Abdominal arteries (all currently removed from aorta compartment), 6 = VenaCava
+		In Chest:  1 = Lungs, 2 = Heart
+		In Abdomen:  1 = Liver, 2 = Spleen, 3 = Pancreas (Splanchnic), 4 = Kidney, 5 = SmallIntestine, 6 = LargeIntestine
+	Digit 5:  Wound information too specific for BioGears (any number fine, 0 used here)
+
+Stopping a hemorrhage requires Severity = 0 and remainder of code consistent with original wound
+-->   		
 	<Action xsi:type="AdvanceTimeData">
         <Time value="30" unit="s"/>       
     </Action>
-    <Action xsi:type="HemorrhageData" Compartment="RightLeg">
-        <Rate value="250" unit="mL/min"/>
+    <Action xsi:type="HemorrhageData">
+		<MCIS> 
+			<IntegerList>4 2 8 2 0</IntegerList> <!--Spleen hemorrhage-->
+		</MCIS>
     </Action>
-    <Action xsi:type="HemorrhageData" Compartment="VenaCava">
-        <Rate value="25" unit="mL/min"/>
+    <Action xsi:type="HemorrhageData">
+		<MCIS>
+			<IntegerList>4 4 0 0 0</IntegerList> <!--Leg hemorrhage-->
+		</MCIS>
     </Action>
     <Action xsi:type="AdvanceTimeData">
-        <Time value="300" unit="s"/>       
+        <Time value="500" unit="s"/>       
     </Action>
-    <Action xsi:type="HemorrhageData" Compartment="RightLeg">
-        <Rate value="20" unit="mL/min"/>
+  <Action xsi:type="HemorrhageData">
+        <MCIS>
+			<IntegerList>3 2 8 2 0</IntegerList> <!--Decrease spleen hemorrhage severity-->
+		</MCIS>
     </Action>
     <Action xsi:type="AdvanceTimeData">
         <Time value="60" unit="s"/>       
     </Action>
-    <Action xsi:type="HemorrhageData" Compartment="VenaCava">
-        <Rate value="0" unit="mL/min"/>
+    <Action xsi:type="HemorrhageData">
+		<MCIS>
+			<IntegerList>0 4 0 0 0</IntegerList> <!--Stop leg hemorrhage-->
+		</MCIS>
     </Action>
     <Action xsi:type="AdvanceTimeData">
         <Time value="240" unit="s"/>       
     </Action>
-    <Action xsi:type="HemorrhageData" Compartment="RightLeg">
-        <Rate value="0" unit="mL/min"/>
+   <Action xsi:type="HemorrhageData">
+		<MCIS>
+			<IntegerList> 0 2 8 2 0 </IntegerList> <!--Stop spleen hemorrhage-->
+		</MCIS>
     </Action>
     <Action xsi:type="AdvanceTimeData">
         <Time value="240" unit="s"/>       
@@ -117,6 +147,6 @@
         <Rate value="100" unit="mL/min"/>
     </Action>
     <Action xsi:type="AdvanceTimeData">
-        <Time value="300" unit="s"/>       
+        <Time value="500" unit="s"/>     
     </Action>
 </Scenario>
