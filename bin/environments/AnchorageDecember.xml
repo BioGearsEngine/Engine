@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<EnvironmentalConditions xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.1-beta" xsi:schemaLocation="">
+<EnvironmentalConditions xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
     <SurroundingType>Air</SurroundingType>
     <AirVelocity value="5.0" unit="m/s"/>
     <AmbientTemperature value="-10.0" unit="degC"/>
