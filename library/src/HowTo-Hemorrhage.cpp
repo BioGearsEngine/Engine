@@ -79,10 +79,25 @@ void HowToHemorrhage()
 	bg->GetLogger()->Info(std::stringstream() <<"Heart Rate : " << bg->GetCardiovascularSystem()->GetHeartRate(FrequencyUnit::Per_min) << "bpm");;
 
 	// Hemorrhage Starts - instantiate a hemorrhage action and have the engine process it
-	SEHemorrhage hemorrhageLeg;
-	hemorrhageLeg.SetCompartment(BGE::VascularCompartment::RightLeg);//the location of the hemorrhage
-	hemorrhageLeg.GetRate().SetValue(250,VolumePerTimeUnit::mL_Per_min);//the rate of hemorrhage
-	bg->ProcessAction(hemorrhageLeg);
+	/*MCIS Code Brief : 
+	Digit 1 = Severity 
+	Digit 2 = Body Region(1 = Head, 2 = Torso, 3 = Arms, 4 = Legs, 5 = Multiple(not currently supported) 
+	Digit 3 = Subregion(not requied for arms or legs) 
+		In Head : 6 = Vessels 
+		In Torso : 6 = Vessels, 7 = Chest, 8 = Abdomen, 9 = Pelvis(not currently supported) 
+	Digit 4 
+		In Vessels : 1 = Intracranial, 3 - 5 = Carotid / Thoracic / Abdominal arteries(all currently removed from aorta compartment), 6 = VenaCava 
+		In Chest : 1 = Lungs, 2 = Heart In Abdomen : 1 = Liver, 2 = Spleen, 3 = Pancreas(Splanchnic), 4 = Kidney, 5 = SmallIntestine, 6 = LargeIntestine 
+	Digit 5 : Wound information too specific for BioGears(any number fine, 0 used here) 
+	
+	Stopping a hemorrhage requires Severity = 0 and remainder of code consistent with original wound*/
+
+	SEHemorrhage hemorrhageAbdominal;
+	std::vector<unsigned int> hemorrhageStart = {4,2,6,5,0 };
+	hemorrhageAbdominal.SetMCIS(hemorrhageStart);
+	hemorrhageAbdominal.ProcessMCIS();  //Extracts the injury severity and injury location from the mcis code
+	
+	bg->ProcessAction(hemorrhageAbdominal);
 
 	// Advance some time to let the body bleed out a bit
 	tracker.AdvanceModelTime(300);
@@ -97,9 +112,10 @@ void HowToHemorrhage()
 	bg->GetLogger()->Info(std::stringstream() <<"Heart Rate : " << bg->GetCardiovascularSystem()->GetHeartRate(FrequencyUnit::Per_min) << "bpm");;
 
 	// Hemorrhage is sealed
-	hemorrhageLeg.SetCompartment(BGE::VascularCompartment::RightLeg);//location of hemorrhage
-	hemorrhageLeg.GetRate().SetValue(0,VolumePerTimeUnit::mL_Per_min);//rate is set to 0 to close the bleed
-	bg->ProcessAction(hemorrhageLeg);
+	std::vector<unsigned int> hemorrhageEnd = { 0,2,6,5,0 };
+	hemorrhageAbdominal.SetMCIS(hemorrhageEnd);
+	hemorrhageAbdominal.ProcessMCIS();
+	bg->ProcessAction(hemorrhageAbdominal);
 	
 	
 	// Advance some time while the medic gets the drugs ready

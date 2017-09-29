@@ -26,7 +26,7 @@ int main()
 	//HowToAirwayObstruction();
 	//HowToAnesthesiaMachine();
 	//HowToAsthmaAttack();
-  HowToBrainInjury();
+  //HowToBrainInjury();
 	//HowToBolusDrug();
 	//HowToConsumeNutrients();
 	//HowToCOPD();
@@ -35,7 +35,7 @@ int main()
 	//HowToExercise();
 	//HowToHemorrhage();
 	//HowToLobarPneumonia();
-//  HowToMechanicalVentilation();
+  HowToMechanicalVentilation();
 	//HowToPulmonaryFunctionTest();
   //HowToSmoke();
 	//HowToTensionPneumothorax();
