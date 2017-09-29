@@ -132,6 +132,8 @@ specific language governing permissions and limitations under the License.
           <xs:element name="SystolicPressureModifier" type="ScalarFractionData" minOccurs="1"  maxOccurs="1"/><!--<< @brief -->
           <xs:element name="TidalVolumeModifier" type="ScalarFractionData" minOccurs="1"  maxOccurs="1"/><!--<< @brief -->          
           <xs:element name="TubularPermeabilityModifier" type="ScalarFractionData" minOccurs="1"  maxOccurs="1"/><!--<< @brief -->
+          <xs:element name="CentralNervousModifier" type="ScalarFractionData" minOccurs="1"  maxOccurs="1"/><!--<< @brief -->
+          <xs:element name="EffectSiteRateConstant" type="ScalarFrequencyData" minOccurs="1"  maxOccurs="1"/><!--<< @brief Describes speed of equilibration between plasma concentration and site of action of a drug -->
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>
@@ -205,6 +207,8 @@ specific language governing permissions and limitations under the License.
           <xs:element name="MassInTissue" type="ScalarMassData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Amount of mass of this substance that is in the tissue. -->
           <xs:element name="PlasmaConcentration" type="ScalarMassPerVolumeData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Calculated concentration of a substance in the plasma. -->
           <xs:element name="SystemicMassCleared" type="ScalarMassData" minOccurs="0"  maxOccurs="1"/><!--<< @brief The total amount of mass that has been systemically cleared-->          
+          <xs:element name="EffectSiteConcentration" type="ScalarMassPerVolumeData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Calculated concentration at drug site of action for PD Effects -->
+
           <xs:element name="TissueConcentration" type="ScalarMassPerVolumeData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Concentration of this substance that is in the tissue. -->
           <!-- Gas -->
           <xs:element name="AlveolarTransfer" type="ScalarVolumePerTimeData" minOccurs="0" maxOccurs="1"/><!--<< @brief Calculated rate of transfer that occurs during gas exchange. -->

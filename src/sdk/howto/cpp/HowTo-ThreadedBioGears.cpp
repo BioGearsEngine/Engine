@@ -27,6 +27,7 @@ specific language governing permissions and limitations under the License.
 #include "properties/SEScalarTime.h"
 #include "properties/SEScalarVolume.h"
 #include "properties/SEScalarVolumePerTime.h"
+#include <iostream>
 
 void HowToDynamicHemorrhage()
 {
@@ -37,10 +38,13 @@ void HowToDynamicHemorrhage()
 
   int action;
   double rate;
+  std::vector<unsigned int> userMCIS;
   bool active = true;
+  int codeCount;
+  int codeIn;
   do
   {
-    bgThread.GetLogger()->Info("Enter Interger for Action to Perform : [1]Status, [2]Hemorrhage, [3]IVFluids, [4]Quit");
+    bgThread.GetLogger()->Info("Enter Integer for Action to Perform : [1]Status, [2]Hemorrhage, [3]IVFluids, [4]Quit");
     std::cin >> action;
     switch (action)
     {
@@ -48,10 +52,16 @@ void HowToDynamicHemorrhage()
       bgThread.Status();
       break;
     case 2:
-      bgThread.GetLogger()->Info("Enter Hemorrhage Rate in mL/min : ");
-      std::cin >> rate;
-      bgThread.GetLogger()->Info(std::stringstream() << rate);
-      bgThread.SetHemorrhageFlow_mL_Per_min(rate);
+		codeCount = 0;
+		//See HowTo-Hemorrhage for description of MCIS code
+		bgThread.GetLogger()->Info("Provide 5-digit MCIS code (separate digits by spaces) followed by ENTER: ");
+		do {
+			std::cin >> codeIn;
+			userMCIS.push_back(codeIn);
+			codeCount++;
+		} while (codeCount <= 4);		//MCIS code must be five digits long, so don't go past fourth index
+	  bgThread.GetLogger()->Info(std::stringstream() << userMCIS[0] << userMCIS[1] << userMCIS[2] << userMCIS[3] << userMCIS[4]);	  
+	  bgThread.SetHemorrhage(userMCIS);
       break;
     case 3:
       bgThread.GetLogger()->Info("Enter IV Fluids Rate in mL/min : ");
@@ -80,7 +90,6 @@ BioGearsThread::BioGearsThread(const std::string& logfile) : m_thread()
   // Create and initialize our actions
   m_infusion = new SESubstanceCompoundInfusion(*saline);
   m_hemorrhage = new SEHemorrhage();
-  m_hemorrhage->SetCompartment(BGE::VascularCompartment::RightLeg);//the location of the hemorrhage  
 
   // Start advancing time in a seperate thread
   m_runThread = true;
@@ -95,9 +104,10 @@ BioGearsThread::~BioGearsThread()
   SAFE_DELETE(m_hemorrhage);
 }
 
-void BioGearsThread::SetHemorrhageFlow_mL_Per_min(double rate)
+void BioGearsThread::SetHemorrhage(const std::vector<unsigned int>& mcisIn)
 {
-  m_hemorrhage->GetRate().SetValue(rate, VolumePerTimeUnit::mL_Per_min);//the rate of hemorrhage
+  m_hemorrhage->SetMCIS(mcisIn);//the rate of hemorrhage
+  m_hemorrhage->ProcessMCIS();
   m_mutex.lock();
   m_bg->ProcessAction(*m_hemorrhage);
   m_mutex.unlock();
@@ -107,7 +117,7 @@ void BioGearsThread::SetIVFluidsFlow_mL_Per_min(double rate)
 {
   // For this example, I am always resetting the bag volume on every change, but you may want to allow the bag to run out..
   m_infusion->GetBagVolume().SetValue(500, VolumeUnit::mL);//the total volume in the bag of Saline
-  m_infusion->GetRate().SetValue(100, VolumePerTimeUnit::mL_Per_min);//The rate to admnister the compound in the bag in this case saline
+  m_infusion->GetRate().SetValue(rate, VolumePerTimeUnit::mL_Per_min);//The rate to admnister the compound in the bag in this case saline
   m_mutex.lock();
   m_bg->ProcessAction(*m_infusion);
   m_mutex.unlock();

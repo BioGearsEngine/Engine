@@ -127,7 +127,7 @@ public class ConvexHullPlotter implements Plotter
 	    try
 	    {
 		    CSVContents csv = new CSVContents(job.dataPath + job.dataFile);
-		    csv.abreviateContents = job.resultsSkipNum;
+		    csv.abbreviateContents = job.resultsSkipNum;
 		    for (int i = 0; i < job.headers.size(); i++)
 		    {
 			    List<Double> headerData = new ArrayList<Double>();

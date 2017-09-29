@@ -47,17 +47,19 @@ void BioGearsSubstances::Clear()
 	m_HCO3 = nullptr;
 	m_epi = nullptr;
 
-	m_acetoacetate = nullptr;
 	m_albumin = nullptr;
+  m_aminoAcids = nullptr;
 	m_calcium = nullptr;
 	m_chloride = nullptr;
 	m_creatinine = nullptr;
   m_globulin = nullptr;
+  m_glucagon = nullptr;
 	m_glucose = nullptr;
 	m_insulin = nullptr;
+  m_ketones = nullptr;
 	m_lactate = nullptr;
 	m_potassium = nullptr;
-	m_tristearin = nullptr;
+	m_triacylglycerol = nullptr;
 	m_sodium = nullptr;
 	m_urea = nullptr;
 }
@@ -87,18 +89,20 @@ void BioGearsSubstances::InitializeSubstances()
   AddActiveSubstance(*m_HCO3);
   AddActiveSubstance(*m_epi);
 
-  AddActiveSubstance(*m_acetoacetate);
   AddActiveSubstance(*m_albumin);
+  AddActiveSubstance(*m_aminoAcids);
   AddActiveSubstance(*m_calcium);
   AddActiveSubstance(*m_chloride);
   AddActiveSubstance(*m_creatinine);
   //AddActiveSubstance(*m_globulin);//We don't transport this
+  AddActiveSubstance(*m_glucagon);
   AddActiveSubstance(*m_glucose);
   AddActiveSubstance(*m_insulin);
+  AddActiveSubstance(*m_ketones);
   AddActiveSubstance(*m_lactate);
   AddActiveSubstance(*m_potassium);
   AddActiveSubstance(*m_sodium);
-  AddActiveSubstance(*m_tristearin);
+  AddActiveSubstance(*m_triacylglycerol);
   AddActiveSubstance(*m_urea);
 
   InitializeGasCompartments();
@@ -220,8 +224,10 @@ void BioGearsSubstances::InitializeLiquidCompartmentGases()
   InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::LeftEfferentArteriole), Hb_total_mM, 0.907413, 0.0791142, 0.072315, 1.35842, 26.0389, 7.38259);
   InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::LeftGlomerularCapillaries), Hb_total_mM, 0.9209, 0.0773075, 0.031322, 1.07857, 25.5034, 7.47375);
   //No Hb through glomerular ultrafiltration
-  InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::LeftBowmansCapsules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 25.5034, 7.47375);
-  InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::LeftTubules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 25.5034, 7.47375);
+  //InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::LeftBowmansCapsules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 25.5034, 7.47375);
+  InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::LeftBowmansCapsules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 0.0, 7.47375);
+  //InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::LeftTubules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 25.5034, 7.47375);
+  InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::LeftTubules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 0.0, 7.47375);
   //----------------------------------------
   InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::LeftHeart), Hb_total_mM, 0.974919, 0.129622, 0.0281731, 1.30089, 25.9384, 7.3997);
   InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::LeftLeg), Hb_total_mM, 0.974914, 0.129637, 0.0281665, 1.30153, 25.9395, 7.39951);
@@ -240,8 +246,10 @@ void BioGearsSubstances::InitializeLiquidCompartmentGases()
   InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::RightEfferentArteriole), Hb_total_mM, 0.907413, 0.0791142, 0.072315, 1.35842, 26.0389, 7.38259);
   InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::RightGlomerularCapillaries), Hb_total_mM, 0.9209, 0.0773075, 0.031322, 1.07857, 25.5034, 7.47375);
   //No Hb through glomerular ultrafiltration
-  InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::RightBowmansCapsules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 25.5034, 7.47375);
-  InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::RightTubules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 25.5034, 7.47375);
+  //InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::RightBowmansCapsules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 25.5034, 7.47375);
+  InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::RightBowmansCapsules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 0.0, 7.47375);
+  //InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::RightTubules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 25.5034, 7.47375);
+  InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::RightTubules), 0.0, 0.0, 0.0773075, 0.0, 1.07857, 0.0, 7.47375);
   //----------------------------------------
   InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::RightHeart), Hb_total_mM, 0.813115, 0.0591938, 0.14621, 1.39669, 26.1035, 7.3716);
   InitializeBloodGases(*cmpts.GetLiquidCompartment(BGE::VascularCompartment::RightLeg), Hb_total_mM, 0.974914, 0.129637, 0.0281665, 1.30153, 25.9395, 7.39951);
@@ -446,29 +454,7 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   //SELiquidCompartment* urethra = m_data.GetCompartments().GetUrineCompartment("Urethra");
   SELiquidCompartment* bladder = m_data.GetCompartments().GetLiquidCompartment(BGE::UrineCompartment::Bladder);
 
-	// ACETOACETATE //
-	concentration.SetValue(9.19, MassPerVolumeUnit::mg_Per_L);
-	SetSubstanceConcentration(*m_acetoacetate, vascular, concentration);
-  // Set Urine
-  subQ = leftBowmansCapsules->GetSubstanceQuantity(*m_acetoacetate);
-  subQ->GetConcentration().Set(concentration);
-  subQ->Balance(BalanceLiquidBy::Concentration);
-  subQ = rightBowmansCapsules->GetSubstanceQuantity(*m_acetoacetate);
-  subQ->GetConcentration().Set(concentration);
-  subQ->Balance(BalanceLiquidBy::Concentration);
-  leftTubules->GetSubstanceQuantity(*m_acetoacetate)->GetConcentration().SetValue(0.0,MassPerVolumeUnit::mg_Per_dL);
-  leftTubules->GetSubstanceQuantity(*m_acetoacetate)->Balance(BalanceLiquidBy::Concentration);
-  rightTubules->GetSubstanceQuantity(*m_acetoacetate)->GetConcentration().SetValue(0.0, MassPerVolumeUnit::mg_Per_dL);
-  rightTubules->GetSubstanceQuantity(*m_acetoacetate)->Balance(BalanceLiquidBy::Concentration);
-  leftUreter->GetSubstanceQuantity(*m_acetoacetate)->GetConcentration().SetValue(0.0, MassPerVolumeUnit::mg_Per_dL);
-  leftUreter->GetSubstanceQuantity(*m_acetoacetate)->Balance(BalanceLiquidBy::Concentration);
-  rightUreter->GetSubstanceQuantity(*m_acetoacetate)->GetConcentration().SetValue(0.0, MassPerVolumeUnit::mg_Per_dL);
-  rightUreter->GetSubstanceQuantity(*m_acetoacetate)->Balance(BalanceLiquidBy::Concentration);
-  bladder->GetSubstanceQuantity(*m_acetoacetate)->GetConcentration().SetValue(0.0, MassPerVolumeUnit::mg_Per_dL);
-  bladder->GetSubstanceQuantity(*m_acetoacetate)->Balance(BalanceLiquidBy::Concentration);
-  // Tissue
-  molarity1.SetValue(0.09, AmountPerVolumeUnit::mmol_Per_L);
-  SetSubstanceMolarity(*m_acetoacetate, tissue, molarity1);
+  SETissueCompartment* brain = m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Brain);
 	
 	// ALBUMIN //
 	concentration.SetValue(3.7, MassPerVolumeUnit::g_Per_dL);
@@ -490,16 +476,47 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   molarity1.SetValue(0.0, AmountPerVolumeUnit::mmol_Per_L);
   SetSubstanceMolarity(*m_albumin, tissue, molarity1);
 
+  // AMINOACIDS //
+  concentration.SetValue(50.0, MassPerVolumeUnit::mg_Per_dL);
+  SetSubstanceConcentration(*m_aminoAcids, vascular, concentration);
+  // Tissue
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L)/m_aminoAcids->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  SetSubstanceMolarity(*m_aminoAcids, tissue, molarity1, molarity1);
+
 	// BICARBONATE IS SET IN GASES SECTION //
 
 	// CALCIUM //
-	concentration.SetValue(48.1, MassPerVolumeUnit::mg_Per_L);
+	//concentration.SetValue(48.1, MassPerVolumeUnit::mg_Per_L);
+  concentration.SetValue(88.1, MassPerVolumeUnit::mg_Per_L);
   SetSubstanceConcentration(*m_calcium, vascular, concentration);
-	SetSubstanceConcentration(*m_calcium, urine, concentration);
+  // Set Urine
+  concentration.SetValue(98.1, MassPerVolumeUnit::mg_Per_L);
+  subQ = leftBowmansCapsules->GetSubstanceQuantity(*m_calcium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = rightBowmansCapsules->GetSubstanceQuantity(*m_calcium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = leftTubules->GetSubstanceQuantity(*m_calcium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = rightTubules->GetSubstanceQuantity(*m_calcium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = leftUreter->GetSubstanceQuantity(*m_calcium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = rightUreter->GetSubstanceQuantity(*m_calcium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = bladder->GetSubstanceQuantity(*m_calcium);
+  subQ->GetConcentration().Set(concentration);
   // Tissue
-  molarity1.SetValue(1.2, AmountPerVolumeUnit::mmol_Per_L);
-  molarity2.SetValue(0.0001, AmountPerVolumeUnit::mmol_Per_L);
-  SetSubstanceMolarity(*m_calcium, tissue, molarity1, molarity2);
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_aminoAcids->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  //molarity1.SetValue(1.2, AmountPerVolumeUnit::mmol_Per_L);
+  //molarity2.SetValue(1.2, AmountPerVolumeUnit::mmol_Per_L);
+  //molarity2.SetValue(0.0001, AmountPerVolumeUnit::mmol_Per_L);
+  SetSubstanceMolarity(*m_calcium, tissue, molarity1, molarity1);
 
 	// CHLORIDE //
 	concentration.SetValue(0.362, MassPerVolumeUnit::g_Per_dL);
@@ -507,7 +524,8 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   SetSubstanceConcentration(*m_chloride, urine, concentration);
   // Tissue
   molarity1.SetValue(116, AmountPerVolumeUnit::mmol_Per_L);
-  molarity2.SetValue(20, AmountPerVolumeUnit::mmol_Per_L);
+  molarity2.SetValue(116, AmountPerVolumeUnit::mmol_Per_L);
+  //molarity2.SetValue(20, AmountPerVolumeUnit::mmol_Per_L);
   SetSubstanceMolarity(*m_chloride, tissue, molarity1, molarity2);
 
 	// CREATININE //
@@ -538,11 +556,12 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   subQ->GetConcentration().Set(concentration);
   subQ->Balance(BalanceLiquidBy::Concentration);
   // Tissue
-  molarity1.SetValue(0.044, AmountPerVolumeUnit::mmol_Per_L);
+  //molarity1.SetValue(0.044, AmountPerVolumeUnit::mmol_Per_L);
+  molarity1.SetValue(0.1, AmountPerVolumeUnit::mmol_Per_L);
   SetSubstanceMolarity(*m_creatinine, tissue, molarity1);
 
   // EPINEPHRINE //
-  // Initializing to artificial plasma concentration because BG plasma is BS
+  // Initializing to artificial plasma concentration because BG plasma is not totally correct
   //double hematocritGuess = 0.45;
   concentration.SetValue(0.034, MassPerVolumeUnit::ug_Per_L);
   SetSubstanceConcentration(*m_epi, vascular, concentration);
@@ -550,24 +569,18 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   molarity1.SetValue(1.8558e-7, AmountPerVolumeUnit::mmol_Per_L); //epinephrine: 183.2044 g/mol
   //molarity1.SetValue(0, AmountPerVolumeUnit::mmol_Per_L); //epinephrine: 183.2044 g/mol
   SetSubstanceMolarity(*m_epi, tissue, molarity1);
+
+  // GLUCAGON //
+  concentration.SetValue(0.079, MassPerVolumeUnit::ug_Per_L);  //We want 70 pg/mL, but it dips in stabilization, so set it higher
+  SetSubstanceConcentration(*m_glucagon, vascular, concentration);
+  // Tissue
+  molarity1.SetValue(0.0, AmountPerVolumeUnit::mmol_Per_L);
+  molarity2.SetValue(0.0, AmountPerVolumeUnit::mmol_Per_L);
+  SetSubstanceMolarity(*m_glucagon, tissue, molarity1, molarity2);
 	
 	// GLUCOSE //
-	concentration.SetValue(80, MassPerVolumeUnit::mg_Per_dL);
+	concentration.SetValue(90, MassPerVolumeUnit::mg_Per_dL);
 	SetSubstanceConcentration(*m_glucose, vascular, concentration);
-	//Overwriting initialization for liver glucose since acts as the glucose pool for the body
-  //subQ = liver->GetExtracellularFluid().GetSubstanceQuantity(*m_glucose);
-  //subQ->GetMass().SetValue(500 * (m_data.GetPatient().GetWeight(MassUnit::kg) / 65.0), MassUnit::g);
-  //subQ->Balance(BalanceLiquidBy::Mass);
-  //subQ = liver->GetIntracellularFluid().GetSubstanceQuantity(*m_glucose);
-  // subQ->GetMass().SetValue(500 * (m_data.GetPatient().GetWeight(MassUnit::kg) / 65.0), MassUnit::g);
-  // subQ->Balance(BalanceLiquidBy::Mass);
-  //Overwriting initialization for muscle glucose since acts as the glucose pool for the body
-  //subQ = muscle->GetExtracellularFluid().GetSubstanceQuantity(*m_glucose);
-  //subQ->GetMass().SetValue(100 * (m_data.GetPatient().GetWeight(MassUnit::kg) / 65.0), MassUnit::g);
-  // subQ->Balance(BalanceLiquidBy::Mass);
-  //subQ = muscle->GetIntracellularFluid().GetSubstanceQuantity(*m_glucose);
-  // subQ->GetMass().SetValue(100 * (m_data.GetPatient().GetWeight(MassUnit::kg) / 65.0), MassUnit::g);
-  // subQ->Balance(BalanceLiquidBy::Mass);
   // Only Bowmans has it
   subQ = leftBowmansCapsules->GetSubstanceQuantity(*m_glucose);
   subQ->GetConcentration().Set(concentration);
@@ -581,12 +594,11 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   rightUreter->GetSubstanceQuantity(*m_glucose)->SetToZero();
   bladder->GetSubstanceQuantity(*m_glucose)->SetToZero();
   // Tissue
-  molarity1.SetValue(5.9, AmountPerVolumeUnit::mmol_Per_L);
-  molarity2.SetValue(0, AmountPerVolumeUnit::mmol_Per_L);
-  SetSubstanceMolarity(*m_glucose, tissue, molarity1, molarity2);
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  SetSubstanceMolarity(*m_glucose, tissue, molarity1, molarity1);
 
 	// INSULIN //
-	concentration.SetValue(0.412, MassPerVolumeUnit::ug_Per_L);
+	concentration.SetValue(0.85, MassPerVolumeUnit::ug_Per_L);  //118.1 pmol/L is desired (.6859 ug/L), but it dips during stabilization, so start higher
 	SetSubstanceConcentration(*m_insulin, vascular, concentration);
   // None in Urine
   leftBowmansCapsules->GetSubstanceQuantity(*m_insulin)->SetToZero();
@@ -597,11 +609,37 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   rightUreter->GetSubstanceQuantity(*m_insulin)->SetToZero();
   bladder->GetSubstanceQuantity(*m_insulin)->SetToZero();
   // Tissue
-  molarity1.SetValue(7.1e-8, AmountPerVolumeUnit::mmol_Per_L);
-  SetSubstanceMolarity(*m_insulin, tissue, molarity1);
+  molarity1.SetValue(0.0, AmountPerVolumeUnit::mmol_Per_L);
+  molarity2.SetValue(0.0, AmountPerVolumeUnit::mmol_Per_L);
+  SetSubstanceMolarity(*m_insulin, tissue, molarity1, molarity2);
+
+  // KETONES //
+  concentration.SetValue(9.19, MassPerVolumeUnit::mg_Per_L);
+  SetSubstanceConcentration(*m_ketones, vascular, concentration);
+  // Set Urine
+  subQ = leftBowmansCapsules->GetSubstanceQuantity(*m_ketones);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = rightBowmansCapsules->GetSubstanceQuantity(*m_ketones);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  leftTubules->GetSubstanceQuantity(*m_ketones)->GetConcentration().SetValue(0.0, MassPerVolumeUnit::mg_Per_dL);
+  leftTubules->GetSubstanceQuantity(*m_ketones)->Balance(BalanceLiquidBy::Concentration);
+  rightTubules->GetSubstanceQuantity(*m_ketones)->GetConcentration().SetValue(0.0, MassPerVolumeUnit::mg_Per_dL);
+  rightTubules->GetSubstanceQuantity(*m_ketones)->Balance(BalanceLiquidBy::Concentration);
+  leftUreter->GetSubstanceQuantity(*m_ketones)->GetConcentration().SetValue(0.0, MassPerVolumeUnit::mg_Per_dL);
+  leftUreter->GetSubstanceQuantity(*m_ketones)->Balance(BalanceLiquidBy::Concentration);
+  rightUreter->GetSubstanceQuantity(*m_ketones)->GetConcentration().SetValue(0.0, MassPerVolumeUnit::mg_Per_dL);
+  rightUreter->GetSubstanceQuantity(*m_ketones)->Balance(BalanceLiquidBy::Concentration);
+  bladder->GetSubstanceQuantity(*m_ketones)->GetConcentration().SetValue(0.0, MassPerVolumeUnit::mg_Per_dL);
+  bladder->GetSubstanceQuantity(*m_ketones)->Balance(BalanceLiquidBy::Concentration);
+  // Tissue
+  molarity1.SetValue(0.09, AmountPerVolumeUnit::mmol_Per_L);
+  SetSubstanceMolarity(*m_ketones, tissue, molarity1);
 
 	// LACTATE //
 	concentration.SetValue(142.5, MassPerVolumeUnit::mg_Per_L);
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_lactate->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
 	SetSubstanceConcentration(*m_lactate, vascular, concentration);
   //set in tubules zero in urine
   concentration.SetValue(1.5, MassPerVolumeUnit::g_Per_L);
@@ -616,16 +654,37 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   leftUreter->GetSubstanceQuantity(*m_lactate)->SetToZero();
   rightUreter->GetSubstanceQuantity(*m_lactate)->SetToZero();
   // Tissue
-  molarity1.SetValue(0.09, AmountPerVolumeUnit::mmol_Per_L);
-  SetSubstanceMolarity(*m_lactate, tissue, molarity1);
+  SetSubstanceMolarity(*m_lactate, tissue, molarity1, molarity1);
 
 	// POTASSIUM //
-	concentration.SetValue(0.0156, MassPerVolumeUnit::g_Per_dL);
+	concentration.SetValue(156.0, MassPerVolumeUnit::mg_Per_L);
 	SetSubstanceConcentration(*m_potassium, vascular, concentration);
-  SetSubstanceConcentration(*m_potassium, urine, concentration);
+  // Set Urine
+  concentration.SetValue(4.5, MassPerVolumeUnit::g_Per_L);
+  subQ = leftBowmansCapsules->GetSubstanceQuantity(*m_potassium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = rightBowmansCapsules->GetSubstanceQuantity(*m_potassium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = leftTubules->GetSubstanceQuantity(*m_potassium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = rightTubules->GetSubstanceQuantity(*m_potassium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = leftUreter->GetSubstanceQuantity(*m_potassium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = rightUreter->GetSubstanceQuantity(*m_potassium);
+  subQ->GetConcentration().Set(concentration);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+  subQ = bladder->GetSubstanceQuantity(*m_potassium);
+  subQ->GetConcentration().Set(concentration);
   // Tissue
   molarity1.SetValue(4.5, AmountPerVolumeUnit::mmol_Per_L);
-  molarity2.SetValue(120, AmountPerVolumeUnit::mmol_Per_L);
+  //molarity2.SetValue(120, AmountPerVolumeUnit::mmol_Per_L);
+  molarity2.SetValue(4.5, AmountPerVolumeUnit::mmol_Per_L);
   SetSubstanceMolarity(*m_potassium, tissue, molarity1, molarity2);
 	
 	// SODIUM //
@@ -655,31 +714,31 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   subQ->GetConcentration().Set(concentration);
   // Tissue
   molarity1.SetValue(145, AmountPerVolumeUnit::mmol_Per_L);
-  molarity2.SetValue(15, AmountPerVolumeUnit::mmol_Per_L);
+  molarity2.SetValue(145, AmountPerVolumeUnit::mmol_Per_L);
+  //molarity2.SetValue(15, AmountPerVolumeUnit::mmol_Per_L);
   SetSubstanceMolarity(*m_sodium, tissue, molarity1, molarity2);
 
-	// TRISTEARIN
-  /// \todo Tristearin is actually all triacylglycerols. Change name.
-	concentration.SetValue(100.0, MassPerVolumeUnit::mg_Per_dL);
-	SetSubstanceConcentration(*m_tristearin, vascular, concentration);
-  //Overwriting initialization for fatty mcfat fat since it acts as the fat pool for the body
-  //subQ = fat->GetExtracellularFluid().GetSubstanceQuantity(*m_tristearin);
-  //subQ->GetMass().SetValue(m_data.GetPatient().GetBodyFatFraction().GetValue()*m_data.GetPatient().GetWeight(MassUnit::g), MassUnit::g);
-  //subQ->Balance(BalanceLiquidBy::Mass);
-  //subQ = fat->GetIntracellularFluid().GetSubstanceQuantity(*m_tristearin);
-  //subQ->GetMass().SetValue(m_data.GetPatient().GetBodyFatFraction().GetValue()*m_data.GetPatient().GetWeight(MassUnit::g), MassUnit::g);
-  //subQ->Balance(BalanceLiquidBy::Mass);
+	// TRIACYLGLYCEROL //
+	concentration.SetValue(75.0, MassPerVolumeUnit::mg_Per_dL);
+	SetSubstanceConcentration(*m_triacylglycerol, vascular, concentration);
   // None in Urine
-  leftBowmansCapsules->GetSubstanceQuantity(*m_tristearin)->SetToZero();
-  rightBowmansCapsules->GetSubstanceQuantity(*m_tristearin)->SetToZero();
-  leftTubules->GetSubstanceQuantity(*m_tristearin)->SetToZero();
-  rightTubules->GetSubstanceQuantity(*m_tristearin)->SetToZero();
-  leftUreter->GetSubstanceQuantity(*m_tristearin)->SetToZero();
-  rightUreter->GetSubstanceQuantity(*m_tristearin)->SetToZero();
-  bladder->GetSubstanceQuantity(*m_tristearin)->SetToZero();
+  leftBowmansCapsules->GetSubstanceQuantity(*m_triacylglycerol)->SetToZero();
+  rightBowmansCapsules->GetSubstanceQuantity(*m_triacylglycerol)->SetToZero();
+  leftTubules->GetSubstanceQuantity(*m_triacylglycerol)->SetToZero();
+  rightTubules->GetSubstanceQuantity(*m_triacylglycerol)->SetToZero();
+  leftUreter->GetSubstanceQuantity(*m_triacylglycerol)->SetToZero();
+  rightUreter->GetSubstanceQuantity(*m_triacylglycerol)->SetToZero();
+  bladder->GetSubstanceQuantity(*m_triacylglycerol)->SetToZero();
   // Tissue
-  molarity1.SetValue(0.09, AmountPerVolumeUnit::mmol_Per_L);
-  SetSubstanceMolarity(*m_tristearin, tissue, molarity1);
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_triacylglycerol->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  SetSubstanceMolarity(*m_triacylglycerol, tissue, molarity1, molarity1);
+  // TAG can't cross blood-brain barrier, so no TAG there
+  molarity1.SetValue(0, AmountPerVolumeUnit::mmol_Per_L);
+  m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::BrainExtracellular)->GetSubstanceQuantity(*m_triacylglycerol)->GetMolarity().Set(molarity1);
+  m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::BrainExtracellular)->GetSubstanceQuantity(*m_triacylglycerol)->Balance(BalanceLiquidBy::Molarity);
+  m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::BrainIntracellular)->GetSubstanceQuantity(*m_triacylglycerol)->GetMolarity().Set(molarity1);
+  m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::BrainIntracellular)->GetSubstanceQuantity(*m_triacylglycerol)->Balance(BalanceLiquidBy::Molarity);
+  
 
 	// UREA //
 	concentration.SetValue(270.0, MassPerVolumeUnit::mg_Per_L);
@@ -758,24 +817,26 @@ bool BioGearsSubstances::LoadSubstanceDirectory()
 		m_epi == nullptr || m_HCO3 == nullptr)
 		return false;
 
-	m_acetoacetate = GetSubstance("Acetoacetate");
 	m_albumin = GetSubstance("Albumin");
+  m_aminoAcids = GetSubstance("AminoAcids");
 	m_calcium = GetSubstance("Calcium");
 	m_chloride = GetSubstance("Chloride");
 	m_creatinine = GetSubstance("Creatinine");
   m_globulin = GetSubstance("Globulin");
+  m_glucagon = GetSubstance("Glucagon");
 	m_glucose = GetSubstance("Glucose");
 	m_insulin = GetSubstance("Insulin");
+  m_ketones = GetSubstance("Ketones");
 	m_lactate = GetSubstance("Lactate");
 	m_potassium = GetSubstance("Potassium");
 	m_sodium = GetSubstance("Sodium");
-	m_tristearin = GetSubstance("Tristearin");
+	m_triacylglycerol = GetSubstance("Triacylglycerol");
 	m_urea = GetSubstance("Urea");
 
-	if (m_acetoacetate == nullptr)
-		Error("Acetoacetate Definition not found");
 	if (m_albumin == nullptr)
 		Error("Albumin Definition not found");
+  if (m_aminoAcids == nullptr)
+    Error("AminoAcids Definition not found");
 	if (m_calcium == nullptr)
 		Error("Calcium Definition not found");
 	if (m_chloride == nullptr)
@@ -784,18 +845,22 @@ bool BioGearsSubstances::LoadSubstanceDirectory()
 		Error("Creatinine Definition not found");
   if (m_globulin == nullptr)
     Error("Globulin Definition not found");
+  if (m_glucagon == nullptr)
+    Error("Glucagon Definition not found");
 	if (m_glucose == nullptr)
 		Error("Glucose Definition not found");
 	if (m_insulin == nullptr)
 		Error("Insulin Definition not found");
+  if (m_ketones == nullptr)
+    Error("Ketones Definition not found");
 	if (m_lactate == nullptr)
 		Error("Lactate Definition not found");
 	if (m_potassium == nullptr)
 		Error("Potassium Definition not found");
 	if (m_sodium == nullptr)
 		Error("Sodium Definition not found");
-	if (m_tristearin == nullptr)
-		Error("Tristearin Definition not found");
+	if (m_triacylglycerol == nullptr)
+		Error("Triacylglycerol Definition not found");
 	if (m_urea == nullptr)
 		Error("Urea Definition not found");
 	// These metabolites will be activated in initialization
@@ -827,7 +892,7 @@ void BioGearsSubstances::AddActiveSubstance(SESubstance& substance)
     m_data.GetCompartments().AddGasCompartmentSubstance(substance);
   m_data.GetCompartments().AddLiquidCompartmentSubstance(substance);
 
-  if (&substance == m_CO)// We need to put HbCO in the system is CO is in the system
+  if (&substance == m_CO)// We need to put HbCO in the system if CO is in the system
   {
     m_isCOActive = true;
     AddActiveSubstance(*m_HbCO);
@@ -1099,7 +1164,29 @@ void BioGearsSubstances::SetSubstanceMolarity(SESubstance& sub, const std::vecto
     subQ->Balance(BalanceLiquidBy::Molarity);
   }
 }
-void BioGearsSubstances::SetSubstanceMolarity(SESubstance& sub, const std::vector<SETissueCompartment*>& cmpts, const SEScalarAmountPerVolume& extracellular, const SEScalarAmountPerVolume& intracellular)
+void BioGearsSubstances::SetSubstanceMolarity(SESubstance& sub, const std::vector<SETissueCompartment*>& cmpts, const SEScalarAmountPerVolume& extracellularMolarity, const SEScalarAmountPerVolume& intracellularMolarity)
+{
+  SELiquidCompartment* intracellular = nullptr;
+  SELiquidCompartment* extracellular = nullptr;
+
+  for (SETissueCompartment* cmpt : cmpts)
+  {
+    intracellular = m_data.GetCompartments().GetLiquidCompartment(cmpt->GetName() + "Intracellular");
+    if (intracellular != nullptr)
+    {
+      intracellular->GetSubstanceQuantity(sub)->GetMolarity().Set(intracellularMolarity);
+      intracellular->GetSubstanceQuantity(sub)->Balance(BalanceLiquidBy::Molarity);
+    }
+
+    extracellular = m_data.GetCompartments().GetLiquidCompartment(cmpt->GetName() + "Extracellular");
+    if (extracellular != nullptr)
+    {
+      extracellular->GetSubstanceQuantity(sub)->GetMolarity().Set(extracellularMolarity);
+      extracellular->GetSubstanceQuantity(sub)->Balance(BalanceLiquidBy::Molarity);
+    }
+  }
+}
+void BioGearsSubstances::SetSubstanceMolarity(SESubstance& sub, const SEScalarAmountPerVolume& extracellular, const SEScalarAmountPerVolume& intracellular)
 {
   SELiquidSubstanceQuantity* subQ;
   for (auto itr : m_data.GetCompartments().GetExtracellularFluid())

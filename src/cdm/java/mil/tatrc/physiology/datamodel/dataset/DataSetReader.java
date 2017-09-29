@@ -568,6 +568,11 @@ public class DataSetReader
       substance.getPlasmaConcentration().setValue(Double.parseDouble(value),unit);
       return true;
     }
+    if(property.equals("EffectSiteConcentration"))
+    {
+      substance.getEffectSiteConcentration().setValue(Double.parseDouble(value),unit);
+      return true;
+    }
     if(property.equals("SystemicMassCleared"))
     {
       substance.getSystemicMassCleared().setValue(Double.parseDouble(value),unit);
@@ -802,7 +807,16 @@ public class DataSetReader
       substance.getPD().getTubularPermeabilityModifier().setValue(Double.parseDouble(value),unit);
       return true;
     }
-    
+    if(property.equals("CentralNervousModifier"))
+    {
+    	substance.getPD().getCentralNervousModifier().setValue(Double.parseDouble(value),unit);
+    	return true;
+    }
+    if(property.equals("EffectSiteRateConstant"))
+    {	
+    	substance.getPD().getEffectSiteRateConstant().setValue(Double.parseDouble(value),unit);
+    	return true;
+    }
     throw new RuntimeException("Not a valid substance property " + property);
   }
 

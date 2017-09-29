@@ -88,7 +88,10 @@ void Endocrine::SetUp()
   m_aortaGlucose = aorta->GetSubstanceQuantity(m_data.GetSubstances().GetGlucose());
   SESubstance* insulin = &m_data.GetSubstances().GetInsulin();
   m_insulinMolarMass_g_Per_mol = insulin->GetMolarMass(MassPerAmountUnit::g_Per_mol);
+  SESubstance* glucagon = &m_data.GetSubstances().GetGlucagon();
+  m_glucagonMolarMass_g_Per_mol = glucagon->GetMolarMass(MassPerAmountUnit::g_Per_mol);
   m_splanchnicInsulin = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Splanchnic)->GetSubstanceQuantity(*insulin);
+  m_splanchnicGlucagon = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Splanchnic)->GetSubstanceQuantity(*glucagon);
 }
 
 void Endocrine::AtSteadyState()
@@ -98,18 +101,42 @@ void Endocrine::AtSteadyState()
 
 //--------------------------------------------------------------------------------------------------
 /// \brief
-/// Endocrine process function
+/// Endocrine Preprocess function
 ///
 /// \details
-/// Currently, only two hormones exists in the BioGears system: epinephrine and insulin. If the metabolic rate 
-/// rises above the basal rate, epinephrine is released. This is meant to simulate a sympathetic 
-/// nervous system response. The masses of the hormones are increased in the kidneys' efferent arterioles. 
-/// The hormones will then circulate using the transport and substances methodology.
+/// Currently, only three hormones exist in the BioGears system: epinephrine, insulin, and glucagon. 
+/// These functions determine the release of these hormones.
+/// The hormones will then circulate using the transport and substances methodologies.
 //--------------------------------------------------------------------------------------------------
-void Endocrine::Process()
+void Endocrine::PreProcess()
 {
   ReleaseEpinephrine();
   SynthesizeInsulin();
+  SynthesizeGlucagon();
+}
+
+//--------------------------------------------------------------------------------------------------
+/// \brief
+/// Endocrine process function
+///
+/// \details
+/// The Endocrine system does not currently have any Process functionality.
+//--------------------------------------------------------------------------------------------------
+void Endocrine::Process()
+{
+  
+}
+
+//--------------------------------------------------------------------------------------------------
+/// \brief
+/// Endocrine PostProcess function
+///
+/// \details
+/// The Endocrine system does not currently have any PostProcess functionality.
+//--------------------------------------------------------------------------------------------------
+void Endocrine::PostProcess()
+{
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -126,10 +153,15 @@ void Endocrine::SynthesizeInsulin()
   // 2.0 = upperConcentration_g_Per_L
 	// 0.3 = lowerConcentration_g_Per_l
 	// 65.421 = amplitudeRate_mU_Per_min
+  // 6.67 = insulinConversionToAmount_pmol_Per_mU
 
-	double insulinSynthesisRate_pmol_Per_min = 65.421
-                                    / (1.0 + exp((2.0 - 2.0*bloodGlucoseConcentration_g_Per_L) / 0.3))
-                                    * 6.67;// = insulinConversionToAmount_pmol_Per_mU (Figure out where to put this units of pmol/mU)
+  // Note: Guyton says insulin production at 90 mg/dL glucose concentration should be
+  // 25 ng/min/kg, which is about 300 pmol/min, double what we have using this curve from Tolic.
+  // Because of this, we won't capture insulin behavior for very high glucose concentrations, see Guyton p 991
+  // If we ever want to capture diabetes behavior, we'll need to change this curve.
+  // Also, since we only key off of the instantaneous aorta glucose, we miss out on any parasympathetic
+  // signals that affect Beta cells, meaning if we implement stress response, we might also see hyperinsulinemia (see Boron p 1222)
+	double insulinSynthesisRate_pmol_Per_min = 6.67 * 65.421 / (1.0 + exp((2.0 - 2.0*bloodGlucoseConcentration_g_Per_L) / 0.3));
 
 	GetInsulinSynthesisRate().SetValue(insulinSynthesisRate_pmol_Per_min, AmountPerTimeUnit::pmol_Per_min);
 	
@@ -138,6 +170,29 @@ void Endocrine::SynthesizeInsulin()
 	
   m_splanchnicInsulin->GetMass().IncrementValue(insulinMassDelta_g, MassUnit::g);
   m_splanchnicInsulin->Balance(BalanceLiquidBy::Mass);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// \brief
+/// Calculate the rate of glucagon production 
+///
+/// \details
+/// The glucagon production rate is set based on the aorta glucose concentration to values that
+/// allow it to have stable concentrations when paired with the clearance rate of 9 mL/min kg from 
+/// https://www.ncbi.nlm.nih.gov/pubmed/773949
+//--------------------------------------------------------------------------------------------------
+void Endocrine::SynthesizeGlucagon()
+{
+  double bloodGlucoseConcentration_g_Per_L = m_aortaGlucose->GetConcentration(MassPerVolumeUnit::g_Per_L);
+  double glucagonSynthesisRate_pmol_Per_min = 21.3 - (21.3 / (1.0 + exp((2 - 2 * bloodGlucoseConcentration_g_Per_L) / .3)));
+
+  GetGlucagonSynthesisRate().SetValue(glucagonSynthesisRate_pmol_Per_min, AmountPerTimeUnit::pmol_Per_min);
+
+  double glucagonMassDelta_g = Convert(glucagonSynthesisRate_pmol_Per_min, AmountPerTimeUnit::pmol_Per_min, AmountPerTimeUnit::mol_Per_s);
+  glucagonMassDelta_g *= m_glucagonMolarMass_g_Per_mol*m_dt_s;
+
+  m_splanchnicGlucagon->GetMass().IncrementValue(glucagonMassDelta_g, MassUnit::g);
+  m_splanchnicGlucagon->Balance(BalanceLiquidBy::Mass);
 }
 
 //--------------------------------------------------------------------------------------------------

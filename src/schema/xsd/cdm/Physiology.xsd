@@ -145,6 +145,7 @@ specific language governing permissions and limitations under the License.
                     <xs:element name="SedationLevel" type="ScalarFractionData" minOccurs="0"  maxOccurs="1"/> <!--<< @brief -->
                     <xs:element name="TidalVolumeChange" type="ScalarVolumeData" minOccurs="0"  maxOccurs="1"/> <!--<< @brief -->
                     <xs:element name="TubularPermeabilityChange" type="ScalarFractionData" minOccurs="0"  maxOccurs="1"/> <!--<< @brief -->
+                    <xs:element name="CentralNervousResponse" type="ScalarFractionData" minOccurs="0"  maxOccurs="1"/> <!--<< @brief -->
                 </xs:sequence>  
             </xs:extension>
         </xs:complexContent>
@@ -198,7 +199,7 @@ specific language governing permissions and limitations under the License.
         <xs:complexContent>
             <xs:extension base="SystemData">
                 <xs:sequence>
-                    <xs:element name="ChymeAbsorbtionRate" type="ScalarVolumePerTimeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief Rate of the absorption of nutrients from chyme into the blood stream-->
+                    <xs:element name="ChymeAbsorptionRate" type="ScalarVolumePerTimeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief Rate of the absorption of nutrients from chyme into the blood stream-->
                     <xs:element name="StomachContents" type="NutritionData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The contents in the stomach-->
                 </xs:sequence>	
             </xs:extension>

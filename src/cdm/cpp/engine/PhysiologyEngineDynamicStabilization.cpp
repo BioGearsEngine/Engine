@@ -365,7 +365,7 @@ bool PhysiologyEngineDynamicStabilization::Merge()
 	return true;
 }
 
-// This basically tests the current property with the target proptry and if they are in a window of acceptance
+// This basically tests the current property with the target property and if they are in a window of acceptance
 bool PropertyConvergence::Test(double time_s)
 {
   double v = !m_DataRequestScalar.HasUnit() ?

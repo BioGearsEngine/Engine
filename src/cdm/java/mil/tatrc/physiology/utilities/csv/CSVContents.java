@@ -36,7 +36,7 @@ public class CSVContents
   protected DataInputStream in      = null;
   protected BufferedReader  buff    = null;
   
-  public int abreviateContents = 0;
+  public int abbreviateContents = 0;
   
   public static void main(String[] args) throws IOException
   {
@@ -183,12 +183,12 @@ public class CSVContents
       if(noZero&&d<=0)
         d=Double.NaN;
       data.add(d);
-      if(abreviateContents>0)
+      if(abbreviateContents>0)
     	{
     		try
     		{
     			boolean eof=false;
-    			for(int i=0; i<abreviateContents; i++)
+    			for(int i=0; i<abbreviateContents; i++)
     			{
     				if(buff.readLine()==null)
     				{
@@ -251,12 +251,12 @@ public class CSVContents
           d=Double.NaN;
         list.add(d);
       }
-      if(abreviateContents>0)
+      if(abbreviateContents>0)
     	{
     		try
     		{
     			boolean eof=false;
-    			for(int i=0; i<abreviateContents; i++)
+    			for(int i=0; i<abbreviateContents; i++)
     			{
     				if(buff.readLine()==null)
     				{

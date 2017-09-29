@@ -64,7 +64,7 @@ void BloodChemistry::Clear()
   m_venaCava = nullptr;
   m_venaCavaO2 = nullptr;
   m_venaCavaCO2 = nullptr;
-  m_venaCavaAcetoacetate = nullptr;
+  m_venaCavaKetones = nullptr;
   m_venaCavaAlbumin = nullptr;
   m_venaCavaBicarbonate = nullptr;
   m_venaCavaCalcium = nullptr;
@@ -76,7 +76,7 @@ void BloodChemistry::Clear()
   m_venaCavaLactate = nullptr;
   m_venaCavaPotassium = nullptr;
   m_venaCavaSodium = nullptr;
-  m_venaCavaTristearin = nullptr;
+  m_venaCavaTriacylglycerol = nullptr;
   m_venaCavaUrea = nullptr;
   m_ArterialOxygen_mmHg.Reset();
   m_ArterialCarbonDioxide_mmHg.Reset();
@@ -140,19 +140,21 @@ void BloodChemistry::SetUp()
   m_HbPerRedBloodCell_ug_Per_ct = ConfigData.GetMeanCorpuscularHemoglobin(MassPerAmountUnit::ug_Per_ct);
 
   //Substance
-  SESubstance* acetoacetate = &m_data.GetSubstances().GetAcetoacetate();
   SESubstance* albumin = &m_data.GetSubstances().GetAlbumin();
+  SESubstance* aminoAcids = &m_data.GetSubstances().GetAminoAcids();
   SESubstance* bicarbonate = &m_data.GetSubstances().GetBicarbonate();
   SESubstance* calcium = &m_data.GetSubstances().GetCalcium();
   SESubstance* chloride = &m_data.GetSubstances().GetChloride();
   SESubstance* creatinine = &m_data.GetSubstances().GetCreatinine();
   SESubstance* epinephrine = &m_data.GetSubstances().GetEpi();
+  SESubstance* glucagon = &m_data.GetSubstances().GetGlucagon();
   SESubstance* glucose = &m_data.GetSubstances().GetGlucose();
   SESubstance* insulin = &m_data.GetSubstances().GetInsulin();
+  SESubstance* ketones = &m_data.GetSubstances().GetKetones();
   SESubstance* lactate = &m_data.GetSubstances().GetLactate();
   SESubstance* potassium = &m_data.GetSubstances().GetPotassium();
   SESubstance* sodium = &m_data.GetSubstances().GetSodium();
-  SESubstance* tristearin = &m_data.GetSubstances().GetTristearin();
+  SESubstance* triaclyglycerol = &m_data.GetSubstances().GetTriacylglycerol();
   SESubstance* urea = &m_data.GetSubstances().GetUrea();
 
   m_aorta = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Aorta);
@@ -166,19 +168,21 @@ void BloodChemistry::SetUp()
   m_venaCava = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::VenaCava);
   m_venaCavaO2 = m_venaCava->GetSubstanceQuantity(m_data.GetSubstances().GetO2());
   m_venaCavaCO2 = m_venaCava->GetSubstanceQuantity(m_data.GetSubstances().GetCO2());
-  m_venaCavaAcetoacetate = m_venaCava->GetSubstanceQuantity(*acetoacetate);
   m_venaCavaAlbumin = m_venaCava->GetSubstanceQuantity(*albumin);
+  m_venaCavaAminoAcids = m_venaCava->GetSubstanceQuantity(*aminoAcids);
   m_venaCavaBicarbonate = m_venaCava->GetSubstanceQuantity(*bicarbonate);
   m_venaCavaCalcium = m_venaCava->GetSubstanceQuantity(*calcium);
   m_venaCavaChloride = m_venaCava->GetSubstanceQuantity(*chloride);
   m_venaCavaCreatinine = m_venaCava->GetSubstanceQuantity(*creatinine);
   m_venaCavaEpinephrine = m_venaCava->GetSubstanceQuantity(*epinephrine);
+  m_venaCavaGlucagon = m_venaCava->GetSubstanceQuantity(*glucagon);
   m_venaCavaGlucose = m_venaCava->GetSubstanceQuantity(*glucose);
   m_venaCavaInsulin = m_venaCava->GetSubstanceQuantity(*insulin);
+  m_venaCavaKetones = m_venaCava->GetSubstanceQuantity(*ketones);
   m_venaCavaLactate = m_venaCava->GetSubstanceQuantity(*lactate);
   m_venaCavaPotassium = m_venaCava->GetSubstanceQuantity(*potassium);
   m_venaCavaSodium = m_venaCava->GetSubstanceQuantity(*sodium);
-  m_venaCavaTristearin = m_venaCava->GetSubstanceQuantity(*tristearin);
+  m_venaCavaTriacylglycerol = m_venaCava->GetSubstanceQuantity(*triaclyglycerol);
   m_venaCavaUrea = m_venaCava->GetSubstanceQuantity(*urea);
 
   SELiquidCompartment* pulmonaryArteries = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::PulmonaryArteries);
@@ -261,27 +265,28 @@ void BloodChemistry::Process()
   GetPlasmaVolume().SetValue(TotalBloodVolume_mL - RedBloodCellVolume_mL, VolumeUnit::mL);
 
   // Concentrations
-  m_data.GetSubstances().GetAcetoacetate().GetBloodConcentration().Set(m_venaCavaAcetoacetate->GetConcentration());
   double albuminConcentration_ug_Per_mL = m_venaCavaAlbumin->GetConcentration(MassPerVolumeUnit::ug_Per_mL);
   m_data.GetSubstances().GetAlbumin().GetBloodConcentration().Set(m_venaCavaAlbumin->GetConcentration());
+  m_data.GetSubstances().GetAminoAcids().GetBloodConcentration().Set(m_venaCavaAminoAcids->GetConcentration());
   m_data.GetSubstances().GetBicarbonate().GetBloodConcentration().Set(m_venaCavaBicarbonate->GetConcentration());
   GetBloodUreaNitrogenConcentration().SetValue(m_venaCavaUrea->GetConcentration(MassPerVolumeUnit::ug_Per_mL) / 2.14, MassPerVolumeUnit::ug_Per_mL);
   m_data.GetSubstances().GetCalcium().GetBloodConcentration().Set(m_venaCavaCalcium->GetConcentration());
   m_data.GetSubstances().GetChloride().GetBloodConcentration().Set(m_venaCavaChloride->GetConcentration());
   m_data.GetSubstances().GetCreatinine().GetBloodConcentration().Set(m_venaCavaCreatinine->GetConcentration());
   m_data.GetSubstances().GetEpi().GetBloodConcentration().Set(m_venaCavaEpinephrine->GetConcentration());
-  m_data.GetSubstances().GetGlobulin().GetBloodConcentration().SetValue(albuminConcentration_ug_Per_mL*1.6 - albuminConcentration_ug_Per_mL, MassPerVolumeUnit::ug_Per_mL);
+  m_data.GetSubstances().GetGlobulin().GetBloodConcentration().SetValue(albuminConcentration_ug_Per_mL*1.6 - albuminConcentration_ug_Per_mL, MassPerVolumeUnit::ug_Per_mL); // 1.6 comes from reading http://www.drkaslow.com/html/proteins_-_albumin-_globulins-_etc.html
+  m_data.GetSubstances().GetGlucagon().GetBloodConcentration().Set(m_venaCavaGlucagon->GetConcentration());
   m_data.GetSubstances().GetGlucose().GetBloodConcentration().Set(m_venaCavaGlucose->GetConcentration());
   double HemoglobinConcentration = totalHemoglobinO2Hemoglobin_g / TotalBloodVolume_mL;
   m_data.GetSubstances().GetHb().GetBloodConcentration().SetValue(HemoglobinConcentration, MassPerVolumeUnit::g_Per_mL);
   m_data.GetSubstances().GetInsulin().GetBloodConcentration().Set(m_venaCavaInsulin->GetConcentration());
+  m_data.GetSubstances().GetKetones().GetBloodConcentration().Set(m_venaCavaKetones->GetConcentration());
   m_data.GetSubstances().GetLactate().GetBloodConcentration().Set(m_venaCavaLactate->GetConcentration());
   m_data.GetSubstances().GetPotassium().GetBloodConcentration().Set(m_venaCavaPotassium->GetConcentration());
   m_data.GetSubstances().GetSodium().GetBloodConcentration().Set(m_venaCavaSodium->GetConcentration());
   GetTotalProteinConcentration().SetValue(albuminConcentration_ug_Per_mL*1.6, MassPerVolumeUnit::ug_Per_mL);
-  m_data.GetSubstances().GetTristearin().GetBloodConcentration().Set(m_venaCavaTristearin->GetConcentration());
+  m_data.GetSubstances().GetTriacylglycerol().GetBloodConcentration().Set(m_venaCavaTriacylglycerol->GetConcentration());
   m_data.GetSubstances().GetUrea().GetBloodConcentration().Set(m_venaCavaUrea->GetConcentration());
-  // 1.6 comes from reading http://www.drkaslow.com/html/proteins_-_albumin-_globulins-_etc.html
 
   // Calculate pH 
   /// \todo Change system data so that we have ArterialBloodPH (from aorta) and VenousBloodPH (from vena cava)
@@ -306,7 +311,8 @@ void BloodChemistry::Process()
   double shunt = shuntFlow_mL_Per_min / totalFlow_mL_Per_min;
   GetShuntFraction().SetValue(shunt);
 
-  CheckBloodGasLevels();
+  //Throw events if levels are low/high
+  CheckBloodSubstanceLevels();
 
   // Total up all active substances
   double bloodMass_ug;
@@ -335,17 +341,24 @@ void BloodChemistry::PostProcess()
 
 //--------------------------------------------------------------------------------------------------
 /// \brief
-/// Checks the blood gas (oxygen, carbon dioxide) levels and sets events.
+/// Checks the blood substance (oxygen, carbon dioxide, glucose, etc.) levels and sets events.
 ///
 /// \details
-/// Checks the oxygen and carbon dioxide levels in specific compartments of the body. 
-/// Set events for hypercapnia, Hypoxia, and Brain and MyoCardium Oxygen Deficit based on the levels.
+/// Checks the oxygen, carbon dioxide, glucose, ketones, and lactate levels in specific compartments of the body. 
+/// Set events for Hypercapnia, Hypoxia, Brain and MyoCardium Oxygen Deficit, Hypo/hyperglycemia and related events,
+/// ketoacidosis, and lactic acidosis based on the levels.
 //--------------------------------------------------------------------------------------------------
-void BloodChemistry::CheckBloodGasLevels()
+void BloodChemistry::CheckBloodSubstanceLevels()
 {
   SEPatient& patient = m_data.GetPatient();
   double hypoxiaFlag = 65.0; //Arterial O2 Partial Pressure in mmHg \cite Pierson2000Pathophysiology
   double hypoxiaIrreversible = 15.0; // \cite hobler1973HypoxemiaCardiacOutput
+  double hypoglycemiaLevel_mg_Per_dL = 70;
+  double hypoglycemicShockLevel_mg_Per_dL = 50;
+  double hypoglycemicComaLevel_mg_Per_dL = 20;
+  double hyperglycemiaLevel_mg_Per_dL = 200;
+  double lacticAcidosisLevel_mg_Per_dL = 44;
+  double ketoacidosisLevel_mg_Per_dL = 122;
 
   m_ArterialOxygen_mmHg.Sample(m_aortaO2->GetPartialPressure(PressureUnit::mmHg));
   m_ArterialCarbonDioxide_mmHg.Sample(m_aortaCO2->GetPartialPressure(PressureUnit::mmHg));
@@ -400,10 +413,73 @@ void BloodChemistry::CheckBloodGasLevels()
         /// The patient is no longer considered to be hypoxic.
         patient.SetEvent(CDM::enumPatientEvent::Hypoxia, false, m_data.GetSimulationTime());
       }
+
+      //glucose checks
+
+      //hypoglycemia
+      if (m_venaCavaGlucose->GetConcentration(MassPerVolumeUnit::mg_Per_dL) < hypoglycemiaLevel_mg_Per_dL)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::Hypoglycemia, true, m_data.GetSimulationTime());
+      }
+      else if (patient.IsEventActive(CDM::enumPatientEvent::Hypoglycemia) && m_venaCavaGlucose->GetConcentration(MassPerVolumeUnit::mg_Per_dL) > hypoglycemiaLevel_mg_Per_dL + 5)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::Hypoglycemia, false, m_data.GetSimulationTime());
+      }
+
+      //hypoglycemic shock
+      if (m_venaCavaGlucose->GetConcentration(MassPerVolumeUnit::mg_Per_dL) < hypoglycemicShockLevel_mg_Per_dL)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::HypoglycemicShock, true, m_data.GetSimulationTime());
+      }
+      else if (patient.IsEventActive(CDM::enumPatientEvent::HypoglycemicShock) && m_venaCavaGlucose->GetConcentration(MassPerVolumeUnit::mg_Per_dL) > hypoglycemicShockLevel_mg_Per_dL + 5)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::HypoglycemicShock, false, m_data.GetSimulationTime());
+      }
+
+      //hypoglycemic coma
+      if (m_venaCavaGlucose->GetConcentration(MassPerVolumeUnit::mg_Per_dL) < hypoglycemicComaLevel_mg_Per_dL)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::HypoglycemicComa, true, m_data.GetSimulationTime());
+      }
+      else if (patient.IsEventActive(CDM::enumPatientEvent::HypoglycemicComa) && m_venaCavaGlucose->GetConcentration(MassPerVolumeUnit::mg_Per_dL) > hypoglycemicComaLevel_mg_Per_dL + 3)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::HypoglycemicComa, false, m_data.GetSimulationTime());
+      }
+
+      //hypoglycemic coma
+      if (m_venaCavaGlucose->GetConcentration(MassPerVolumeUnit::mg_Per_dL) > hyperglycemiaLevel_mg_Per_dL)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::Hyperglycemia, true, m_data.GetSimulationTime());
+      }
+      else if (patient.IsEventActive(CDM::enumPatientEvent::Hyperglycemia) && m_venaCavaGlucose->GetConcentration(MassPerVolumeUnit::mg_Per_dL) < hypoglycemicShockLevel_mg_Per_dL - 10)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::Hyperglycemia, false, m_data.GetSimulationTime());
+      }
+
+      //lactate check
+      if (m_venaCavaLactate->GetConcentration(MassPerVolumeUnit::mg_Per_dL) > lacticAcidosisLevel_mg_Per_dL)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::LacticAcidosis, true, m_data.GetSimulationTime());
+      }
+      else if (patient.IsEventActive(CDM::enumPatientEvent::LacticAcidosis) && m_venaCavaLactate->GetConcentration(MassPerVolumeUnit::mg_Per_dL) < lacticAcidosisLevel_mg_Per_dL - 5)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::LacticAcidosis, false, m_data.GetSimulationTime());
+      }
+
+      //ketones check
+      if (m_venaCavaKetones->GetConcentration(MassPerVolumeUnit::mg_Per_dL) > ketoacidosisLevel_mg_Per_dL)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::Ketoacidosis, true, m_data.GetSimulationTime());
+      }
+      else if (patient.IsEventActive(CDM::enumPatientEvent::Ketoacidosis) && m_venaCavaKetones->GetConcentration(MassPerVolumeUnit::mg_Per_dL) < ketoacidosisLevel_mg_Per_dL - 5)
+      {
+        patient.SetEvent(CDM::enumPatientEvent::Ketoacidosis, false, m_data.GetSimulationTime());
+      }
     }
 
 	  m_ArterialOxygen_mmHg.Reset();
 	  m_ArterialCarbonDioxide_mmHg.Reset();
+
   }
 
 

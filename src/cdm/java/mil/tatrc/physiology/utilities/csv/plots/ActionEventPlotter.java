@@ -125,7 +125,7 @@ public class ActionEventPlotter implements Plotter
 	    try
 	    {
 		    CSVContents csv = new CSVContents(job.dataPath + job.dataFile);
-		    csv.abreviateContents = job.resultsSkipNum;
+		    csv.abbreviateContents = job.resultsSkipNum;
 		    for (int i = 0; i < job.headers.size(); i++)
 		    {
 			    List<Double> headerData = new ArrayList<Double>();
@@ -138,7 +138,7 @@ public class ActionEventPlotter implements Plotter
 		    if(job.computedDataFile != null)
 		    {
 		    	csv = new CSVContents(job.computedDataPath + job.computedDataFile);
-		    	csv.abreviateContents = job.resultsSkipNum;
+		    	csv.abbreviateContents = job.resultsSkipNum;
 			    for (int i = 0; i < job.headers.size(); i++)
 			    {
 				    List<Double> headerData = new ArrayList<Double>();
@@ -371,7 +371,7 @@ public class ActionEventPlotter implements Plotter
 			try
 			{
   			CSVContents csv = new CSVContents(job.experimentalData);
-  	    csv.abreviateContents = 0;
+  	    csv.abbreviateContents = 0;
   	    csv.readAll(expData);
   	    expHeaders = csv.getHeaders();
 			}

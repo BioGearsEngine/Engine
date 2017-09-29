@@ -409,7 +409,7 @@ public class PlotDriver
 		try
 		{
 			expectedResults = new CSVContents(expectedFilePath);
-			expectedResults.abreviateContents = this.abbreviateContents;
+			expectedResults.abbreviateContents = this.abbreviateContents;
 			expectedResults.readAll(allExpected);
 			compareData.put(expectedFilePath, allExpected);
 		}
@@ -422,7 +422,7 @@ public class PlotDriver
 		try
 		{
 			computedResults = new CSVContents(computedFilePath);
-			computedResults.abreviateContents = this.abbreviateContents;
+			computedResults.abbreviateContents = this.abbreviateContents;
 			computedResults.readAll(allComputed);
 			compareData.put(computedFilePath, allComputed);
 		}
@@ -471,7 +471,7 @@ public class PlotDriver
 			try
 			{
 				expectedResults = new CSVContents(expectedFilePath);
-				expectedResults.abreviateContents = this.abbreviateContents;
+				expectedResults.abbreviateContents = this.abbreviateContents;
 			}
 			catch(Exception ex)
 			{
@@ -482,7 +482,7 @@ public class PlotDriver
 			try
 			{
 				computedResults = new CSVContents(computedFilePath);
-				computedResults.abreviateContents = this.abbreviateContents;
+				computedResults.abbreviateContents = this.abbreviateContents;
 			}
 			catch(Exception ex)
 			{

@@ -35,6 +35,7 @@ public class SESubstance
   protected SEScalarMass                     massInBlood;  
   protected SEScalarMass                     massInTissue;  
   protected SEScalarMassPerVolume            plasmaConcentration;
+  protected SEScalarMassPerVolume						 effectSiteConcentration;
   protected SEScalarMass                     systemicMassCleared;
   protected SEScalarMassPerVolume            tissueConcentration;
   // Gas related-ish
@@ -80,6 +81,8 @@ public class SESubstance
       this.massInTissue.invalidate();
     if(this.plasmaConcentration!=null)
       this.plasmaConcentration.invalidate();
+    if(this.effectSiteConcentration!=null)
+      this.effectSiteConcentration.invalidate();
 		if(this.systemicMassCleared!=null)
       this.systemicMassCleared.invalidate();
 		if(this.tissueConcentration!=null)
@@ -135,6 +138,8 @@ public class SESubstance
       this.getMassInTissue().load(data.getMassInTissue());
     if(data.getPlasmaConcentration()!=null)
       this.getPlasmaConcentration().load(data.getPlasmaConcentration());
+    if(data.getEffectSiteConcentration()!=null)
+      this.getEffectSiteConcentration().load(data.getEffectSiteConcentration());
 		if(data.getSystemicMassCleared()!=null)
       this.getSystemicMassCleared().load(data.getSystemicMassCleared());
 		if(data.getTissueConcentration()!=null)
@@ -198,6 +203,8 @@ public class SESubstance
       to.setMassInTissue(this.massInTissue.unload());
     if(hasPlasmaConcentration())
       to.setPlasmaConcentration(this.plasmaConcentration.unload());
+    if(hasEffectSiteConcentration())
+      to.setEffectSiteConcentration(this.effectSiteConcentration.unload());
     if(hasSystemicMassCleared())
       to.setSystemicMassCleared(this.systemicMassCleared.unload());
     if(hasTissueConcentration())
@@ -321,6 +328,14 @@ public class SESubstance
     return this.plasmaConcentration;
   }
   public boolean hasPlasmaConcentration() {return this.plasmaConcentration==null?false:this.plasmaConcentration.isValid();}
+  
+  public SEScalarMassPerVolume getEffectSiteConcentration() 
+  { 
+    if(this.effectSiteConcentration==null)
+      this.effectSiteConcentration=new SEScalarMassPerVolume();
+    return this.effectSiteConcentration;
+  }
+  public boolean hasEffectSiteConcentration() {return this.effectSiteConcentration==null?false:this.effectSiteConcentration.isValid();}
   
   public SEScalarMass getSystemicMassCleared() 
   { 

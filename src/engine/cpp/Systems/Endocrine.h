@@ -51,12 +51,13 @@ protected:
 
 public:
 	void AtSteadyState();
-	void PreProcess(){}
+  void PreProcess();
 	void Process();
-	void PostProcess(){}
+  void PostProcess();
 
 private:
 	void SynthesizeInsulin();
+  void SynthesizeGlucagon();
   void ReleaseEpinephrine();
 
   // Serializable member variables (Set in Initialize and in schema)
@@ -64,9 +65,11 @@ private:
   // Stateless member variable (Set in SetUp())
 	double                     m_dt_s;
 	double                     m_insulinMolarMass_g_Per_mol;
+  double                     m_glucagonMolarMass_g_Per_mol;
 	SELiquidSubstanceQuantity* m_aortaGlucose = nullptr;
 	SELiquidSubstanceQuantity* m_aortaEpinephrine = nullptr;
-  SELiquidSubstanceQuantity* m_rKidneyEpinephrine = nullptr;  //Don't forget to tell amb we added these
+  SELiquidSubstanceQuantity* m_rKidneyEpinephrine = nullptr;
   SELiquidSubstanceQuantity* m_lKidneyEpinephrine = nullptr;
   SELiquidSubstanceQuantity* m_splanchnicInsulin = nullptr;
+  SELiquidSubstanceQuantity* m_splanchnicGlucagon = nullptr;
 };

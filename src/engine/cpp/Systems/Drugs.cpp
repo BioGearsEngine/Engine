@@ -24,6 +24,7 @@ specific language governing permissions and limitations under the License.
 #include "substance/SESubstance.h"
 #include "substance/SESubstanceCompound.h"
 #include "substance/SESubstanceConcentration.h"
+#include "bind/SubstanceConcentrationData.hxx"
 #include "properties/SEScalarPressure.h"
 #include "properties/SEScalarMassPerVolume.h"
 #include "properties/SEScalarVolumePerTime.h"
@@ -64,6 +65,8 @@ void Drugs::Clear()
   m_liverTissue      = nullptr;
   m_IVToVenaCava     = nullptr;
   DELETE_MAP_SECOND(m_BolusAdministrations);
+  
+ 
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -85,13 +88,25 @@ void Drugs::Initialize()
   GetSedationLevel().SetValue(0.0);
   GetTidalVolumeChange().SetValue(0.0, VolumeUnit::mL);
   GetTubularPermeabilityChange().SetValue(0);
+  GetCentralNervousResponse().SetValue(0.0);
+
+  //Loop over substances and initialize effect site concentration to 0 for substances with PD effects (i.e. drugs)
+  for (SESubstance* sub : m_data.GetSubstances().GetSubstances())
+  {
+	  if (sub->HasPD())
+		  sub->GetEffectSiteConcentration().SetValue(0.0, MassPerVolumeUnit::ug_Per_mL);
+
+  }
+
 }
 
 bool Drugs::Load(const CDM::BioGearsDrugSystemData& in)
 {
   if (!SEDrugSystem::Load(in))
     return false;
+  
   BioGearsSystem::LoadState();
+
   for (const CDM::SubstanceBolusStateData& bData : in.BolusAdministration())
   {
     SESubstance* sub = m_data.GetSubstances().GetSubstance(bData.Substance());
@@ -106,6 +121,9 @@ bool Drugs::Load(const CDM::BioGearsDrugSystemData& in)
     m_BolusAdministrations[sub] = bolusState;
     bolusState->Load(bData);
   }
+
+
+ 
   return true;
 }
 CDM::BioGearsDrugSystemData* Drugs::Unload() const
@@ -117,11 +135,13 @@ CDM::BioGearsDrugSystemData* Drugs::Unload() const
 void Drugs::Unload(CDM::BioGearsDrugSystemData& data) const
 {
   SEDrugSystem::Unload(data);
+
   for (auto itr : m_BolusAdministrations)
   {
     if(itr.second != nullptr)
       data.BolusAdministration().push_back(std::unique_ptr<CDM::SubstanceBolusStateData>(itr.second->Unload()));
   }
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -142,6 +162,8 @@ void Drugs::SetUp()
 	m_liverTissue = m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Liver);
   m_IVToVenaCava = m_data.GetCircuits().GetCardiovascularCircuit().GetPath(BGE::CardiovascularPath::IVToVenaCava);
 	DELETE_MAP_SECOND(m_BolusAdministrations);
+	
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -542,13 +564,16 @@ void Drugs::CalculateDrugEffects()
 	double bronchodilationLevel = 0;
 	double plasmaConcentration_ug_Per_mL = 0;
 	double concentrationEffects_unitless = 0;
-  double deltaTubularPermeability = 0.0;
-  double pupilSizeResponseLevel = 0;
-  double pupilReactivityResponseLevel = 0;
-  double shapeParameter = 1.;
+	double deltaTubularPermeability = 0.0;
+	double pupilSizeResponseLevel = 0;
+	double pupilReactivityResponseLevel = 0;
+	double shapeParameter = 1.;
 	SEPatient& patient = m_data.GetPatient();
-  double HRBaseline_per_min = patient.GetHeartRateBaseline(FrequencyUnit::Per_min);
+	double HRBaseline_per_min = patient.GetHeartRateBaseline(FrequencyUnit::Per_min);
+	double effectSiteConcentration_ug_Per_mL = 0.0;
+	double centralNervousResponseLevel = 0.0;
 	
+
 	//Loop over substances
 	for (SESubstance* sub : m_data.GetCompartments().GetLiquidCompartmentSubstances())
 	{
@@ -556,12 +581,23 @@ void Drugs::CalculateDrugEffects()
 			continue;
 
 		SESubstancePharmacodynamics& pd = sub->GetPD();
+		///\TODO Replace all plasma concentrations with effect site concentrations (if any left over)
 		plasmaConcentration_ug_Per_mL = sub->GetPlasmaConcentration(MassPerVolumeUnit::ug_Per_mL);
-    shapeParameter = pd.GetEMaxShapeParameter().GetValue();
-    if(shapeParameter == 1) // Avoiding using pow if we don't have to. I don't know if this is good practice or not, but seems legit.
-      concentrationEffects_unitless = plasmaConcentration_ug_Per_mL / (pd.GetEC50().GetValue(MassPerVolumeUnit::ug_Per_mL) + plasmaConcentration_ug_Per_mL);
-    else
-		  concentrationEffects_unitless = pow(plasmaConcentration_ug_Per_mL, shapeParameter) / (pow(pd.GetEC50().GetValue(MassPerVolumeUnit::ug_Per_mL), shapeParameter) + pow(plasmaConcentration_ug_Per_mL, shapeParameter));
+		shapeParameter = pd.GetEMaxShapeParameter().GetValue();
+
+		//Get effect site concentration and use it to calculate unitless drug effects.
+		//Currently, effect site concentration is same as plasma concentration for all drugs except morphine
+		effectSiteConcentration_ug_Per_mL = sub->GetEffectSiteConcentration(MassPerVolumeUnit::ug_Per_mL);
+		if (shapeParameter == 1) // Avoiding using pow if we don't have to. I don't know if this is good practice or not, but seems legit.
+		{
+			concentrationEffects_unitless = effectSiteConcentration_ug_Per_mL / (pd.GetEC50().GetValue(MassPerVolumeUnit::ug_Per_mL) + effectSiteConcentration_ug_Per_mL);
+
+		}
+		else
+		{
+			concentrationEffects_unitless = pow(effectSiteConcentration_ug_Per_mL, shapeParameter) / (pow(pd.GetEC50().GetValue(MassPerVolumeUnit::ug_Per_mL), shapeParameter) + pow(effectSiteConcentration_ug_Per_mL, shapeParameter));
+		}
+	  
     /// \todo The drug effect is being applied to the baseline, so if the baseline changes the delta heart rate changes.
     // This would be a problem for something like a continuous infusion of a drug or an environmental drug
     // where we need to establish a new homeostatic point. Once the patient stabilizes with the drug effect included, a new baseline is
@@ -576,9 +612,11 @@ void Drugs::CalculateDrugEffects()
 		deltaSystolicBP_mmHg += patient.GetSystolicArterialPressureBaseline(PressureUnit::mmHg) * pd.GetSystolicPressureModifier().GetValue() * concentrationEffects_unitless;
 
 		sedationLevel += pd.GetSedation().GetValue() * concentrationEffects_unitless;
+		centralNervousResponseLevel += pd.GetCentralNervousModifier().GetValue() * concentrationEffects_unitless;
 
-    deltaTubularPermeability += (pd.GetTubularPermeabilityModifier().GetValue())*concentrationEffects_unitless;
+		deltaTubularPermeability += (pd.GetTubularPermeabilityModifier().GetValue())*concentrationEffects_unitless;
 
+   
 		if (sedationLevel > 0.15)
 		{
 			deltaRespirationRate_Per_min += patient.GetRespirationRateBaseline(FrequencyUnit::Per_min) * pd.GetRespirationRateModifier().GetValue();
@@ -586,10 +624,10 @@ void Drugs::CalculateDrugEffects()
 		}
 		else
 		{
-			deltaRespirationRate_Per_min += patient.GetRespirationRateBaseline(FrequencyUnit::Per_min) * pd.GetRespirationRateModifier().GetValue() * concentrationEffects_unitless;
+			deltaRespirationRate_Per_min += patient.GetRespirationRateBaseline(FrequencyUnit::Per_min) * pd.GetRespirationRateModifier().GetValue()*concentrationEffects_unitless;
 			deltaTidalVolume_mL += patient.GetTidalVolumeBaseline(VolumeUnit::mL) * pd.GetTidalVolumeModifier().GetValue() * concentrationEffects_unitless;
 		}
-			
+		
 		neuromuscularBlockLevel += pd.GetNeuromuscularBlock().GetValue() * concentrationEffects_unitless;
 
 		bronchodilationLevel += pd.GetBronchodilation().GetValue() * concentrationEffects_unitless;
@@ -612,7 +650,8 @@ void Drugs::CalculateDrugEffects()
 	GetNeuromuscularBlockLevel().SetValue(neuromuscularBlockLevel);
 	GetSedationLevel().SetValue(sedationLevel);
 	GetBronchodilationLevel().SetValue(bronchodilationLevel);
-  GetTubularPermeabilityChange().SetValue(deltaTubularPermeability);
+	GetTubularPermeabilityChange().SetValue(deltaTubularPermeability);
+	GetCentralNervousResponse().SetValue(centralNervousResponseLevel);
   
 
   // Bound the pupil modifiers
@@ -620,6 +659,7 @@ void Drugs::CalculateDrugEffects()
   BLIM(pupilReactivityResponseLevel, -1, 1);
   GetPupillaryResponse().GetSizeModifier().SetValue(pupilSizeResponseLevel);
   GetPupillaryResponse().GetReactivityModifier().SetValue(pupilReactivityResponseLevel);
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -635,12 +675,37 @@ void Drugs::CalculateDrugEffects()
 void Drugs::CalculatePlasmaSubstanceConcentration()
 {
 	double PlasmaMass_ug = 0;
+	double effectConcentration;
 	double PlasmaVolume_mL = m_data.GetBloodChemistry().GetPlasmaVolume(VolumeUnit::mL);
+	double rate_Per_s = 0.0;
 
 	for (SESubstance* sub : m_data.GetCompartments().GetLiquidCompartmentSubstances())
 	{
+		
 		PlasmaMass_ug = m_data.GetSubstances().GetSubstanceMass(*sub, m_data.GetCompartments().GetVascularLeafCompartments(), MassUnit::ug);
 		sub->GetPlasmaConcentration().SetValue(PlasmaMass_ug / PlasmaVolume_mL, MassPerVolumeUnit::ug_Per_mL);
+
+		//Get substance PD Data if it exists, including rate constant describing transfer to effect compartment and previous effect site concentration
+		if (sub->HasPD())
+		{
+			SESubstancePharmacodynamics& pd = sub->GetPD();
+			rate_Per_s = pd.GetEffectSiteRateConstant(FrequencyUnit::Per_s);
+			effectConcentration = sub->GetEffectSiteConcentration(MassPerVolumeUnit::ug_Per_mL);
+
+			//If a substance has rate constant set to 0, no effect concentration is needed.  Just use plasma concentration as before
+			if (rate_Per_s == 0)
+			{
+				effectConcentration = sub->GetPlasmaConcentration(MassPerVolumeUnit::ug_Per_mL);
+			}
+			else
+			{
+				//For drugs with effect site rate constant, use first order difference equation to calculate transfer at next time step
+				effectConcentration += (pd.GetEffectSiteRateConstant(FrequencyUnit::Per_s)) * m_dt_s*(sub->GetPlasmaConcentration(MassPerVolumeUnit::ug_Per_mL) - effectConcentration);
+
+			}
+			//Store effect site concentration for use in CalculateDrugEffects function
+			sub->GetEffectSiteConcentration().SetValue(effectConcentration, MassPerVolumeUnit::ug_Per_mL);
+		}
 	}
 }
 

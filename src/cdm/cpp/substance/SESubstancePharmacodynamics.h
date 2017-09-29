@@ -81,19 +81,30 @@ public:
   virtual SEScalarFraction& GetTubularPermeabilityModifier();
   virtual double GetTubularPermeabilityModifier() const;
 
+  virtual bool HasCentralNervousModifier() const;
+  virtual SEScalarFraction& GetCentralNervousModifier();
+  virtual double GetCentralNervousModifier() const;
+
+  virtual bool HasEffectSiteRateConstant() const;
+  virtual SEScalarFrequency& GetEffectSiteRateConstant();
+  virtual double GetEffectSiteRateConstant(const FrequencyUnit& unit) const;
+
+
 protected:
 	virtual void CalculateDerived();
 
 	SEScalarFraction*          m_Bronchodilation;
 	SEScalarFraction*          m_DiastolicPressureModifier;
 	SEScalarMassPerVolume*     m_EC50;
-  SEScalar*                  m_EMaxShapeParameter;
+	SEScalar*                  m_EMaxShapeParameter;
 	SEScalarFraction*          m_HeartRateModifier;
 	SEScalarFraction*          m_NeuromuscularBlock;
-  SEPupillaryResponse*       m_PupillaryResponse;
+	SEPupillaryResponse*       m_PupillaryResponse;
 	SEScalarFraction*          m_RespirationRateModifier;
 	SEScalarFraction*          m_Sedation;
 	SEScalarFraction*          m_SystolicPressureModifier;
 	SEScalarFraction*          m_TidalVolumeModifier;
-  SEScalarFraction*          m_TubularPermeabilityModifier;
+	SEScalarFraction*          m_TubularPermeabilityModifier;
+	SEScalarFraction*		   m_CentralNervousModifier;
+	SEScalarFrequency*		   m_EffectSiteRateConstant;
 };

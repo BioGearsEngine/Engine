@@ -743,7 +743,7 @@ void Renal::CalculateGluconeogenesis()
 	double patientWeight_kg = m_patient->GetWeight(MassUnit::kg);
 	m_lactate->GetClearance().GetRenalClearance().SetValue(totalLactateExcretionRate_mg_Per_s / plasmaConcentration_mg_Per_mL / patientWeight_kg, VolumePerTimeMassUnit::mL_Per_s_kg);
 
-  double singleExcreted_mg = totalLactateExcretionRate_mg_Per_s * m_dt * 0.5;// We are assuming the kindney's are doing the same amount of work
+  double singleExcreted_mg = totalLactateExcretionRate_mg_Per_s * m_dt * 0.5;// We are assuming the kidneys are each doing the same amount of work
   m_leftKidneyIntracellularLactate->GetMassExcreted().IncrementValue(singleExcreted_mg, MassUnit::mg);
   m_leftKidneyIntracellularLactate->GetMassCleared().IncrementValue(singleExcreted_mg, MassUnit::mg);
   m_rightKidneyIntracellularLactate->GetMassExcreted().IncrementValue(singleExcreted_mg, MassUnit::mg);
@@ -917,7 +917,7 @@ void Renal::CalculateSecretion()
 
 	double massPotassiumToMove_mg = 0.0;
 	double potassiumConcentration_g_Per_dL = 0.0;
-	double peritubularVolume_L = 0.0;
+	double peritubularVolume_dL = 0.0;
 
 	for (unsigned int kidney = 0; kidney < 2; kidney++)
 	{
@@ -926,14 +926,14 @@ void Renal::CalculateSecretion()
 			//LEFT
 			ureterPotassium = m_leftUreterPotassium;
 			peritubularPotassium = m_leftPeritubularPotassium;
-      peritubularVolume_L = m_leftPeritubular->GetVolume().GetValue(VolumeUnit::L);
+      peritubularVolume_dL = m_leftPeritubular->GetVolume().GetValue(VolumeUnit::dL);
 		}
 		else
 		{
 			//RIGHT
 			ureterPotassium = m_rightUreterPotassium;
 			peritubularPotassium = m_rightPeritubularPotassium;
-      peritubularVolume_L = m_rightPeritubular->GetVolume().GetValue(VolumeUnit::L);
+      peritubularVolume_dL = m_rightPeritubular->GetVolume().GetValue(VolumeUnit::dL);
 		}
 	}
 
@@ -944,7 +944,7 @@ void Renal::CalculateSecretion()
 	if (potassiumConcentration_g_Per_dL > m_baselinePotassiumConcentration_g_Per_dL)
 	{		
 		//calculate mass to move in mg: 
-		massPotassiumToMove_mg = (potassiumConcentration_g_Per_dL - m_baselinePotassiumConcentration_g_Per_dL)*peritubularVolume_L;
+		massPotassiumToMove_mg = (potassiumConcentration_g_Per_dL - m_baselinePotassiumConcentration_g_Per_dL)*peritubularVolume_dL;
 
 		//Increment & decrement
     peritubularPotassium->GetMass().IncrementValue(-massPotassiumToMove_mg, MassUnit::mg);
@@ -1777,7 +1777,7 @@ void Renal::CalculateOsmoreceptorFeedback()
 	
 	double permeability_mL_Per_s_Per_mmHg_Per_m2 = 0.0;
 	
-	///\todo get the arota osmolarity instead of sodium concentration 
+	///\todo get the aorta osmolarity instead of sodium concentration 
 	double sodiumConcentration_mg_Per_mL = m_data.GetSubstances().GetSodium().GetBloodConcentration().GetValue(MassPerVolumeUnit::mg_Per_mL);
 	sodiumConcentration_mg_Per_mL = m_sodiumConcentration_mg_Per_mL_runningAvg.Sample(sodiumConcentration_mg_Per_mL);
 

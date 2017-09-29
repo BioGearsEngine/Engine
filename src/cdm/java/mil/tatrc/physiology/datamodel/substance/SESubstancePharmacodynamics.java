@@ -31,6 +31,8 @@ public class SESubstancePharmacodynamics
 	protected SEScalarFraction      systolicPressureModifier;
 	protected SEScalarFraction      tidalVolumeModifier;
 	protected SEScalarFraction      tubularPermeabilityModifier;
+	protected SEScalarFraction		  centralNervousModifier;
+	protected SEScalarFrequency			effectSiteRateConstant;
 	
 	public SESubstancePharmacodynamics()
 	{
@@ -63,6 +65,10 @@ public class SESubstancePharmacodynamics
       this.tidalVolumeModifier.invalidate();
 		if(this.tubularPermeabilityModifier!=null)
       this.tubularPermeabilityModifier.invalidate();
+    if(this.centralNervousModifier!=null)
+      this.centralNervousModifier.invalidate();
+    if(this.effectSiteRateConstant!=null)
+    	this.effectSiteRateConstant.invalidate();
 	}
 	
 	public boolean isValid()
@@ -78,7 +84,9 @@ public class SESubstancePharmacodynamics
        !hasSedation() ||
        !hasSystolicPressureModifier() ||
        !hasTidalVolumeModifier() ||
-       !hasTubularPermeabilityModifier())       
+       !hasTubularPermeabilityModifier() ||
+       !hasCentralNervousModifier()||
+       !hasEffectSiteRateConstant())
       return false;
     return true;
   }
@@ -111,6 +119,10 @@ public class SESubstancePharmacodynamics
       this.getTidalVolumeModifier().load(data.getTidalVolumeModifier());
 		if(data.getTubularPermeabilityModifier()!=null)
       this.getTubularPermeabilityModifier().load(data.getTubularPermeabilityModifier());
+    if(data.getCentralNervousModifier()!=null)
+      this.getCentralNervousModifier().load(data.getCentralNervousModifier());
+    if(data.getEffectSiteRateConstant()!=null)
+    	this.getEffectSiteRateConstant().load(data.getEffectSiteRateConstant());
     
 		return true;
 	}
@@ -150,6 +162,10 @@ public class SESubstancePharmacodynamics
       to.setTidalVolumeModifier(this.tidalVolumeModifier.unload());
 		if(hasTubularPermeabilityModifier())
       to.setTubularPermeabilityModifier(this.tubularPermeabilityModifier.unload());
+    if(hasCentralNervousModifier())
+      to.setCentralNervousModifier(this.centralNervousModifier.unload());
+    if(hasEffectSiteRateConstant())
+    	to.setEffectSiteRateConstant(this.effectSiteRateConstant.unload());
 	}
 	
 	public SEScalarFraction getBronchodilation() 
@@ -247,4 +263,21 @@ public class SESubstancePharmacodynamics
     return this.tubularPermeabilityModifier;
   }
   public boolean      hasTubularPermeabilityModifier() {return this.tubularPermeabilityModifier==null?false:this.tubularPermeabilityModifier.isValid();}
+  
+  public SEScalarFraction getCentralNervousModifier()
+  {
+  	if(this.centralNervousModifier==null)
+  		this.centralNervousModifier=new SEScalarFraction();
+  	return this.centralNervousModifier;
+  }
+  public boolean	  hasCentralNervousModifier() {return this.centralNervousModifier==null?false:this.centralNervousModifier.isValid();}
+ 
+  public SEScalarFrequency getEffectSiteRateConstant()
+  {
+  	if(this.effectSiteRateConstant==null)
+  		this.effectSiteRateConstant=new SEScalarFrequency();
+  	return this.effectSiteRateConstant;
+  }
+  public boolean 		hasEffectSiteRateConstant() {return this.effectSiteRateConstant==null?false:this.effectSiteRateConstant.isValid();}
+  
 }

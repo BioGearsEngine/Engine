@@ -956,7 +956,7 @@ bool BioGears::CreateCircuitsAndCompartments()
   SetupGastrointestinal();
 
   ///////////////////////////////////////////////////////////////////
-  // Create abd Combine External and Internal Temperature Circuits //
+  // Create and Combine External and Internal Temperature Circuits //
   ///////////////////////////////////////////////////////////////////
   SetupExternalTemperature();
   SetupInternalTemperature();
@@ -1467,9 +1467,38 @@ void BioGears::SetupCardiovascular()
   SEFluidCircuitPath& VenaCavaToGround = cCardiovascular.CreatePath(VenaCava, Ground, BGE::CardiovascularPath::VenaCavaToGround);
   VenaCavaToGround.GetComplianceBaseline().SetValue(0.0, FlowComplianceUnit::mL_Per_mmHg);
   SEFluidCircuitPath& VenaCavaBleed = cCardiovascular.CreatePath(VenaCava, Ground, BGE::CardiovascularPath::VenaCavaBleed);
-  VenaCavaBleed.GetFlowSourceBaseline().SetValue(0.0, VolumePerTimeUnit::mL_Per_s);
+  VenaCavaBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
   SEFluidCircuitPath& IVToVenaCava = cCardiovascular.CreatePath(Ground, VenaCava, BGE::CardiovascularPath::IVToVenaCava);
   IVToVenaCava.GetFlowSourceBaseline().SetValue(0.0, VolumePerTimeUnit::mL_Per_s);
+
+  //Hemorrhage--Include major organs, if there is a right/left side just adjust the resistance of the right side
+  SEFluidCircuitPath& AortaBleed = cCardiovascular.CreatePath(Aorta1, Ground, BGE::CardiovascularPath::AortaBleed);
+  AortaBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  SEFluidCircuitPath& BrainBleed = cCardiovascular.CreatePath(Brain1, Ground, BGE::CardiovascularPath::BrainBleed);
+  BrainBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  SEFluidCircuitPath& HeartBleed = cCardiovascular.CreatePath(Myocardium1, Ground, BGE::CardiovascularPath::HeartBleed);
+  HeartBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  SEFluidCircuitPath& LungBleed = cCardiovascular.CreatePath(RightPulmonaryArteries, Ground, BGE::CardiovascularPath::LungBleed);
+  LungBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  SEFluidCircuitPath& ArmBleed = cCardiovascular.CreatePath(RightArm1, Ground, BGE::CardiovascularPath::ArmBleed);
+  ArmBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  SEFluidCircuitPath& SpleenBleed = cCardiovascular.CreatePath(Spleen, Ground, BGE::CardiovascularPath::SpleenBleed);
+  SpleenBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  SEFluidCircuitPath& SmallIntestineBleed = cCardiovascular.CreatePath(SmallIntestine, Ground, BGE::CardiovascularPath::SmallIntestineBleed);
+  SmallIntestineBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  SEFluidCircuitPath& LargeIntestineBleed = cCardiovascular.CreatePath(LargeIntestine, Ground, BGE::CardiovascularPath::LargeIntestineBleed);
+  LargeIntestineBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  SEFluidCircuitPath& SplanchnicBleed = cCardiovascular.CreatePath(Splanchnic, Ground, BGE::CardiovascularPath::SplanchnicBleed);
+  SplanchnicBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  SEFluidCircuitPath& LiverBleed = cCardiovascular.CreatePath(Liver1, Ground, BGE::CardiovascularPath::LiverBleed);
+  LiverBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  SEFluidCircuitPath& PortalBleed = cCardiovascular.CreatePath(PortalVein, Ground, BGE::CardiovascularPath::PortalBleed);
+  PortalBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_min_Per_L);
+  //Set up kidney hemorrhage path in renal circuit
+  SEFluidCircuitPath& LegBleed = cCardiovascular.CreatePath(RightLeg1, Ground, BGE::CardiovascularPath::LegBleed);
+  LegBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+
+
 
   // Compute compliances from target pressures and baseline volumes
   for (SEFluidCircuitPath* p : cCardiovascular.GetPaths())
@@ -1509,7 +1538,6 @@ void BioGears::SetupCardiovascular()
 
   //And also modify the compliances
   Aorta1ToGround.GetComplianceBaseline().SetValue(largeArteriesComplianceModifier*Aorta1ToGround.GetComplianceBaseline(FlowComplianceUnit::mL_Per_mmHg), FlowComplianceUnit::mL_Per_mmHg);
-
 
   RightPulmonaryArteries.GetVolumeBaseline().SetValue(VolumeModifierPulmArtR * RightPulmonaryArteries.GetVolumeBaseline(VolumeUnit::mL), VolumeUnit::mL);
   LeftPulmonaryArteries.GetVolumeBaseline().SetValue(VolumeModifierPulmArtL * LeftPulmonaryArteries.GetVolumeBaseline(VolumeUnit::mL), VolumeUnit::mL);
@@ -1868,10 +1896,33 @@ void BioGears::SetupCardiovascular()
 
   /////////////////////
   // Bleeds and IV's //
-  SELiquidCompartmentLink& vVenaCavaHemorrhage = m_Compartments->CreateLiquidLink(vVenaCava, vGround, BGE::VascularLink::VenaCavaHemorrhage);
-  vVenaCavaHemorrhage.MapPath(VenaCavaBleed);
   SELiquidCompartmentLink& vVenaCavaIV = m_Compartments->CreateLiquidLink(vGround, vVenaCava, BGE::VascularLink::VenaCavaIV);
   vVenaCavaIV.MapPath(IVToVenaCava);
+  SELiquidCompartmentLink& vVenaCavaHemorrhage = m_Compartments->CreateLiquidLink(vVenaCava, vGround, BGE::VascularLink::VenaCavaHemorrhage);
+  vVenaCavaHemorrhage.MapPath(VenaCavaBleed);
+  SELiquidCompartmentLink& vAortaHemorrhage = m_Compartments->CreateLiquidLink(vAorta, vGround, BGE::VascularLink::AortaHemorrhage);
+  vAortaHemorrhage.MapPath(AortaBleed);
+  SELiquidCompartmentLink& vBrainHemorrhage = m_Compartments->CreateLiquidLink(vBrain, vGround, BGE::VascularLink::BrainHemorrhage);
+  vBrainHemorrhage.MapPath(BrainBleed);
+  SELiquidCompartmentLink& vHeartHemorrhage = m_Compartments->CreateLiquidLink(vMyocardium, vGround, BGE::VascularLink::HeartHemorrhage);
+  vHeartHemorrhage.MapPath(HeartBleed);
+  SELiquidCompartmentLink& vLungHemorrhage = m_Compartments->CreateLiquidLink(vRightPulmonaryArteries, vGround, BGE::VascularLink::LungHemorrhage);
+  vLungHemorrhage.MapPath(LungBleed);
+  SELiquidCompartmentLink& vArmHemorrhage = m_Compartments->CreateLiquidLink(vRightArm, vGround, BGE::VascularLink::ArmHemorrhage);
+  vArmHemorrhage.MapPath(ArmBleed);
+  SELiquidCompartmentLink& vSpleenHemorrhage = m_Compartments->CreateLiquidLink(vSpleen, vGround, BGE::VascularLink::SpleenHemorrhage);
+  vSpleenHemorrhage.MapPath(SpleenBleed);
+  SELiquidCompartmentLink& vSmallIntestineHemorrhage = m_Compartments->CreateLiquidLink(vSmallIntestine, vGround, BGE::VascularLink::SmallIntestineHemorrhage);
+  vSmallIntestineHemorrhage.MapPath(SmallIntestineBleed);
+  SELiquidCompartmentLink& vLargeIntestineHemorrhage = m_Compartments->CreateLiquidLink(vLargeIntestine, vGround, BGE::VascularLink::LargeIntestineHemorrhage);
+  vLargeIntestineHemorrhage.MapPath(LargeIntestineBleed);
+  SELiquidCompartmentLink& vSplanchnicHemorrhage = m_Compartments->CreateLiquidLink(vSplanchnic, vGround, BGE::VascularLink::SplanchnicHemorrhage);
+  vSplanchnicHemorrhage.MapPath(SplanchnicBleed);
+  //Take care of kidney hemorrhage in renal circuit set up below
+  SELiquidCompartmentLink& vLiverHemorrhage = m_Compartments->CreateLiquidLink(vLiver, vGround, BGE::VascularLink::LiverHemorrhage);
+  vLiverHemorrhage.MapPath(LiverBleed);
+  SELiquidCompartmentLink& vLegHemorrhage = m_Compartments->CreateLiquidLink(vRightLeg, vGround, BGE::VascularLink::LegHemorrhage);
+  vLegHemorrhage.MapPath(LegBleed);
 
   SELiquidCompartmentGraph& gCardiovascular = m_Compartments->GetCardiovascularGraph();
   gCardiovascular.AddCompartment(vRightHeart);
@@ -1949,6 +2000,17 @@ void BioGears::SetupCardiovascular()
   gCardiovascular.AddLink(vSpleenToLiver);
   gCardiovascular.AddLink(vVenaCavaHemorrhage);
   gCardiovascular.AddLink(vVenaCavaIV);
+  gCardiovascular.AddLink(vAortaHemorrhage);
+  gCardiovascular.AddLink(vBrainHemorrhage);
+  gCardiovascular.AddLink(vHeartHemorrhage);
+  gCardiovascular.AddLink(vLungHemorrhage);
+  gCardiovascular.AddLink(vArmHemorrhage);
+  gCardiovascular.AddLink(vSpleenHemorrhage);
+  gCardiovascular.AddLink(vSmallIntestineHemorrhage);
+  gCardiovascular.AddLink(vLargeIntestineHemorrhage);
+  gCardiovascular.AddLink(vSplanchnicHemorrhage);
+  gCardiovascular.AddLink(vLiverHemorrhage);
+  gCardiovascular.AddLink(vLegHemorrhage);
   gCardiovascular.StateChange();
 
   SELiquidCompartmentGraph& gCombinedCardiovascular = m_Compartments->GetActiveCardiovascularGraph();
@@ -1973,8 +2035,8 @@ void BioGears::SetupRenal()
   ///// Circuit Parameters//////
   double openSwitch_mmHg_s_Per_mL = m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL);
   //Resistances with some tuning multipliers
-  double urineTuningMultiplier = 0.80; //0.85;
-  double arteryTuningMultiplier = 0.35;
+  double urineTuningMultiplier = 0.50;
+  double arteryTuningMultiplier = 1.2;
 
   double renalArteryResistance_mmHg_s_Per_mL = Convert(0.0250 * arteryTuningMultiplier, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
   double afferentResistance_mmHg_s_Per_mL = Convert(0.0417, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
@@ -1986,7 +2048,7 @@ void BioGears::SetupRenal()
   double tubulesResistance_mmHg_s_Per_mL = Convert(0.1920 * urineTuningMultiplier, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
   double reabsoprtionResistance_mmHg_s_Per_mL = Convert(0.1613 * urineTuningMultiplier, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
   //This one is tuned
-  double ureterTuningMultiplier = 0.65;
+  double ureterTuningMultiplier = 0.48;
   double ureterResistance_mmHg_s_Per_mL = Convert(30.0*ureterTuningMultiplier, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
   double urethraResistance_mmHg_s_Per_mL = openSwitch_mmHg_s_Per_mL;
   //Compliances
@@ -2234,6 +2296,10 @@ void BioGears::SetupRenal()
   SEFluidCircuitPath& RightBowmansCapsulesToNetBowmansCapsules = cRenal.CreatePath(RightBowmansCapsules, RightNetBowmansCapsules, BGE::RenalPath::RightBowmansCapsulesToNetBowmansCapsules);
   RightBowmansCapsulesToNetBowmansCapsules.GetPressureSourceBaseline().SetValue(bowmansOsmoticPressure_mmHg, PressureUnit::mmHg);
   /////////////////
+  // Hemorrhage from kidney--use only right kidney //
+  SEFluidCircuitPath& KidneyBleed = cRenal.CreatePath(RightRenalVein, Ground, BGE::CardiovascularPath::KidneyBleed);
+  KidneyBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
+  ///////////////////////////////////
   // Right Urine //
   ///////////////// 
   ///////////////////////////////////
@@ -2579,6 +2645,10 @@ void BioGears::SetupRenal()
   m_Compartments->DeleteLiquidLink(BGE::VascularLink::RightKidneyToVenaCava);// Replace this vink
   SELiquidCompartmentLink& vRightRenalVeinToVenaCava = m_Compartments->CreateLiquidLink(vRightRenalVein, vVenaCava, BGE::VascularLink::RightKidneyToVenaCava);
   vRightRenalVeinToVenaCava.MapPath(RightRenalVeinToVenaCavaConnection);
+  /////////////////////////////
+  // Hemorrhage //
+  SELiquidCompartmentLink& vKidneyHemorrhage = m_Compartments->CreateLiquidLink(vRightRenalVein, vGround, BGE::VascularLink::KidneyHemorrhage);
+  vKidneyHemorrhage.MapPath(KidneyBleed);
 
   ////////////////////////////
   // AortaToLeftRenalArtery //
@@ -2688,6 +2758,7 @@ void BioGears::SetupRenal()
   gRenal.AddLink(vRightRenalArteryToAfferentArteriole);
   gRenal.AddLink(vRightAfferentArterioleToGlomerularCapillaries);
   gRenal.AddLink(vRightGlomerularCapillariesToEfferentArteriole);
+  gRenal.AddLink(vKidneyHemorrhage);
   //gRenal.AddLink(vRightGlomerularCapillariesToBowmansCapsules); //Active transport only
   gRenal.AddLink(vRightBowmansCapsulesToTubules);
   //gRenal.AddLink(vRightTubulesToPeritubularCapillaries); //Active transport only
@@ -3886,13 +3957,14 @@ void BioGears::SetupGastrointestinal()
   SELiquidCompartment& cSmallIntestine = m_Compartments->CreateLiquidCompartment(BGE::ChymeCompartment::SmallIntestine);
   cSmallIntestine.MapNode(SmallIntestineC1);
 
+  //remove the link becasue substances are handled manually in model design
   SELiquidCompartment* vSmallIntestine = m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::SmallIntestine);
-  SELiquidCompartmentLink& lSmallIntestineChymeToVasculature = m_Compartments->CreateLiquidLink(cSmallIntestine, *vSmallIntestine, BGE::ChymeLink::SmallIntestineChymeToVasculature);
-  lSmallIntestineChymeToVasculature.MapPath(SmallIntestineC1ToSmallIntestine1);
+  //SELiquidCompartmentLink& lSmallIntestineChymeToVasculature = m_Compartments->CreateLiquidLink(cSmallIntestine, *vSmallIntestine, BGE::ChymeLink::SmallIntestineChymeToVasculature);
+  //lSmallIntestineChymeToVasculature.MapPath(SmallIntestineC1ToSmallIntestine1);
 
   SELiquidCompartmentGraph& gCombinedCardiovascular = m_Compartments->GetActiveCardiovascularGraph();
   gCombinedCardiovascular.AddCompartment(cSmallIntestine);
-  gCombinedCardiovascular.AddLink(lSmallIntestineChymeToVasculature);
+  //gCombinedCardiovascular.AddLink(lSmallIntestineChymeToVasculature);
   gCombinedCardiovascular.StateChange();
 }
 

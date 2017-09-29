@@ -23,7 +23,7 @@ specific language governing permissions and limitations under the License.
 
 SEGastrointestinalSystem::SEGastrointestinalSystem(Logger* logger) : SESystem(logger)
 {
-	m_ChymeAbsorbtionRate = nullptr;
+	m_ChymeAbsorptionRate = nullptr;
   m_StomachContents = nullptr;
 }
 
@@ -35,15 +35,15 @@ SEGastrointestinalSystem::~SEGastrointestinalSystem()
 void SEGastrointestinalSystem::Clear()
 {
   SESystem::Clear();
-	SAFE_DELETE(m_ChymeAbsorbtionRate);
+	SAFE_DELETE(m_ChymeAbsorptionRate);
   SAFE_DELETE(m_StomachContents);
 }
 
 
 const SEScalar* SEGastrointestinalSystem::GetScalar(const std::string& name)
 {
-	if(name.compare("ChymeAbsorbtionRate") == 0)
-		return &GetChymeAbsorbtionRate();
+	if(name.compare("ChymeAbsorptionRate") == 0)
+		return &GetChymeAbsorptionRate();
 
   size_t split = name.find('-');
   if (split != name.npos)
@@ -59,8 +59,8 @@ const SEScalar* SEGastrointestinalSystem::GetScalar(const std::string& name)
 bool SEGastrointestinalSystem::Load(const CDM::GastrointestinalSystemData& in)
 {
 	SESystem::Load(in);
-	if (in.ChymeAbsorbtionRate().present())
-		GetChymeAbsorbtionRate().Load(in.ChymeAbsorbtionRate().get());
+	if (in.ChymeAbsorptionRate().present())
+		GetChymeAbsorptionRate().Load(in.ChymeAbsorptionRate().get());
   if (in.StomachContents().present())
     GetStomachContents().Load(in.StomachContents().get());
 	return true;
@@ -76,27 +76,27 @@ CDM::GastrointestinalSystemData* SEGastrointestinalSystem::Unload() const
 void SEGastrointestinalSystem::Unload(CDM::GastrointestinalSystemData& data) const
 {
 	SESystem::Unload(data);
-	if (m_ChymeAbsorbtionRate != nullptr)
-		data.ChymeAbsorbtionRate(std::unique_ptr<CDM::ScalarVolumePerTimeData>(m_ChymeAbsorbtionRate->Unload())); 
+	if (m_ChymeAbsorptionRate != nullptr)
+		data.ChymeAbsorptionRate(std::unique_ptr<CDM::ScalarVolumePerTimeData>(m_ChymeAbsorptionRate->Unload())); 
   if(m_StomachContents!=nullptr)
     data.StomachContents(std::unique_ptr<CDM::NutritionData>(m_StomachContents->Unload()));
 }
 
-bool SEGastrointestinalSystem::HasChymeAbsorbtionRate() const
+bool SEGastrointestinalSystem::HasChymeAbsorptionRate() const
 {
-	return m_ChymeAbsorbtionRate == nullptr ? false : m_ChymeAbsorbtionRate->IsValid();
+	return m_ChymeAbsorptionRate == nullptr ? false : m_ChymeAbsorptionRate->IsValid();
 }
-SEScalarVolumePerTime& SEGastrointestinalSystem::GetChymeAbsorbtionRate()
+SEScalarVolumePerTime& SEGastrointestinalSystem::GetChymeAbsorptionRate()
 {
-	if (m_ChymeAbsorbtionRate == nullptr)
-		m_ChymeAbsorbtionRate = new SEScalarVolumePerTime();
-	return *m_ChymeAbsorbtionRate;
+	if (m_ChymeAbsorptionRate == nullptr)
+		m_ChymeAbsorptionRate = new SEScalarVolumePerTime();
+	return *m_ChymeAbsorptionRate;
 }
-double SEGastrointestinalSystem::GetChymeAbsorbtionRate(const VolumePerTimeUnit& unit) const
+double SEGastrointestinalSystem::GetChymeAbsorptionRate(const VolumePerTimeUnit& unit) const
 {
-	if (m_ChymeAbsorbtionRate == nullptr)
+	if (m_ChymeAbsorptionRate == nullptr)
 		return SEScalar::dNaN();
-	return m_ChymeAbsorbtionRate->GetValue(unit);
+	return m_ChymeAbsorptionRate->GetValue(unit);
 }
 
 bool SEGastrointestinalSystem::HasStomachContents() const

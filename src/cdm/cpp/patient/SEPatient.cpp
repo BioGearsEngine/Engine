@@ -420,6 +420,12 @@ void SEPatient::SetEvent(CDM::enumPatientEvent::value type, bool active, const S
 			case CDM::enumPatientEvent::Hypoglycemia:
 				m_ss << " Patient has Hypoglycemia";
 				break;
+      case CDM::enumPatientEvent::HypoglycemicShock:
+        m_ss << " Patient is in Hypoglycemic Shock";
+        break;
+      case CDM::enumPatientEvent::HypoglycemicComa:
+        m_ss << " Patient has fallen into Hypoglycemic Coma";
+        break;
 			case CDM::enumPatientEvent::Hypothermia:
 				m_ss << " Patient is Hypothermic";
 				break;
@@ -442,8 +448,11 @@ void SEPatient::SetEvent(CDM::enumPatientEvent::value type, bool active, const S
 				m_ss << " Patient has Ketoacidosis";
 				break;
 			case CDM::enumPatientEvent::LacticAcidosis:
-				m_ss << " Patient has LacticAcidosis";
+				m_ss << " Patient has Lactic Acidosis";
 				break;
+      case CDM::enumPatientEvent::LiverGlycogenDepleted:
+        m_ss << " Patient's liver glycogen is depleted";
+        break;
       case CDM::enumPatientEvent::MaximumPulmonaryVentilationRate:
 				m_ss << " Patient's Respiratory Driver has exceeded the maximum target pulmonary ventilation rate, setting value to the maximum allowable rate";
 				break;
@@ -458,6 +467,9 @@ void SEPatient::SetEvent(CDM::enumPatientEvent::value type, bool active, const S
         break;
       case CDM::enumPatientEvent::ModerateAcuteRespiratoryDistress:
         m_ss << " The patient has Moderate Acute Respiratory Distress";
+        break;
+      case CDM::enumPatientEvent::MuscleGlycogenDepleted:
+        m_ss << " Patient's muscle glycogen is depleted";
         break;
       case CDM::enumPatientEvent::MyocardiumOxygenDeficit:
         m_ss << " The patient's heart is not receiving enough oxygen";
@@ -547,6 +559,12 @@ void SEPatient::SetEvent(CDM::enumPatientEvent::value type, bool active, const S
 			case CDM::enumPatientEvent::Hypoglycemia:
 				m_ss << " Patient no longer has Hypoglycemia";
 				break;
+      case CDM::enumPatientEvent::HypoglycemicShock:
+        m_ss << " Patient is no longer in Hypoglycemic Shock";
+        break;
+      case CDM::enumPatientEvent::HypoglycemicComa:
+        m_ss << " Patient is no longer in a Hypoglycemic Coma";
+        break;
 			case CDM::enumPatientEvent::Hypothermia:
 				m_ss << " Patient is no longer has Hypothermic";
 				break;
@@ -569,8 +587,11 @@ void SEPatient::SetEvent(CDM::enumPatientEvent::value type, bool active, const S
 				m_ss << " Patient no longer has Ketoacidosis";
 				break;
 			case CDM::enumPatientEvent::LacticAcidosis:
-				m_ss << " Patient no longer has LacticAcidosis";
+				m_ss << " Patient no longer has Lactic Acidosis";
 				break;
+      case CDM::enumPatientEvent::LiverGlycogenDepleted:
+        m_ss << " Patient's liver glycogen is no longer depleted";
+        break;
 			case CDM::enumPatientEvent::MaximumPulmonaryVentilationRate:
 				m_ss << " Patient's Respiratory Driver is no longer exceeding the maximum target pulmonary ventilation rate";
 				break;
@@ -585,6 +606,9 @@ void SEPatient::SetEvent(CDM::enumPatientEvent::value type, bool active, const S
         break;
       case CDM::enumPatientEvent::ModerateAcuteRespiratoryDistress:
         m_ss << " Patient no longer has a Moderate Acute Respiratory Distress";
+        break;
+      case CDM::enumPatientEvent::MuscleGlycogenDepleted:
+        m_ss << " Patient's muscle glycogen is no longer depleted";
         break;
       case CDM::enumPatientEvent::MyocardiumOxygenDeficit:
         m_ss << " Patient no longer has a Myocardium Oxygen Deficit";

@@ -74,6 +74,12 @@ public:
   virtual SEScalarFraction& GetTubularPermeabilityChange();
   virtual double GetTubularPermeabilityChange() const;
 
+  virtual bool HasCentralNervousResponse() const;
+  virtual SEScalarFraction& GetCentralNervousResponse();
+  virtual double GetCentralNervousResponse() const;
+
+
+
 protected:
 
 	SEScalarFraction*          m_BronchodilationLevel;
@@ -86,4 +92,5 @@ protected:
 	SEScalarFraction*          m_SedationLevel;
 	SEScalarVolume*            m_TidalVolumeChange;
   SEScalarFraction*          m_TubularPermeabilityChange;
+  SEScalarFraction*			   m_CentralNervousResponse;
 };

@@ -29,6 +29,7 @@ public class SEDrugSystem extends SEPhysiologySystem implements SESystem
   protected SEScalarFraction    sedationLevel;
   protected SEScalarVolume      tidalVolumeChange;
   protected SEScalarFraction    tubularPermeabilityChange;
+  protected SEScalarFraction		centralNervousResponse;
 
   public SEDrugSystem()
   {
@@ -42,6 +43,7 @@ public class SEDrugSystem extends SEPhysiologySystem implements SESystem
     sedationLevel = null;
     tidalVolumeChange = null;
     tubularPermeabilityChange = null;
+    centralNervousResponse = null;
   }
 
   public void reset()
@@ -66,6 +68,8 @@ public class SEDrugSystem extends SEPhysiologySystem implements SESystem
       tidalVolumeChange.invalidate();
     if (tubularPermeabilityChange != null)
     	tubularPermeabilityChange.invalidate();
+    if (centralNervousResponse != null)
+    	centralNervousResponse.invalidate();
   }
 
   public boolean load(DrugSystemData in)
@@ -90,6 +94,8 @@ public class SEDrugSystem extends SEPhysiologySystem implements SESystem
       getTidalVolumeChange().load(in.getTidalVolumeChange());
     if (in.getTubularPermeabilityChange() != null)
     	getTubularPermeabilityChange().load(in.getTubularPermeabilityChange());
+    if(in.getCentralNervousResponse() != null)
+    	getCentralNervousResponse().load(in.getCentralNervousResponse());
 
     return true;
   }
@@ -123,6 +129,8 @@ public class SEDrugSystem extends SEPhysiologySystem implements SESystem
       data.setTidalVolumeChange(tidalVolumeChange.unload());
     if (tubularPermeabilityChange != null)
       data.setTubularPermeabilityChange(tubularPermeabilityChange.unload());
+    if (centralNervousResponse != null)
+    	data.setCentralNervousResponse(centralNervousResponse.unload());
   }
   
   public SEScalarFraction getBronchodilationLevel()
@@ -233,5 +241,16 @@ public class SEDrugSystem extends SEPhysiologySystem implements SESystem
   public boolean hasTubularPermeabilityChange()
   {
     return tubularPermeabilityChange == null ? false : tubularPermeabilityChange.isValid();
+  }
+  
+  public SEScalarFraction getCentralNervousResponse()
+  {
+  	if(centralNervousResponse == null)
+  		centralNervousResponse = new SEScalarFraction();
+  	return centralNervousResponse;
+  }
+  public boolean hasCentralNervousResponse()
+  {
+  	return centralNervousResponse == null ? false : centralNervousResponse.isValid();
   }
 }

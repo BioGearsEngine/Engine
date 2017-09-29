@@ -537,8 +537,20 @@ namespace mil {
           DEFINE_STATIC_STRING(SpleenToLiver);
 
           // Hemorrhage and IV
+		  DEFINE_STATIC_STRING(VenaCavaIV);
           DEFINE_STATIC_STRING(VenaCavaHemorrhage);
-          DEFINE_STATIC_STRING(VenaCavaIV);
+		  DEFINE_STATIC_STRING(AortaHemorrhage);
+		  DEFINE_STATIC_STRING(BrainHemorrhage);
+		  DEFINE_STATIC_STRING(HeartHemorrhage);
+		  DEFINE_STATIC_STRING(LungHemorrhage);
+		  DEFINE_STATIC_STRING(ArmHemorrhage);
+		  DEFINE_STATIC_STRING(SpleenHemorrhage);
+		  DEFINE_STATIC_STRING(SmallIntestineHemorrhage);
+		  DEFINE_STATIC_STRING(LargeIntestineHemorrhage);
+		  DEFINE_STATIC_STRING(SplanchnicHemorrhage);
+		  DEFINE_STATIC_STRING(KidneyHemorrhage);
+		  DEFINE_STATIC_STRING(LiverHemorrhage);
+		  DEFINE_STATIC_STRING(LegHemorrhage);
 
           // Vascular To Tissue Links
           DEFINE_STATIC_STRING(BoneVascularToTissue);

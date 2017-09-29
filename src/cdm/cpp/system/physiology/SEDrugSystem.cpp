@@ -25,6 +25,10 @@ specific language governing permissions and limitations under the License.
 #include "bind/ScalarVolumeData.hxx"
 #include "properties/SEScalarLength.h"
 #include "bind/ScalarLengthData.hxx"
+#include "properties/SEScalarMassPerVolume.h"
+#include "bind/ScalarMassPerVolumeData.hxx"
+
+
 
 SEDrugSystem::SEDrugSystem(Logger* logger) : SESystem(logger)
 {
@@ -38,6 +42,7 @@ SEDrugSystem::SEDrugSystem(Logger* logger) : SESystem(logger)
 	m_SedationLevel = nullptr;
 	m_TidalVolumeChange = nullptr;
   m_TubularPermeabilityChange = nullptr;
+  m_CentralNervousResponse = nullptr;
 }
 
 SEDrugSystem::~SEDrugSystem()
@@ -59,6 +64,8 @@ void SEDrugSystem::Clear()
 	SAFE_DELETE(m_SedationLevel);
 	SAFE_DELETE(m_TidalVolumeChange);
   SAFE_DELETE(m_TubularPermeabilityChange);
+  SAFE_DELETE(m_CentralNervousResponse);
+  
 }
 
 bool SEDrugSystem::Load(const CDM::DrugSystemData& in)
@@ -83,8 +90,11 @@ bool SEDrugSystem::Load(const CDM::DrugSystemData& in)
 		GetSedationLevel().Load(in.SedationLevel().get());
 	if (in.TidalVolumeChange().present())
 		GetTidalVolumeChange().Load(in.TidalVolumeChange().get());
-  if (in.TubularPermeabilityChange().present())
-    GetTubularPermeabilityChange().Load(in.TubularPermeabilityChange().get());
+	if (in.TubularPermeabilityChange().present())
+		GetTubularPermeabilityChange().Load(in.TubularPermeabilityChange().get());
+	if (in.CentralNervousResponse().present())
+		GetCentralNervousResponse().Load(in.CentralNervousResponse().get());
+
 
 	return true;
 }
@@ -107,8 +117,11 @@ const SEScalar* SEDrugSystem::GetScalar(const std::string& name)
 		return &GetSedationLevel();
 	if (name.compare("TidalVolumeChange") == 0)
 		return &GetTidalVolumeChange();
-  if (name.compare("TubularPermeabilityChange") == 0)
-    return &GetTubularPermeabilityChange();
+	if (name.compare("TubularPermeabilityChange") == 0)
+		return &GetTubularPermeabilityChange();
+	if (name.compare("CentralNervousResponse") == 0)
+		return &GetCentralNervousResponse();
+
 
   size_t split = name.find('-');
   if (split != name.npos)
@@ -143,16 +156,18 @@ void SEDrugSystem::Unload(CDM::DrugSystemData& data) const
 		data.NeuromuscularBlockLevel(std::unique_ptr<CDM::ScalarFractionData>(m_NeuromuscularBlockLevel->Unload()));
 	if (m_PulsePressureChange != nullptr)
 		data.PulsePressureChange(std::unique_ptr<CDM::ScalarPressureData>(m_PulsePressureChange->Unload()));
-  if (m_PupillaryResponse != nullptr)
-    data.PupillaryResponse(std::unique_ptr<CDM::PupillaryResponseData>(m_PupillaryResponse->Unload()));
-  if (m_RespirationRateChange != nullptr)
+	if (m_PupillaryResponse != nullptr)
+		data.PupillaryResponse(std::unique_ptr<CDM::PupillaryResponseData>(m_PupillaryResponse->Unload()));
+	if (m_RespirationRateChange != nullptr)
 		data.RespirationRateChange(std::unique_ptr<CDM::ScalarFrequencyData>(m_RespirationRateChange->Unload()));
 	if (m_SedationLevel != nullptr)
 		data.SedationLevel(std::unique_ptr<CDM::ScalarFractionData>(m_SedationLevel->Unload()));
 	if (m_TidalVolumeChange != nullptr)
 		data.TidalVolumeChange(std::unique_ptr<CDM::ScalarVolumeData>(m_TidalVolumeChange->Unload()));
-  if (m_TubularPermeabilityChange != nullptr)
-    data.TubularPermeabilityChange(std::unique_ptr<CDM::ScalarFractionData>(m_TubularPermeabilityChange->Unload()));
+	if (m_TubularPermeabilityChange != nullptr)
+		data.TubularPermeabilityChange(std::unique_ptr<CDM::ScalarFractionData>(m_TubularPermeabilityChange->Unload()));
+	if (m_CentralNervousResponse != nullptr)
+		data.CentralNervousResponse(std::unique_ptr<CDM::ScalarFractionData>(m_CentralNervousResponse->Unload()));
 }
 
 bool SEDrugSystem::HasBronchodilationLevel() const
@@ -327,3 +342,22 @@ double SEDrugSystem::GetTubularPermeabilityChange() const
     return SEScalar::dNaN();
   return m_TubularPermeabilityChange->GetValue();
 }
+
+bool SEDrugSystem::HasCentralNervousResponse() const
+{
+	return m_CentralNervousResponse == nullptr ? false : m_CentralNervousResponse->IsValid();
+}
+
+SEScalarFraction& SEDrugSystem::GetCentralNervousResponse()
+{
+	if (m_CentralNervousResponse == nullptr)
+		m_CentralNervousResponse = new SEScalarFraction();
+	return *m_CentralNervousResponse;
+}
+double SEDrugSystem::GetCentralNervousResponse() const
+{
+	if (m_CentralNervousResponse == nullptr)
+		return SEScalar::dNaN();
+	return m_CentralNervousResponse->GetValue();
+}
+

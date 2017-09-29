@@ -113,13 +113,38 @@ public:
   /////////////
   // Inhaler //
   void RespiratoryWithInhalerCircuitAndTransportTest(const std::string& sTestDirectory);
+  void RespiratoryWithMechanicalVentilatorCircuitAndTransportTest(const std::string& sTestDirectory);
 protected:
 
 public:
-  /////////////
-  // Inhaler //
-  void RespiratoryWithMechanicalVentilatorCircuitAndTransportTest(const std::string& sTestDirectory);
+  ////////
+  // GI //
+  enum MealType { CarbsOnly, ProteinOnly, FatOnly, Balanced, None };
+  void CustomNutrientKineticsTest(const std::string& sOutputDirectory);
+  void ProteinGluconeogenesisTest(const std::string& sOutputDirectory);
+  void StarvingKetogenesisTest(const std::string& sOutputDirectory);
+  void AnaerobicExerciseTest(const std::string& sOutputDirectory);
+  void HormoneStabilityTest(const std::string& sOutputDirectory);
+  void StorageTest(const std::string& sOutputDirectory);
+  void FullStoresFastingTest(const std::string& sOutputDirectory);
+  void LipogenesisTest(const std::string& sOutputDirectory);
+  void DigestionProtein(const std::string & sOutputDirectory);
+  void DigestionFat(const std::string & sOutputDirectory);
+  void DigestionMixed(const std::string & sOutputDirectory);
+  void DigestionCarbs(const std::string & sOutputDirectory);
+  void AbsorptionCarbs(const std::string & sOutputDirectory);
+  void AbsorptionProtein(const std::string & sOutputDirectory);
+  void AbsorptionFat(const std::string & sOutputDirectory);
+
 protected:
+  void NutrientKineticsTest(bool usingAbsorption, bool usingDynamicHormones, bool usingGlycogen, bool usingProteinStorage, bool usingFatStorage, bool fullStores, bool useDiffusion, bool useConsumption, bool usingLipogenesis, bool usingGluconeogenesis, bool isAnaerobic, double exerciseWork_W, const std::string& sOutputDirectory, double testDuration_hr, MealType mealType = None, std::string testName = "Custom");
+  void NutrientDiffusion(std::vector<SELiquidCompartment*>& vascularCompartments, std::vector<SELiquidCompartment*>& extracellularCompartments, BioGears& bg, std::vector<double>& tissueTotalMasses, double deltaT_s, DataTrack& trk, double time);
+  void ProduceAndConsume(double baseEnergyRequested_kcal, double exerciseEnergyRequested_kcal, bool isAnaerobic, BioGears& bg, double deltaT_s, double brainFlowFraction, double& muscleGlycogen_g, double& CO2Produced_mol, double& O2Consumed_mol, double& brainEnergyDeficit_kcal, double& muscleEnergyDeficit_kcal, double& lactateFromGlucose_g, DataTrack& trk);
+  void DigestionTest(const std::string& sOutputDirectory, MealType = None);
+  void AbsorptionTest(const std::string& sOutputDirectory, MealType = None);
+
+
+  
 
 public:
   ////////////////////////////

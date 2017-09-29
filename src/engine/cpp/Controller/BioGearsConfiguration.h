@@ -363,13 +363,13 @@ public:
   virtual SEScalarMassPerTime& GetCalciumDigestionRate();
   virtual double GetCalciumDigestionRate(const MassPerTimeUnit& unit) const;
 
-  virtual bool HasCalciumAbsorbtionFraction() const;
-  virtual SEScalarFraction& GetCalciumAbsorbtionFraction();
-  virtual double GetCalciumAbsorbtionFraction() const;
+  virtual bool HasCalciumAbsorptionFraction() const;
+  virtual SEScalarFraction& GetCalciumAbsorptionFraction();
+  virtual double GetCalciumAbsorptionFraction() const;
 
-  virtual bool HasCarbohydrateAbsorbtionFraction() const;
-  virtual SEScalarFraction& GetCarbohydrateAbsorbtionFraction();
-  virtual double GetCarbohydrateAbsorbtionFraction() const;
+  virtual bool HasCarbohydrateAbsorptionFraction() const;
+  virtual SEScalarFraction& GetCarbohydrateAbsorptionFraction();
+  virtual double GetCarbohydrateAbsorptionFraction() const;
 
   virtual bool HasDefaultCarbohydrateDigestionRate() const;
   virtual SEScalarMassPerTime& GetDefaultCarbohydrateDigestionRate();
@@ -387,9 +387,9 @@ public:
   virtual SENutrition& GetDefaultStomachContents();
   virtual const SENutrition* GetDefaultStomachContents() const;
 
-  virtual bool HasFatAbsorbtionFraction() const;
-  virtual SEScalarFraction& GetFatAbsorbtionFraction();
-  virtual double GetFatAbsorbtionFraction() const;
+  virtual bool HasFatAbsorptionFraction() const;
+  virtual SEScalarFraction& GetFatAbsorptionFraction();
+  virtual double GetFatAbsorptionFraction() const;
 
   virtual bool HasProteinToUreaFraction() const;
   virtual SEScalarFraction& GetProteinToUreaFraction();
@@ -402,13 +402,13 @@ public:
 protected:
 
 	SEScalarMassPerTime*      m_CalciumDigestionRate;
-	SEScalarFraction*         m_CalciumAbsorbtionFraction;
-	SEScalarFraction*         m_CarbohydrateAbsorbtionFraction;
+	SEScalarFraction*         m_CalciumAbsorptionFraction;
+	SEScalarFraction*         m_CarbohydrateAbsorptionFraction;
 	SEScalarMassPerTime*			m_DefaultCarbohydrateDigestionRate;
 	SEScalarMassPerTime*			m_DefaultFatDigestionRate;
 	SEScalarMassPerTime*			m_DefaultProteinDigestionRate;
 	SENutrition*			        m_DefaultStomachContents;
-	SEScalarFraction*         m_FatAbsorbtionFraction;
+	SEScalarFraction*         m_FatAbsorptionFraction;
 	SEScalarFraction*         m_ProteinToUreaFraction;
 	SEScalarVolumePerTime*		m_WaterDigestionRate;
 

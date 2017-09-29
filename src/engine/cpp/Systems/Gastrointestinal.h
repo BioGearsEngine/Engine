@@ -28,7 +28,7 @@ class BIOGEARS_API Gastrointestinal : public SEGastrointestinalSystem, public Bi
 protected:
 	Gastrointestinal(BioGears& bg);
 	BioGears& m_data;
-
+  
 public:
   virtual ~Gastrointestinal();
 
@@ -43,7 +43,7 @@ public:
 protected:
   virtual void Unload(CDM::BioGearsGastrointestinalSystemData& data) const;
 
-  // Set pointers and other member varialbes common to both homeostatic initialization and loading a state
+  // Set pointers and other member variables common to both homeostatic initialization and loading a state
   void SetUp();
 
 public:
@@ -56,21 +56,32 @@ protected:
 
 	void   GastricSecretion(double duration_s);
 	void   DefaultNutritionRates(SENutrition& n);
+  void   AbsorbNutrients();
 	void   DigestStomachNutrients(double duration_s);
   double DigestNutrient(SEUnitScalar& totalAmt, SEUnitScalar& rate, bool mass, double duration_s);
+  void DigestNutrient();
 	void   AbsorbMeal(double duration_s);
 	void   AbsorbNutrients(double duration_s);
 
+  void ChymeSecretion();
   // Serializable member variables (Set in Initialize and in schema)  
 
   // Stateless member variable (Set in SetUp())
 	SELiquidCompartment*         m_SmallIntestineChyme;
+  SELiquidCompartment*         m_vSmallIntestine;
+  SELiquidCompartment*         m_Lymph;
 	SELiquidSubstanceQuantity*   m_SmallIntestineChymeAlbumin;
+  SELiquidSubstanceQuantity*   m_SmallIntestineChymeAminoAcids;
 	SELiquidSubstanceQuantity*   m_SmallIntestineChymeGlucose;
-	SELiquidSubstanceQuantity*   m_SmallIntestineChymeTristearin;
+	SELiquidSubstanceQuantity*   m_SmallIntestineChymeTriacylglycerol;
 	SELiquidSubstanceQuantity*   m_SmallIntestineChymeCalcium;
 	SELiquidSubstanceQuantity*   m_SmallIntestineChymeSodium;
 	SELiquidSubstanceQuantity*   m_SmallIntestineChymeUrea;
+  SELiquidSubstanceQuantity*   m_SmallIntestineVascularSodium;
+  SELiquidSubstanceQuantity*   m_smallIntestineVascularGlucose;
+  SELiquidSubstanceQuantity*   m_smallIntestineVascularAminoAcids;
+  SELiquidSubstanceQuantity*   m_LymphTriacylglycerol;
+  SELiquidSubstanceQuantity*   m_smallintestineVAscularTriacylglycerol;
 
   SEFluidCircuitPath*          m_GItoCVPath;
   SEFluidCircuitPath*          m_GutT1ToGroundPath;
@@ -84,7 +95,7 @@ protected:
   //if the stomach runs out of a substance with a user provided rate, we invalidate the rate (true)
   //if the rate is a configuration rate, we don't want to invalidate it if we run out of the substance (false)
 	bool   m_DecrementNutrients; // True  Signals that we decrement stomach nutrients when we digest them
-  // We do not decriment stomach contents during stabilization
+  // We do not decrement stomach contents during stabilization
 	double m_secretionRate_mL_Per_s;
 	double m_dT_s;
 

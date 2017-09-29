@@ -14,6 +14,12 @@ specific language governing permissions and limitations under the License.
 #include "patient/actions/SEPatientAction.h"
 #include "bind/HemorrhageData.hxx"
 
+
+
+
+
+
+
 class DLL_DECL SEHemorrhage : public SEPatientAction
 {
 public:
@@ -37,14 +43,24 @@ public:
 	virtual void SetCompartment(const std::string& name);
 	virtual bool HasCompartment() const;
 	virtual void InvalidateCompartment();
+	virtual void ProcessMCIS();
+	
+	virtual bool HasMCIS() const;
+	virtual std::vector<unsigned int>& GetMCIS() { return m_MCIS; }
+	virtual void SetMCIS(const std::vector<unsigned int>& mcisIn);
 
-	virtual bool HasRate() const;
-	virtual SEScalarVolumePerTime& GetRate();	
+	virtual bool HasBleedName() const;
+	virtual std::string GetBleedName() const;
+	virtual void SetBleedName(const std::string& name);
 
+	
 	virtual void ToString(std::ostream &str) const;
 
 protected:
-  std::string             m_Compartment;
-	SEScalarVolumePerTime*  m_Rate;
-	
+	std::string             m_Compartment;
+	std::vector<unsigned int>		m_MCIS;
+	std::string				m_BleedName;
+	std::map<std::vector<int>, std::pair<std::string, std::string>> organMap;
+
+	enum region { Head = 1, Torso = 2, Arms = 3, Legs = 4 }; //mcis digit 2
 };    

@@ -34,6 +34,7 @@ import mil.tatrc.physiology.datamodel.scenario.datarequests.SEPhysiologyDataRequ
 import mil.tatrc.physiology.datamodel.utilities.SEEventHandler;
 import mil.tatrc.physiology.utilities.Log;
 import mil.tatrc.physiology.utilities.LogListener;
+import mil.tatrc.physiology.datamodel.bind.IntegerArray;
 
 /**
  * How to use the Java interface to BioGears
@@ -228,8 +229,14 @@ public class HowTo_EngineUse
    
    // Let's do something to the patient, you can either send actions over one at a time, or pass in a List<SEAction>
    SEHemorrhage h = new SEHemorrhage();
-   h.setCompartment(BioGearsCompartments.Vascular.RightLeg);
-   h.getRate().setValue(500,VolumePerTimeUnit.mL_Per_min);
+   IntegerArray mcisIn = h.getMCIS();
+   //The injury code is stored in a 5 digit Integer Array (which contains an IntegerList)
+   //Access IntegerList and add code for severe bleeding from abdominal artery--42650)
+   mcisIn.getIntegerList().add(4);
+   mcisIn.getIntegerList().add(2);
+   mcisIn.getIntegerList().add(6);
+   mcisIn.getIntegerList().add(5);
+   mcisIn.getIntegerList().add(0);
    bge.processAction(h);
    // Note CDM is not updated after this call, you have to advance some time
 

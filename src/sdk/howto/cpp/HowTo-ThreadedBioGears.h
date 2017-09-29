@@ -30,7 +30,7 @@ public:
   BioGearsThread(const std::string& logfile);
   virtual ~BioGearsThread();
 
-  void SetHemorrhageFlow_mL_Per_min(double rate);
+  void SetHemorrhage(const std::vector<unsigned int>& mcisIn);
   void SetIVFluidsFlow_mL_Per_min(double rate);
 
   void Status();

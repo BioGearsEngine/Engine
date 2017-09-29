@@ -49,7 +49,7 @@ public:
 protected:
   void Unload(CDM::BioGearsBloodChemistrySystemData& data) const;
 
-  // Set pointers and other member varialbes common to both homeostatic initialization and loading a state
+  // Set pointers and other member variables common to both homeostatic initialization and loading a state
   void SetUp();
 
 public:
@@ -62,7 +62,7 @@ public:
 	bool CalculateComprehensiveMetabolicPanel(SEComprehensiveMetabolicPanel& cmp);
 
 protected:
-  void CheckBloodGasLevels();
+  void CheckBloodSubstanceLevels();
 	
   // Serializable member variables (Set in Initialize and in schema)
   RunningAverage m_ArterialOxygen_mmHg;
@@ -85,18 +85,20 @@ protected:
 	SELiquidCompartment*       m_venaCava;
 	SELiquidSubstanceQuantity* m_venaCavaO2;
 	SELiquidSubstanceQuantity* m_venaCavaCO2;
-	SELiquidSubstanceQuantity* m_venaCavaAcetoacetate;
 	SELiquidSubstanceQuantity* m_venaCavaAlbumin;
+  SELiquidSubstanceQuantity* m_venaCavaAminoAcids;
 	SELiquidSubstanceQuantity* m_venaCavaBicarbonate;
 	SELiquidSubstanceQuantity* m_venaCavaCalcium;
 	SELiquidSubstanceQuantity* m_venaCavaChloride;
 	SELiquidSubstanceQuantity* m_venaCavaCreatinine;
   SELiquidSubstanceQuantity* m_venaCavaEpinephrine;
+  SELiquidSubstanceQuantity* m_venaCavaGlucagon;
 	SELiquidSubstanceQuantity* m_venaCavaGlucose;
 	SELiquidSubstanceQuantity* m_venaCavaInsulin;
+  SELiquidSubstanceQuantity* m_venaCavaKetones;
 	SELiquidSubstanceQuantity* m_venaCavaLactate;
 	SELiquidSubstanceQuantity* m_venaCavaPotassium;
 	SELiquidSubstanceQuantity* m_venaCavaSodium;
-	SELiquidSubstanceQuantity* m_venaCavaTristearin;
+	SELiquidSubstanceQuantity* m_venaCavaTriacylglycerol;
 	SELiquidSubstanceQuantity* m_venaCavaUrea;  
 };

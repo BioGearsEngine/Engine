@@ -90,6 +90,10 @@ public:
 	virtual SEScalarMassPerVolume& GetPlasmaConcentration();
   virtual double GetPlasmaConcentration(const MassPerVolumeUnit& unit) const;
 
+  virtual bool HasEffectSiteConcentration() const;
+  virtual SEScalarMassPerVolume& GetEffectSiteConcentration();
+  virtual double GetEffectSiteConcentration(const MassPerVolumeUnit& unit) const;
+
 	virtual bool HasSystemicMassCleared() const;
 	virtual SEScalarMass& GetSystemicMassCleared();
   virtual double GetSystemicMassCleared(const MassUnit& unit) const;
@@ -155,6 +159,7 @@ protected:
 	SEScalarMass*				              m_MassInBlood;
 	SEScalarMass*				              m_MassInTissue;
 	SEScalarMassPerVolume*   	        m_PlasmaConcentration;
+	SEScalarMassPerVolume*				m_EffectSiteConcentration;
 	SEScalarMass*				              m_SystemicMassCleared;
   SEScalarMassPerVolume*   	        m_TissueConcentration;
 

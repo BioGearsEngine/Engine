@@ -60,25 +60,27 @@ public:
 	inline SESubstance&	GetHb()      { return *m_Hb; }
 	inline SESubstance&	GetHbO2()    { return *m_HbO2; }
 	inline SESubstance&	GetHbCO2()   { return *m_HbCO2; }
-  inline SESubstance&	GetHbCO() { return *m_HbCO; }
+  inline SESubstance&	GetHbCO()    { return *m_HbCO; }
 	inline SESubstance&	GetHbO2CO2() { return *m_HbO2CO2; }
 	inline SESubstance&	GetHCO3()    { return *m_HCO3; }
 	inline SESubstance&	GetEpi()     { return *m_epi; }
 
-	inline SESubstance&	GetAcetoacetate(){ return *m_acetoacetate; }
-	inline SESubstance&	GetAlbumin()     { return *m_albumin; }
-	inline SESubstance&	GetBicarbonate() { return *m_HCO3; }
-	inline SESubstance&	GetCalcium()     { return *m_calcium; }
-	inline SESubstance&	GetChloride()    { return *m_chloride; }
-	inline SESubstance&	GetCreatinine()  { return *m_creatinine; }
-  inline SESubstance&	GetGlobulin()    { return *m_globulin; }
-	inline SESubstance&	GetGlucose()     { return *m_glucose; }
-	inline SESubstance&	GetInsulin()     { return *m_insulin; }
-	inline SESubstance&	GetLactate()     { return *m_lactate; }
-	inline SESubstance&	GetPotassium()   { return *m_potassium; }
-	inline SESubstance&	GetTristearin()  { return *m_tristearin; }
-	inline SESubstance&	GetSodium()      { return *m_sodium; }
-	inline SESubstance&	GetUrea()        { return *m_urea; }
+	inline SESubstance&	GetAlbumin()          { return *m_albumin; }
+  inline SESubstance&	GetAminoAcids()       { return *m_aminoAcids; }
+	inline SESubstance&	GetBicarbonate()      { return *m_HCO3; }
+	inline SESubstance&	GetCalcium()          { return *m_calcium; }
+	inline SESubstance&	GetChloride()         { return *m_chloride; }
+	inline SESubstance&	GetCreatinine()       { return *m_creatinine; }
+  inline SESubstance&	GetGlobulin()         { return *m_globulin; }
+  inline SESubstance&	GetGlucagon()         { return *m_glucagon; }
+	inline SESubstance&	GetGlucose()          { return *m_glucose; }
+	inline SESubstance&	GetInsulin()          { return *m_insulin; }
+  inline SESubstance&	GetKetones()          { return *m_ketones; }
+	inline SESubstance&	GetLactate()          { return *m_lactate; }
+	inline SESubstance&	GetPotassium()        { return *m_potassium; }
+	inline SESubstance&	GetTriacylglycerol()  { return *m_triacylglycerol; }
+	inline SESubstance&	GetSodium()           { return *m_sodium; }
+	inline SESubstance&	GetUrea()             { return *m_urea; }
 
   void CalculateGenericClearance(double volumeCleared_mL, SELiquidCompartment& cmpt, SESubstance& sub, SEScalarMass* cleared = nullptr);
   void CalculateGenericClearance(double volumeCleared_mL, SETissueCompartment& cmpt, SESubstance& sub, SEScalarMass* cleared = nullptr);
@@ -104,6 +106,7 @@ protected:
   void   SetSubstanceMolarity(SESubstance&, const std::vector<SELiquidCompartment*>&, const SEScalarAmountPerVolume& molarity);  
   void   SetSubstanceMolarity(SESubstance&, const std::vector<SETissueCompartment*>&, const SEScalarAmountPerVolume& molarity);
   void   SetSubstanceMolarity(SESubstance&, const std::vector<SETissueCompartment*>&, const SEScalarAmountPerVolume& extracellular, const SEScalarAmountPerVolume& intracellular);
+  void   SetSubstanceMolarity(SESubstance&, const SEScalarAmountPerVolume& extracellular, const SEScalarAmountPerVolume& intracellular);
   
   void   SetSubstanceConcentration(SESubstance&, const std::vector<SELiquidCompartment*>&, const SEScalarMassPerVolume& concentration);
   void   SetSubstanceConcentration(SESubstance&, const std::vector<SETissueCompartment*>&, const SEScalarMassPerVolume& concentration);
@@ -123,16 +126,19 @@ protected:
 	SESubstance*  m_HCO3;
 	SESubstance*	m_epi;
 
-	SESubstance*  m_acetoacetate;
+	
 	SESubstance*  m_albumin;
+  SESubstance*  m_aminoAcids;
 	SESubstance*  m_calcium;
 	SESubstance*	m_chloride;
 	SESubstance*  m_creatinine;
   SESubstance*  m_globulin;
+  SESubstance*  m_glucagon;
 	SESubstance*  m_glucose;
-	SESubstance*  m_insulin; 
+	SESubstance*  m_insulin;
+  SESubstance*  m_ketones;
 	SESubstance*  m_lactate;
-	SESubstance*  m_tristearin;
+	SESubstance*  m_triacylglycerol;
 	SESubstance*  m_potassium;
 	SESubstance*  m_sodium;
 	SESubstance*  m_urea;

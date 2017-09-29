@@ -29,6 +29,7 @@ specific language governing permissions and limitations under the License.
 #include "compartment/tissue/SETissueCompartment.h"
 #include "compartment/substances/SEGasSubstanceQuantity.h"
 #include "compartment/substances/SELiquidSubstanceQuantity.h"
+#include "properties/SEScalar0To1.h"
 #include "properties/SEScalarArea.h"
 #include "properties/SEScalarAreaPerTimePressure.h"
 #include "properties/SEScalarFraction.h"
@@ -58,6 +59,9 @@ specific language governing permissions and limitations under the License.
 #define GAS_ONLY_PRODCOM
 #define ZERO_APPROX 1e-10
 
+double Tissue::m_hepaticCO2Produced_mol;
+double Tissue::m_hepaticO2Consumed_mol;
+
 Tissue::Tissue(BioGears& bg) : SETissueSystem(bg.GetLogger()), m_data(bg)
 {
   Clear();
@@ -73,18 +77,17 @@ void Tissue::Clear()
   SETissueSystem::Clear();
   m_Albumin = nullptr;
   m_Glucose = nullptr;
-  m_Tristearin = nullptr;
+  m_Triacylglycerol = nullptr;
   m_O2 = nullptr;
   m_CO2 = nullptr;
   m_CO = nullptr;
   m_Lactate = nullptr;
-  m_Acetoacetate = nullptr;
+  m_Ketones = nullptr;
   m_Creatinine = nullptr;
   m_Sodium = nullptr;
   m_Calcium = nullptr;
   m_Insulin = nullptr;
 
-  m_LiverTissueAlbumin = nullptr;
   m_LeftLungTissue = nullptr;
   m_RightLungTissue = nullptr;
   m_MuscleTissue = nullptr;
@@ -131,7 +134,7 @@ void Tissue::Initialize()
 		m_RestingFluidMass_kg += extracellular.GetVolume(VolumeUnit::mL)*m_data.GetConfiguration().GetWaterDensity(MassPerVolumeUnit::kg_Per_mL);
 	}
 	m_RestingBloodGlucose_g_Per_L = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::VenaCava)->GetSubstanceQuantity(*m_Glucose)->GetConcentration(MassPerVolumeUnit::g_Per_L);
-	m_RestingBloodLipid_g_Per_L = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::VenaCava)->GetSubstanceQuantity(*m_Tristearin)->GetConcentration(MassPerVolumeUnit::g_Per_L);
+	m_RestingBloodLipid_g_Per_L = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::VenaCava)->GetSubstanceQuantity(*m_Triacylglycerol)->GetConcentration(MassPerVolumeUnit::g_Per_L);
 	m_RestingBloodInsulin_g_Per_L = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::VenaCava)->GetSubstanceQuantity(*m_Insulin)->GetConcentration(MassPerVolumeUnit::g_Per_L);
 	m_RestingPatientMass_kg = m_data.GetPatient().GetWeight(MassUnit::kg);
   GetIntracellularFluidPH().SetValue(7.0);
@@ -140,6 +143,20 @@ void Tissue::Initialize()
 	GetOxygenConsumptionRate().SetValue(250.0, VolumePerTimeUnit::mL_Per_min);
 	GetCarbonDioxideProductionRate().SetValue(200.0, VolumePerTimeUnit::mL_Per_min);
 	GetRespiratoryExchangeRatio().SetValue(0.8);
+
+  //Set baseline insulin and glucagon values after stabilization
+  GetLiverInsulinSetPoint().Set(m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Liver)->GetSubstanceQuantity(*m_Insulin)->GetMolarity());
+  GetLiverGlucagonSetPoint().Set(m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Liver)->GetSubstanceQuantity(*m_Glucagon)->GetConcentration());
+  GetMuscleInsulinSetPoint().Set(m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Muscle)->GetSubstanceQuantity(*m_Insulin)->GetMolarity());
+  GetMuscleGlucagonSetPoint().Set(m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Muscle)->GetSubstanceQuantity(*m_Glucagon)->GetConcentration());
+  GetFatInsulinSetPoint().Set(m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Fat)->GetSubstanceQuantity(*m_Insulin)->GetMolarity());
+  GetFatGlucagonSetPoint().Set(m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Fat)->GetSubstanceQuantity(*m_Glucagon)->GetConcentration());
+
+  //Set nutrient stores (also reset in AtSteadyState)
+  GetLiverGlycogen().SetValue(.065 * m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Liver)->GetTotalMass(MassUnit::g), MassUnit::g);//TODO figure out what to initialize glycogen to; do we want it full or empty to start, or in between? For now, it's 6.5% of liver mass
+  GetMuscleGlycogen().SetValue(.02 * m_data.GetPatient().GetWeight(MassUnit::g) * .35, MassUnit::g);  //2% of muscle mass
+  GetStoredProtein().SetValue(110, MassUnit::g); //"Reusable" protein stores are usually about 1% of total body protein, ~110 g (https://www.nap.edu/read/10490/chapter/12#595)
+  GetStoredFat().SetValue(m_data.GetPatient().GetWeight(MassUnit::g) * m_data.GetPatient().GetBodyFatFraction().GetValue(), MassUnit::g);
 }
 
 bool Tissue::Load(const CDM::BioGearsTissueSystemData& in)
@@ -173,6 +190,17 @@ void Tissue::Unload(CDM::BioGearsTissueSystemData& data) const
   data.RestingBloodInsulin_g_Per_L(m_RestingBloodInsulin_g_Per_L);
   data.RestingPatientMass_kg(m_RestingPatientMass_kg);
   data.RestingFluidMass_kg(m_RestingFluidMass_kg);
+
+  //data.LiverInsulinSetPoint_pmol_Per_L(m_LiverInsulinSetPoint_pmol_Per_L);
+  //data.LiverGlucagonSetPoint_pg_Per_mL(m_LiverGlucagonSetPoint_pg_Per_mL);
+  //data.MuscleInsulinSetPoint_pmol_Per_L(m_MuscleInsulinSetPoint_pmol_Per_L);
+  //data.MuscleGlucagonSetPoint_pg_Per_mL(m_MuscleGlucagonSetPoint_pg_Per_mL);
+  //data.FatInsulinSetPoint_pmol_Per_L(m_FatInsulinSetPoint_pmol_Per_L);
+  //data.FatGlucagonSetPoint_pg_Per_mL(m_FatGlucagonSetPoint_pg_Per_mL);
+  //data.LiverGlycogen_g(m_LiverGlycogen_g);
+  //data.MuscleGlycogen_g(m_MuscleGlycogen_g);
+  //data.StoredProtein_g(m_StoredProtein_g);
+  //data.StoredFat_g(m_StoredFat_g);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -186,23 +214,39 @@ void Tissue::SetUp()
 {
 	m_Dt_s = m_data.GetTimeStep().GetValue(TimeUnit::s);
 
+  //"Reusable" protein stores are usually about 1% of total body protein, ~110 g (https://www.nap.edu/read/10490/chapter/12#595)
+  m_maxProteinStorage_g = 110;
+
+  Tissue::m_hepaticO2Consumed_mol = 0;  //Hepatic system will send O2/CO2 changes from lipogenesis/gluconeogenesis to Tissue to factor into O2 consumption/CO2 production outputs
+  Tissue::m_hepaticCO2Produced_mol = 0;
+
 	m_PatientActions = &m_data.GetActions().GetPatientActions();
+  m_Patient = &m_data.GetPatient();
+  m_energy = &m_data.GetEnergy();
 
-	m_AlbuminProdutionRate_g_Per_s = 1.5e-4; /// \cite jarnum1972plasma
 	m_Albumin = &m_data.GetSubstances().GetAlbumin();
-	m_LiverTissueAlbumin = m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::LiverExtracellular)->GetSubstanceQuantity(*m_Albumin);
-	m_Glucose = &m_data.GetSubstances().GetGlucose();
-
-	m_Tristearin = &m_data.GetSubstances().GetTristearin();
-	m_O2 = &m_data.GetSubstances().GetO2();
-	m_CO2 = &m_data.GetSubstances().GetCO2();
+  m_AminoAcids = &m_data.GetSubstances().GetAminoAcids();
+  m_Glucose = &m_data.GetSubstances().GetGlucose();
+  m_Glucagon = &m_data.GetSubstances().GetGlucagon();
+  m_Triacylglycerol = &m_data.GetSubstances().GetTriacylglycerol();
+  m_O2 = &m_data.GetSubstances().GetO2();
+  m_CO2 = &m_data.GetSubstances().GetCO2();
   m_CO = &m_data.GetSubstances().GetCO();
-	m_Lactate = &m_data.GetSubstances().GetLactate();
-	m_Acetoacetate = &m_data.GetSubstances().GetAcetoacetate();
-	m_Creatinine = &m_data.GetSubstances().GetCreatinine();
-	m_Sodium = &m_data.GetSubstances().GetSodium();
-	m_Calcium = &m_data.GetSubstances().GetCalcium();
-	m_Insulin = &m_data.GetSubstances().GetInsulin();
+  m_Lactate = &m_data.GetSubstances().GetLactate();
+  m_Ketones = &m_data.GetSubstances().GetKetones();
+  m_Creatinine = &m_data.GetSubstances().GetCreatinine();
+  m_Sodium = &m_data.GetSubstances().GetSodium();
+  m_Calcium = &m_data.GetSubstances().GetCalcium();
+  m_Insulin = &m_data.GetSubstances().GetInsulin();
+  m_Urea = &m_data.GetSubstances().GetUrea();
+
+  m_MuscleInsulin = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Muscle)->GetSubstanceQuantity(*m_Insulin);
+  m_MuscleGlucagon = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Muscle)->GetSubstanceQuantity(*m_Glucagon);
+  m_MuscleAA = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Muscle)->GetSubstanceQuantity(*m_AminoAcids);
+  m_FatInsulin = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Fat)->GetSubstanceQuantity(*m_Insulin);
+  m_FatGlucagon = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Fat)->GetSubstanceQuantity(*m_Glucagon);
+  m_FatTAG = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Fat)->GetSubstanceQuantity(*m_Triacylglycerol);
+  
 
 	m_GutT1 = m_data.GetCircuits().GetActiveCardiovascularCircuit().GetNode(BGE::TissueNode::GutT1);
 	m_GutT1ToGutT3 = m_data.GetCircuits().GetActiveCardiovascularCircuit().GetPath(BGE::TissuePath::GutT1ToGutT3);
@@ -210,7 +254,7 @@ void Tissue::SetUp()
 	m_MuscleVascular = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Muscle);
 	m_FatVascular = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Fat);
 
-	m_FatVascularLipid = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Fat)->GetSubstanceQuantity(*m_Tristearin);
+	m_FatVascularLipid = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Fat)->GetSubstanceQuantity(*m_Triacylglycerol);
 	m_LiverVascularGlucose = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Liver)->GetSubstanceQuantity(*m_Glucose);
 	m_MuscleVascularGlucose = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Muscle)->GetSubstanceQuantity(*m_Glucose);
 
@@ -220,8 +264,10 @@ void Tissue::SetUp()
 	m_LiverTissue = m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Liver);
 	m_FatTissue = m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Fat);
 	m_MuscleTissue = m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Muscle);
+  m_BrainTissue = m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Brain);
 
   m_LiverIntracellular = m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::LiverIntracellular);
+  m_LiverExtracellular = m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::LiverExtracellular);
   m_FatIntracellular = m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::FatIntracellular);
   m_MuscleIntracellular = m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::MuscleIntracellular);
 
@@ -268,9 +314,9 @@ void Tissue::SetUp()
 			Warning("Tissue found a tissue compartment that is not mapped to a vascular compartment  : " + tissue->GetName());
 
 		if (m_LeftLungTissue != tissue && m_RightLungTissue != tissue)
-		{// We don't use the lungs in the consuption/production methodology
+		{// We don't use the lungs in the consumption/production methodology
 			if (!Contains(m_ConsumptionProdutionTissues, (*tissue)))
-				Warning("Tissue found a tissue compartment that it is not using in Consumption/Prodution : " + tissue->GetName());
+				Warning("Tissue found a tissue compartment that it is not using in Consumption/Production : " + tissue->GetName());
 		}
 	}
 }
@@ -290,7 +336,7 @@ void Tissue::AtSteadyState()
 			double systemicVolumeCleared = m_Albumin->GetClearance().GetSystemicClearance(VolumePerTimeMassUnit::mL_Per_s_kg)*patientWeight_kg*elapsedTime_s - renalVolumeCleared;
 			SEScalarVolume integratedVolume;
 			integratedVolume.SetValue(systemicVolumeCleared, VolumeUnit::mL);
-			mass.SetValue(m_AlbuminProdutionRate_g_Per_s*elapsedTime_s, MassUnit::g);
+			//mass.SetValue(m_AlbuminProdutionRate_g_Per_s*elapsedTime_s, MassUnit::g);
 			// Distribute the mass over the body via a total volume weighting
 #ifdef logMeal
 			std::stringstream m_ss;
@@ -312,6 +358,25 @@ void Tissue::AtSteadyState()
 #endif
 		}
 	}
+
+  if (m_data.GetState() == EngineState::AtSecondaryStableState)
+  {
+    //refill nutrient stores that were depleted during stabilization
+    GetLiverGlycogen().SetValue(.065 * m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Liver)->GetTotalMass(MassUnit::g), MassUnit::g);
+    GetMuscleGlycogen().SetValue(.02 * m_data.GetPatient().GetWeight(MassUnit::g) * .35, MassUnit::g);
+    GetStoredProtein().SetValue(110, MassUnit::g);
+    GetStoredFat().SetValue(m_data.GetPatient().GetWeight(MassUnit::g) * m_data.GetPatient().GetBodyFatFraction().GetValue(), MassUnit::g);
+    Info("Nutrient stores refilled after stabilization");
+
+    //TEMPORARILY set to starved state
+    /*
+    GetLiverGlycogen().SetValue(50, MassUnit::g);
+    GetMuscleGlycogen().SetValue(200, MassUnit::g);
+    GetStoredProtein().SetValue(50, MassUnit::g);
+    GetStoredFat().SetValue(m_data.GetPatient().GetWeight(MassUnit::g) * m_data.GetPatient().GetBodyFatFraction().GetValue(), MassUnit::g);
+    Info("Nutrient stores set to altered values for TESTING");
+    */
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -323,9 +388,7 @@ void Tissue::AtSteadyState()
 //--------------------------------------------------------------------------------------------------
 void Tissue::PreProcess()
 {
-	ProduceAlbumin(m_Dt_s);
-  // Glucose and lipid control is currently deactivated for model improvements.
-	// GlucoseLipidControl(m_Dt_s);  
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -338,25 +401,12 @@ void Tissue::PreProcess()
 //--------------------------------------------------------------------------------------------------
 void Tissue::Process()
 {
+  ProteinStorageAndRelease();
+  FatStorageAndRelease();
   CalculateMetabolicConsumptionAndProduction(m_Dt_s);
 	CalculatePulmonaryCapillarySubstanceTransfer();
 	CalculateDiffusion();
-  SEScalarMassPerVolume albuminConcentration;
-  albuminConcentration.SetValue(45.0, MassPerVolumeUnit::g_Per_L);
-  // Currently, substances are not where they need to be, we will hard code this for now until we fix them
-  /// \todo Remove SetBodyState hardcode and replace with computed values after substance redux is complete
-  m_data.GetSaturationCalculator().SetBodyState(albuminConcentration,
-                                                m_data.GetBloodChemistry().GetHematocrit(),
-                                                m_data.GetEnergy().GetCoreTemperature(),
-                                                m_data.GetBloodChemistry().GetStrongIonDifference(),
-                                                m_data.GetBloodChemistry().GetPhosphate());
-	for (SELiquidCompartment* cmpt : m_data.GetCompartments().GetVascularLeafCompartments())
-	{
-    if (cmpt->HasVolume())
-    {
-      m_data.GetSaturationCalculator().CalculateBloodGasDistribution(*cmpt);
-    }
-	}
+  ManageSubstancesAndSaturation();
 	CalculateVitals();
 }
 
@@ -389,13 +439,6 @@ void Tissue::CalculateDiffusion()
 	SELiquidCompartment* vascular;
 	const SESubstanceTissuePharmacokinetics* tissueKinetics;
 
-#ifdef PROBE_BLOOD_GASES
-	double totalO2movedVtoE_ug = 0;
-	double totalO2movedEtoI_ug = 0;
-	double totalCO2movedVtoE_ug = 0;
-	double totalCO2movedEtoI_ug = 0;
-#endif
-
 	for (auto tissueVascular : m_TissueToVascular)
 	{
 		tissue = tissueVascular.first;
@@ -411,125 +454,124 @@ void Tissue::CalculateDiffusion()
       // If the substance is a PBPK drug, then diffusion is computed by perfusion limited diffusion, as described in \cite huisinga2012modeling
 			if (tissueKinetics != nullptr)
 			{
-				if (!tissueKinetics->HasPartitionCoefficient())
-					continue;// wtf...? why would it not have it?
+        if (!tissueKinetics->HasPartitionCoefficient())
+        {
+          Error("Attempted to diffuse a substance with PK that had no partition coefficient available.");
+          continue;
+        }
 				PerfusionLimitedDiffusion(*tissue, *vascular, *sub, tissueKinetics->GetPartitionCoefficient(), m_Dt_s); //Balance happens in the method			
 			}
       // Otherwise, the diffusion is computed by either:
-      // Instantaneous diffusion (gases and very small molecules), Simple diffusion (all substances), Facilitated diffusion (glucose), or Active diffusion (pumps)
+      // Instantaneous diffusion, Simple diffusion, Facilitated diffusion, or Active diffusion
 			else
 			{
+
+        double moved_ug;  //used only for possible debugging output
+
 				// Skip the lungs because they have their own methodology with AlveolarPartialPressureGradientDiffusion
         // This is not true. AlveolarPartialPressureGradientDiffusion goes from a gas compartment to a vascular cmpt. Still need to move stuff into the extravascular space. TODO
-				if (tissue == m_LeftLungTissue || tissue == m_RightLungTissue)
-					continue;
+        //Turned off in diffusion revamp; uncomment if things screw up
+				//if (tissue == m_LeftLungTissue || tissue == m_RightLungTissue)
+					//continue;
 
-        // Currently, only drugs and gases transport across the capillary
-        /// \todo Enable non-advective transport for all substances
-        if (sub->GetState() != CDM::enumSubstanceState::Gas)
-        {
-          // Sodium is special. We need to diffuse for renal function.
-          // We will not treat sodium any differently once diffusion functionality is fully implemented.
-          if (sub == m_Sodium)
-            double moved_ug = MoveMassByInstantDiffusion(*vascular, extracellular, *sub, m_Dt_s);
-
+        //We have to make an exception for the brain and TAGs, since TAG can't cross blood-brain barrier
+        if (sub->GetName() == "Triacylglycerol" && extracellular.GetName().find("Brain") != std::string::npos)
           continue;
-        }
 
-        double moved_ug;
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /////////////////// Vascular to Extravascular-Extracellular /////////////////////////////////////////////
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        // --- First, instant diffusion ---
-        moved_ug = MoveMassByInstantDiffusion(*vascular, extracellular, *sub, m_Dt_s);
-
-        // --- Second, simple diffusion ---
-          // Compute the vascular to extracellular permeability coefficient
-          // This is the coefficient per gram of tissue independent of the tissue type.
-          // This uses the Renkin and Curry data for capillary exchange as reported in \cite fournier2011basic
-          // Divide by 100 is because the Renkin-Curry equations are in per hectogram units, and 100 g/hg
-          /// \todo I believe we can optimize with a cache of these values. Also, we can cache permeabilityCoefficient_mL_Per_s_g which is not a function of the tissue properties
-        double molarMass_g_Per_mol = sub->GetMolarMass(MassPerAmountUnit::g_Per_mol);
-        double molecularRadius_nm = 0.0348*pow(molarMass_g_Per_mol, 0.4175);
-        double vToECpermeabilityCoefficient_mL_Per_s_g = 0.0287*pow(molecularRadius_nm, -2.920) / 100.0; // This is only valid if the molecular radius is > 1.0 nm.
-        if (molecularRadius_nm < 1.0)
-          vToECpermeabilityCoefficient_mL_Per_s_g = 0.0184*pow(molecularRadius_nm, -1.223) / 100.0;
-
-          // Multiply by tissue mass to get the tissue-dependent coefficient. 
-        double vToECpermeabilityCoefficient_mL_Per_s = vToECpermeabilityCoefficient_mL_Per_s_g * tissue->GetTotalMass(MassUnit::g);
-          // A tuning factor helps tune the dynamics - note that concentrations will ALWAYS equilibrate in steady state given enough time regardless of the permeability
-        double vToECPermeabilityTuningFactor = 1.0; 
-        moved_ug = MoveMassBySimpleDiffusion(*vascular, extracellular, *sub, vToECPermeabilityTuningFactor*vToECpermeabilityCoefficient_mL_Per_s, m_Dt_s);
-
-        // --- Third facilitated diffusion ---
-        if (sub->HasMaximumDiffusionFlux())
+        //Gases get moved by instant diffusion
+        if (sub->GetState() == CDM::enumSubstanceState::Gas)
         {
-          double massToAreaCoefficient_cm2_Per_g = 1.0; /// \todo Define relationship between tissue mass and membrane area.
-          double capCoverage_cm2 = massToAreaCoefficient_cm2_Per_g * tissue->GetTotalMass(MassUnit::g);
-          double maximumMassFlux = sub->GetMaximumDiffusionFlux(MassPerAreaTimeUnit::g_Per_cm2_s);
-          double combinedCoefficient_g_Per_s = maximumMassFlux*capCoverage_cm2;
-          moved_ug = MoveMassByFacilitatedDiffusion(*vascular, extracellular, *sub, combinedCoefficient_g_Per_s, m_Dt_s);
+          //Vascular to Extracellular
+          moved_ug = MoveMassByInstantDiffusion(*vascular, extracellular, *sub, m_Dt_s);
+
+          //Extracellular to Intracellular
+          moved_ug = MoveMassByInstantDiffusion(extracellular, intracellular, *sub, m_Dt_s);
+        }
+        //Sodium is currently an oddball handled by instant diffusion, but we may want to change to simple and/or active when we do other ions
+        else if (sub == m_Sodium)
+        {
+          //Vascular to Extracellular
+          moved_ug = MoveMassByInstantDiffusion(*vascular, extracellular, *sub, m_Dt_s);
+
+          //Extracellular to Intracellular
+          //Until we get active pumps working this will need to be off or else you'll get a huge initial movement of sodium
+          //moved_ug = MoveMassByInstantDiffusion(extracellular, intracellular, *sub, m_Dt_s);
+        }
+        //All non-gas substances (besides sodium) use either simple, facilitated, or active diffusion
+        //Bicarbonate doesn't diffuse because it is charged \todo gate diffusion by charge and handle amino acids and lactate specially using facilitated diffusion
+        else if (sub->GetName() != "Bicarbonate")
+        {
+          double molarMass_g_Per_mol = sub->GetMolarMass(MassPerAmountUnit::g_Per_mol);
+
+          //Simple diffusion calculates a permeability based on molecular weight. Even large molecules will diffuse, though slowly.
+          //We want to prevent movement of large molecules like proteins completely. A gate of 1000 g/mol will filter out things like 
+          //albumin, insulin, etc while allowing glucose, ions, and others to be governed by their molecular weight.
+          //Note: it doesn't consider lipophilicity, so TAG will need to be artificially tweaked using other diffusion methods.
+          if (molarMass_g_Per_mol < 1000)
+          {
+            // Compute the vascular to extracellular permeability coefficient
+            // This is the coefficient per gram of tissue independent of the tissue type.
+            // This uses the Renkin and Curry data for capillary exchange as reported in \cite fournier2011basic
+            // Divide by 100 is because the Renkin-Curry equations are in per hectogram units, and 100 g/hg
+            /// \todo I believe we can optimize with a cache of these values. Also, we can cache permeabilityCoefficient_mL_Per_s_g which is not a function of the tissue properties
+            double molecularRadius_nm = 0.0348*pow(molarMass_g_Per_mol, 0.4175);
+            double vToECpermeabilityCoefficient_mL_Per_s_g = 0.0287*pow(molecularRadius_nm, -2.920) / 100.0; // This is only valid if the molecular radius is > 1.0 nm.
+            if (molecularRadius_nm < 1.0)
+              vToECpermeabilityCoefficient_mL_Per_s_g = 0.0184*pow(molecularRadius_nm, -1.223) / 100.0;
+
+            // Multiply by tissue mass to get the tissue-dependent coefficient. 
+            double vToECpermeabilityCoefficient_mL_Per_s = vToECpermeabilityCoefficient_mL_Per_s_g * tissue->GetTotalMass(MassUnit::g);
+
+            // Tuning factors can be used to help tune the dynamics - note that concentrations will ALWAYS equilibrate in steady state given enough time regardless of the permeability
+            double vToECPermeabilityTuningFactor = 1.0;
+            double ECtoICPermeabilityTuningFactor = 1.0;
+
+            //Vascular to Extracellular
+            moved_ug = MoveMassBySimpleDiffusion(*vascular, extracellular, *sub, vToECPermeabilityTuningFactor*vToECpermeabilityCoefficient_mL_Per_s, m_Dt_s);
+
+            //Extracellular to Intracellular
+            // Assuming that the capillary permeability coefficient is proportional to the cellular membrane permeability coefficient for a given tissue and substance
+            moved_ug = MoveMassBySimpleDiffusion(extracellular, intracellular, *sub, ECtoICPermeabilityTuningFactor*vToECpermeabilityCoefficient_mL_Per_s, m_Dt_s);
+          }
+
+          //Facilitated diffusion depends on the substance having flux values
+          //Currently, glucose is the only substance with "real" flux values (but even they are chosen to give good engine behavior)
+          //TAG and ketones have "fake" flux values meant to give extra diffusion movement due to lipophilicity
+          if (sub->HasMaximumDiffusionFlux())
+          {
+            double massToAreaCoefficient_cm2_Per_g = 1.0; /// \todo Define relationship between tissue mass and membrane area.
+            double capCoverage_cm2 = massToAreaCoefficient_cm2_Per_g * tissue->GetTotalMass(MassUnit::g);
+            double maximumMassFlux = sub->GetMaximumDiffusionFlux(MassPerAreaTimeUnit::g_Per_cm2_s);
+            double combinedCoefficient_g_Per_s = maximumMassFlux*capCoverage_cm2;
+
+            //Vascular to Extracellular
+            moved_ug = MoveMassByFacilitatedDiffusion(*vascular, extracellular, *sub, combinedCoefficient_g_Per_s, m_Dt_s);
+
+            //Extracellular to Intracellular
+            moved_ug = MoveMassByFacilitatedDiffusion(extracellular, intracellular, *sub, combinedCoefficient_g_Per_s, m_Dt_s);
+          }
+
+          //Last is active diffusion, which isn't currently used
+          //Couple possibly gate it by pump rate
+          //double pumpRate_g_Per_s = 0.0;
+          /// \todo Compute the pump rate from an empirically-determined baseline pump rate.
+
+          //Vascular to Extracellular
+          //moved_ug = MoveMassByActiveTransport(*vascular, extracellular, *sub, pumpRate_g_Per_s, m_Dt_s);
+
+          //Extracellular to Intracellular
+          //moved_ug = MoveMassByActiveTransport(extracellular, intracellular, *sub, pumpRate_g_Per_s, m_Dt_s);
+
         }
 
-        // --- Fourth, and final vascular to EV-EC, Active diffusion ---
-        double pumpRate_g_Per_s = 0.0;
-        /// \todo Compute the pump rate from an empirically-determined baseline pump rate.
-        moved_ug = MoveMassByActiveTransport(*vascular, extracellular, *sub, pumpRate_g_Per_s, m_Dt_s);
-        
-#ifdef PROBE_BLOOD_GASES
-				if (sub == &m_data.GetSubstances().GetO2() || sub == &m_data.GetSubstances().GetCO2())
-					m_data.GetDataTrack().Probe(tissue->GetName() + "_" + sub->GetName() + "_VascularToExtracelluar_ug", moved_ug);
-				if (sub == &m_data.GetSubstances().GetO2())
-					totalO2movedVtoE_ug += moved_ug;
-				if (sub == &m_data.GetSubstances().GetCO2())
-					totalCO2movedVtoE_ug += moved_ug;
-#endif
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /////////////////// Extravascular-Extracellular to Extravascular-Intracellular //////////////////////////
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        // --- First, instant diffusion ---
-        moved_ug = MoveMassByInstantDiffusion(extracellular, intracellular, *sub, m_Dt_s);
-
-        // --- Second, simple diffusion ---
-          // Assuming that the capillary permeability coefficient is proportional to the cellular membrane permeability coefficient for a given tissue and substance
-        double ECtoICPermeabilityFactor = 1.0; // This is the permeability constant
-        moved_ug = MoveMassBySimpleDiffusion(extracellular, intracellular, *sub, ECtoICPermeabilityFactor*vToECpermeabilityCoefficient_mL_Per_s, m_Dt_s);
-
-        // --- Third facilitated diffusion ---
-          // In BioGears, only glucose moves by facilitated diffusion, and it is assumed that all glucose that gets to the 
-          // intracellular space is used for energy or converted to glycogen for storage. So no facilitated diffusion between EC and IC.
-          /// \todo Decrement glucose from EC for energy and decrement/increment from EC for conversions (glycogen, gluconeogenesis, etc).
-
-        // --- Fourth, and final vascular to EV-EC, Active diffusion ---
-        pumpRate_g_Per_s = 0.0;
-        /// \todo Compute the pump rate from an empirically-determined baseline pump rate.
-        moved_ug = MoveMassByActiveTransport(extracellular, intracellular, *sub, pumpRate_g_Per_s, m_Dt_s);				
-
-#ifdef PROBE_BLOOD_GASES
-				if (sub == &m_data.GetSubstances().GetO2() || sub == &m_data.GetSubstances().GetCO2())
-					m_data.GetDataTrack().Probe(tissue->GetName() + "_" + sub->GetName() + "_ExtracelluarToIntracelluar_ug", moved_ug);
-				if (sub == &m_data.GetSubstances().GetO2())
-					totalO2movedEtoI_ug += moved_ug;
-				if (sub == &m_data.GetSubstances().GetCO2())
-					totalCO2movedEtoI_ug += moved_ug;
-#endif
+        //Now that mass has been moved, balance to set concentrations and molarities
 				vascular->GetSubstanceQuantity(*sub)->Balance(BalanceLiquidBy::Mass);
 				extracellular.GetSubstanceQuantity(*sub)->Balance(BalanceLiquidBy::Mass);
 				intracellular.GetSubstanceQuantity(*sub)->Balance(BalanceLiquidBy::Mass);
 			}
 		}
 	}
-#ifdef PROBE_BLOOD_GASES
-	m_data.GetDataTrack().Probe("VascularToExtracelluarO2Diffused_ug", totalO2movedVtoE_ug);
-	m_data.GetDataTrack().Probe("ExtracelluarToIntracellularO2Diffused_ug", totalO2movedEtoI_ug);
-	m_data.GetDataTrack().Probe("VascularToExtracelluarCO2Diffused_ug", totalCO2movedVtoE_ug);
-	m_data.GetDataTrack().Probe("ExtracelluarToIntracellularCO2Diffused_ug", totalCO2movedEtoI_ug);
-#endif
 }
-
 
 //--------------------------------------------------------------------------------------------------
 /// \brief
@@ -585,502 +627,822 @@ void Tissue::CalculatePulmonaryCapillarySubstanceTransfer()
 
 //--------------------------------------------------------------------------------------------------
 /// \brief
-/// Flat Rate production of albumin in the liver
-///
-/// \param  duration_s
-/// Time period for production of albumin in seconds.
-/// 
-/// \details
-/// The mass of albumin to produce is calculated from a flat rate production value and the time passed. 
-/// This mass is added to the liver. The rate is currently specified as .15 mg/s as found in Jarnum, et al 1972.
-//--------------------------------------------------------------------------------------------------
-void Tissue::ProduceAlbumin(double duration_s)
-{
-	double massConverted_g = m_AlbuminProdutionRate_g_Per_s*duration_s;
-	m_LiverTissueAlbumin->GetMass().IncrementValue(massConverted_g, MassUnit::g);
-	m_LiverTissueAlbumin->Balance(BalanceLiquidBy::Mass);
-}
-
-
-//--------------------------------------------------------------------------------------------------
-/// \brief
-/// Calculates the production and consumption of substances in the tissues in a given time period
-///
-/// \param  time
-/// Time period over which consumption and/or production occurs
+/// Conversions of nutrients to metabolic energy are calculated for each relevant compartment
 ///
 /// \details
-/// This method computes all of the metabolic consumption and production of substances.
-/// There is some consumption and production in all of the tissue compartments.
-/// The oxygen consumption, carbon dioxide production, and nutrient production/consumption are all
-/// determined from the current metabolic rate and the respiratory quotient. 
-/// The total consumption and production rates are then proportioned to
-/// each tissue compartment based on the fraction of blood flow to that compartment. Compartment-specific and 
-/// substance-specific production and consumption is computed in this method.
-/// The system properties for oxygen consumption rate and carbon dioxide production rate are recorded here.
-/// Consumption and production all takes place in the intracellular space.
+/// The desired metabolic rate (including exercise) is used to drive the consumption of nutrients
+/// and the production of waste products in the tissues. Each compartment is given a metabolic need
+/// based on the amount of blood flow to the compartment, and the substances in the compartment
+/// are modified based on stoichiometric relationships. O2 and CO2 are consumed and produced,
+/// respectively. This method handles both aerobic and anaerobic metabolism, and it sets the
+/// Fatigue event if necessary.
 //--------------------------------------------------------------------------------------------------
 void Tissue::CalculateMetabolicConsumptionAndProduction(double time_s)
 {
-  bool gasOnly = false; // To easily disable non-gas substance production and consumption
-	const BioGearsConfiguration& config = m_data.GetConfiguration();
+  //Inputs and outputs
   double TMR_kcal_Per_s = m_data.GetEnergy().GetTotalMetabolicRate(PowerUnit::kcal_Per_s);
   double BMR_kcal_Per_s = m_data.GetPatient().GetBasalMetabolicRate(PowerUnit::kcal_Per_s);
-	double ATPUseRate_mol_Per_s = TMR_kcal_Per_s / config.GetEnergyPerATP(EnergyPerAmountUnit::kcal_Per_mol);
-	double BloodFlowFraction;         // Fraction of blood flow entering a tissue compartment. Used to determine the fraction of total metabolic activity in a tissue compartment.
-	double LocalATPUseRate_mol_Per_s; // Holds the ATP use rate for a tissue compartment
-	double anaerobicWeight;           // Determines how much lactate is produced and oxygen consumed with glucose consumption.
-	double massConverted_g;
+  double baseEnergyRequested_kcal = BMR_kcal_Per_s * time_s;
+  double exerciseEnergyRequested_kcal = (TMR_kcal_Per_s - BMR_kcal_Per_s) * time_s;
+  double brainNeededEnergy_kcal = .2 * baseEnergyRequested_kcal;  //brain requires a roughly constant 20% of basal energy regardless of exercise \cite raichle2002appraising
+  double nonbrainNeededEnergy_kcal = baseEnergyRequested_kcal - brainNeededEnergy_kcal + exerciseEnergyRequested_kcal;
+  double brainEnergyDeficit_kcal = 0;
+  double nonbrainEnergyDeficit_kcal = 0;
+  double totalO2Consumed_mol = 0;
+  double totalCO2Produced_mol = 0;
+  double respiratoryQuotient = 0;
+  double oxygenConsumptionRate_g_Per_s = 0.0;
+  double carbonDioxideProductionRate_g_Per_s = 0.0;
+  double lactateProductionRate_mol_Per_s = 0;
+  double heatGenerated_kcal = 0;
+  double achievedWorkRate_W = 0;
+  double achievedExerciseLevel = 0;
+  double fatigueLevel = 0;
 
-  // The following fractions are used to compute the metabolic conversion of substances.
-  // Stoichiometric ratios can be found in any physiology text, such as \cite guyton2006medical
-	double FractionOfO2CO2ToGlucose = 0.157894737;    // Ratio of o2/co2 required to produce ATP for glucose consumption. = 6.0 / 38.0 
-	double FractionOfO2ToLipid = 0.212239583;         // Ratio of o2 required to produce ATP for lipid consumption. = 163.0 / 768.0;
-	double FractionOfCO2ToLipid = 0.1484375;          // ratio of co2 required to produce ATP for lipid consumption. = 114.0 / 768.0;
-  SEScalarPressure ppO2;
-  SEScalarMassPerVolume atConc;
-  ppO2.SetValue(40.0, PressureUnit::mmHg);
-  GeneralMath::CalculateHenrysLawConcentration(*m_O2, ppO2, atConc, m_Logger);
-  double anaerobicThresholdConcentration_mM = atConc.GetValue(MassPerVolumeUnit::g_Per_L) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mmol);
-	double FractionOfGlucoseToATP = 0.026315789;      // Ratio of glucose required to ATP produced. = 1.0 / 38.0;
-	double FractionOfLactateToGlucose = 0.5;          // Ratio of glucose required to lactate produced during anaerobic metabolism. = 1.0 / 2.0;
-	double FractionOfAcetoacetateToATP = 0.041666667; // Ratio of acetoacetate required to ATP produced. = 1.0 / 24.0;
-	double FractionOfLactateToATP = 0.027777778;      // Ratio of lactate required to ATP produced. = 1.0 / 36.0;
-	double FractionOfLipidToATP = 0.002604167;        // Ratio of of lipid required to ATP produced. = 2.0 / 768.0;	
-	double FractionLipidsAsTristearin = 0.256;        // This is an empirically determined value specific to the BioGears implementation
+  //Data
+  double energyPerMolATP_kcal = m_data.GetConfiguration().GetEnergyPerATP(EnergyPerAmountUnit::kcal_Per_mol);
+  double ATP_Per_Glucose = 29.85; //The full aerobic glucose breakdown gives ~29.85 ATP, including inefficiencies \cite rich2003molecular
+  double CO2_Per_Glucose = 6;
+  double O2_Per_Glucose = 6;
+  double ATP_Per_Ketone = 24; //Assuming acetoacetate
+  double CO2_Per_Ketone = 6; //double check this, ketones consumed via citric acid cycle, so should be the same as glucose
+  double O2_Per_Ketone = 6; //Not sure about this either
+  double ATP_Per_AA = 13;
+  double CO2_Per_AA = 1.5;
+  double Urea_Per_AA = .5;
+  double O2_Per_AA = 1.875; //assuming RQ is .8 for AA, this should be 1.875
+  double ATP_Per_TAG = 330; //Assuming all 3 fatty chains are palmitate, not consumed at theoretical yield (so 106 ATP each), and 12 ATP from glycerol backbone to pyruvate to Citric Acid Cycle \cite boron2012medical p 1231
+  double CO2_Per_TAG = 55;  // \cite meerman2014when
+  double O2_Per_TAG = 78;
+  double aerobic_ATP_Per_Glycogen = ATP_Per_Glucose + 1; //Since muscle glycogen is already phosphorylated, we get more ATP from it than when we split glucose by glycolysis \cite guyton2006medical p 904
+  double anaerobic_ATP_Per_Glycogen = 3;
+  double lactate_Per_Glycogen = 2;
+  double anaerobic_ATP_Per_Glucose = 2;
+  double lactate_Per_Glucose = 2;
+  double glucose_CellularEfficiency = energyPerMolATP_kcal * ATP_Per_Glucose / 686; //686 kcal/mol energy generated when burning glucose completely via bomb calorimeter \cite boron2012medical
+  double TAG_CellularEfficiency = energyPerMolATP_kcal * ATP_Per_TAG / (3*2340 + 686); //Palmitic acid free energy is 2340 kcal, glycerol is similar to glucose, so assume 686 \cite voet2013fundamentals
+  double AA_CellularEfficiency = energyPerMolATP_kcal * ATP_Per_AA / 387.189; //Alanine heat of combustion is 1.62 MJ/mol \cite livesey1984energy
+  double ketones_CellularEfficiency = glucose_CellularEfficiency; //Assuming the same as glucose
+  double mandatoryMuscleAnaerobicFraction = .035; //There is always some anaerobic consumption in the body, particularly in muscle fibers with few mitochondria \cite boron2012medical
+  double kcal_Per_day_Per_Watt = 20.6362855;
+  double maxWorkRate_W = 1200; //see Energy::Exercise
 
-  double exerciseTuningFactor = 1.0; // 2.036237;           // A tuning factor to adjust production and consumption during exercise
+  //Reusable values for looping
+  SELiquidCompartment* vascular;
+  SELiquidSubstanceQuantity* TissueO2;
+  SELiquidSubstanceQuantity* TissueCO2;
+  SELiquidSubstanceQuantity* TissueGlucose;
+  SELiquidSubstanceQuantity* TissueTAG;
+  SELiquidSubstanceQuantity* TissueLactate;
+  SELiquidSubstanceQuantity* TissueKetones;
+  SELiquidSubstanceQuantity* TissueAA;
+  SELiquidSubstanceQuantity* TissueUrea;
+  double TissueVolume_L;
 
-	/// The respiratory quotient (RQ) is calculated as a value between 0.7 and 1.0 and linearly increasing 
-	/// with the ratio of current glucose to resting glucose at a rate of 0.15. As stored glucose levels
-	/// increase, the RQ shifts towards glucose, reaching 1.0 when glucose stores are twice resting.
-	/// Note that in human physiology the RQ can increase above 1.0, but the current 
-	/// method of computing the fraction of carbohydrates consumed assumes that the RQ is upper bounded at 1.0.
-	double currentTotalGlucoseStored_g = 0.0;
-  double RespiratoryQuotient;
-	for (auto itr : m_data.GetCompartments().GetExtracellularFluid())
-	{
-    // We use extracellular glucose to quantify stored glucose with the assumption that intracellular glucose is instantly used for energy.
-		currentTotalGlucoseStored_g += itr.second->GetSubstanceQuantity(*m_Glucose)->GetMass(MassUnit::g);
-	}
-  RespiratoryQuotient = currentTotalGlucoseStored_g / m_RestingTissueGlucose_g * 0.15 + 0.7;
-  // If the patient is exercising, an emphasis is placed on glucose consumption (higher RQ) as long as plenty of glucose is available.
-  // But if glucose stores are depleting, we want to emphasize glucose consumption a little less.
-	if (m_PatientActions->HasExercise() && RespiratoryQuotient > 0.8)
-	{
-    double totalWorkRateLevel = m_data.GetEnergy().GetTotalWorkRateLevel().GetValue();
-		if (RespiratoryQuotient > 0.775)
-		{
-			RespiratoryQuotient = RespiratoryQuotient + 0.15 * totalWorkRateLevel * exerciseTuningFactor;
-		}
-		else 
-		{
-			RespiratoryQuotient = RespiratoryQuotient + (2 * RespiratoryQuotient - 1.4) * totalWorkRateLevel * exerciseTuningFactor;
-		}
-	}
-  RespiratoryQuotient = MIN(RespiratoryQuotient, 1.0);
-
-	// The fraction of glucose consumed is determined from a linear relation of the non-protein respiratory quotient.
-	// A respiratory quotient of 0.7 would specify that the metabolism is completely derived from lipids,
-  // while a respiratory quotient of 1.0 would be completely derived from carbohydrates.
-	double FractionCarbConsumed = (RespiratoryQuotient - 0.7) / 0.3;
-  BLIM(FractionCarbConsumed, 0., 1.);
-
-  //The basal ketone production rate a resting patient and maximum production rate in starvation are derived from data in @cite garber1974ketone
-  double basalKetoneProductionRate_mmol_Per_kg_Per_s = (4.0E-3) / 60.0;
-  double maxKetoneProductionRate_mmol_Per_kg_Per_s = (12.0E-3) / 60.0;
-	// The ketone production rate is calculated as linear equation, with basal ketone production rate as the intercept. 
-	// The current ketone production rate will be equal to the basal value when the patient has a normal metabolism (RespiratoryQuotient=0.85, FractionCarbConsumed=0.5).
-	// For increasing starvation levels, FractionCarbConsumed decreases leading to increased ketone production
-  double ketoneProductionRateChange_mmol_Per_kg_Per_s = (1.0 - 2.0*FractionCarbConsumed)*(maxKetoneProductionRate_mmol_Per_kg_Per_s - basalKetoneProductionRate_mmol_Per_kg_Per_s);
-  double KetoneProductionRate_mmol_Per_kg_s = basalKetoneProductionRate_mmol_Per_kg_Per_s + ketoneProductionRateChange_mmol_Per_kg_Per_s;
-  LLIM(KetoneProductionRate_mmol_Per_kg_s, 0.0);
-
-  /// \todo Remove this temporary blood increment when diffusion is operational (0.125 is tuning factor)
-  double acetoacetateIncrement_mg = 0.375 * KetoneProductionRate_mmol_Per_kg_s * m_Acetoacetate->GetMolarMass(MassPerAmountUnit::mg_Per_mmol) 
-    * m_data.GetPatient().GetWeight(MassUnit::kg) * time_s;
-  m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Liver)->GetSubstanceQuantity(*m_Acetoacetate)->GetMass().IncrementValue(acetoacetateIncrement_mg, MassUnit::mg);
-  if (m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Liver)->GetSubstanceQuantity(*m_Acetoacetate)->GetMass(MassUnit::ug) < ZERO_APPROX)
+  //--------------------------------------------------------------------------------------------------
+  /// The metabolic fraction for each tissue compartment is computed as the fraction of the total vascular blood flow
+  /// that is going into the specific vascular compartment that is associated with the tissue compartment.
+  //--------------------------------------------------------------------------------------------------
+  double totalFlowRate_mL_Per_min = 0.0;
+  // First sum the vascular flow into all of the vascular compartments that are associated with the tissue compartments.
+  // We do not use the cardiac output as total flow rate because all of the fractions must sum to one at each time slice.
+  for (SETissueCompartment* tissue : m_ConsumptionProdutionTissues)
   {
-    m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Liver)->GetSubstanceQuantity(*m_Acetoacetate)->GetMass().SetValue(0.0, MassUnit::ug);
+    if(tissue == m_BrainTissue)
+      continue;
+    vascular = m_TissueToVascular[tissue];
+    if (vascular->HasInFlow())
+      totalFlowRate_mL_Per_min += vascular->GetInFlow(VolumePerTimeUnit::mL_Per_min);
   }
-  m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Liver)->GetSubstanceQuantity(*m_Acetoacetate)->Balance(BalanceLiquidBy::Mass);
-  // End temporary blood increment
 
-  // Lactate production is computed per tissue
-	//double lactateProduction_mol_Per_s = 0.0;
-	double lactateProductionTuningParameter = 0.6;
-	double lactateConsumptionTuningParameter = 0.000075;
-
-	double tissueO2_mM;
-	double tissueCO2_mM;
-
-	SELiquidCompartment* vascular;
-	SELiquidSubstanceQuantity* TissueO2;
-	SELiquidSubstanceQuantity* TissueCO2;
-	SELiquidSubstanceQuantity* TissueGlucose;
-	SELiquidSubstanceQuantity* TissueTristearin;
-	SELiquidSubstanceQuantity* TissueLactate;
-	SELiquidSubstanceQuantity* TissueAcetoacetate;
-	SELiquidSubstanceQuantity* TissueCreatinine;
-
-	//--------------------------------------------------------------------------------------------------
-	/// The metabolic fraction for each tissue compartment is computed as the fraction of the total vascular blood flow
-	/// that is going into the specific vascular compartment that is associated with the tissue compartment.
-	//--------------------------------------------------------------------------------------------------
-	double totalFlowRate_mL_Per_min = 0.0;
-	// First sum the vascular flow into all of the vascular compartments that are associated with the tissue compartments.
-	// We do not use the cardiac output as total flow rate because all of the fractions must sum to one at each time slice.
-	for (SETissueCompartment* tissue : m_ConsumptionProdutionTissues)
-	{
-		vascular = m_TissueToVascular[tissue];
-		if (vascular->HasInFlow())
-			totalFlowRate_mL_Per_min += vascular->GetInFlow(VolumePerTimeUnit::mL_Per_min);
-	}
-
-	double oxygenConsumptionRate_g_Per_s = 0.0;
-	double carbonDioxideProductionRate_g_Per_s = 0.0;
-  double arterialGlucose_mg_Per_dL = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Aorta)->GetSubstanceQuantity(*m_Glucose)->GetConcentration(MassPerVolumeUnit::mg_Per_dL);
-
-	for (SETissueCompartment* tissue : m_ConsumptionProdutionTissues)
-	{
-    double acidDissociationFraction = 0.5;
-		vascular = m_TissueToVascular[tissue];
+  for (SETissueCompartment* tissue : m_ConsumptionProdutionTissues)
+  {
+    vascular = m_TissueToVascular[tissue];
     SELiquidCompartment& intracellular = m_data.GetCompartments().GetIntracellularFluid(*tissue);
-		TissueO2 = intracellular.GetSubstanceQuantity(*m_O2);
-		TissueCO2 = intracellular.GetSubstanceQuantity(*m_CO2);
-		TissueGlucose = intracellular.GetSubstanceQuantity(*m_Glucose);
-		TissueTristearin = intracellular.GetSubstanceQuantity(*m_Tristearin);
-		TissueLactate = intracellular.GetSubstanceQuantity(*m_Lactate);
-		TissueAcetoacetate = intracellular.GetSubstanceQuantity(*m_Acetoacetate);
-		TissueCreatinine = intracellular.GetSubstanceQuantity(*m_Creatinine);
+    TissueO2 = intracellular.GetSubstanceQuantity(*m_O2);
+    TissueCO2 = intracellular.GetSubstanceQuantity(*m_CO2);
+    TissueGlucose = intracellular.GetSubstanceQuantity(*m_Glucose);
+    TissueTAG = intracellular.GetSubstanceQuantity(*m_Triacylglycerol);
+    TissueLactate = intracellular.GetSubstanceQuantity(*m_Lactate);
+    TissueKetones = intracellular.GetSubstanceQuantity(*m_Ketones);
+    TissueAA = intracellular.GetSubstanceQuantity(*m_AminoAcids);
+    TissueUrea = intracellular.GetSubstanceQuantity(*m_Urea);
+    TissueVolume_L = intracellular.GetVolume(VolumeUnit::L);
 
-		tissueO2_mM = TissueO2->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
-		tissueCO2_mM = TissueCO2->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
-
-		BloodFlowFraction = 0;
-		if (vascular->HasInFlow() && totalFlowRate_mL_Per_min > 0)
-			BloodFlowFraction = vascular->GetInFlow(VolumePerTimeUnit::mL_Per_min) / totalFlowRate_mL_Per_min;
-
-		LocalATPUseRate_mol_Per_s = BloodFlowFraction*ATPUseRate_mol_Per_s;
-		anaerobicWeight = MIN(1.0, tissueO2_mM / anaerobicThresholdConcentration_mM);
-    /// \todo This is the reason for the decrease in O2 consumption and CO2 production with oxygen depletion. It looks like we are mixing models here. 
-    // At a minimum, we know that CO2 production should not decrease at the same rate as O2 consumption during anaerobic metabolism.
-
-    /////////////////////////////////////////////////////////////////////
-    /////////////// Gas production and consumption //////////////////////
-    /////////////////////////////////////////////////////////////////////
-		// Oxygen Consumption
-		double oxygenConsumption_mol_Per_s = FractionCarbConsumed*anaerobicWeight*FractionOfO2CO2ToGlucose*LocalATPUseRate_mol_Per_s
-			+ (1.0 - FractionCarbConsumed)*FractionOfO2ToLipid*LocalATPUseRate_mol_Per_s;
-		massConverted_g = oxygenConsumption_mol_Per_s*(m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))*time_s;
-
-#ifdef PROBE_BLOOD_GASES
-		m_data.GetDataTrack().Probe(tissue->GetName() + "_Converted_O2_ug", massConverted_g * 1e6);
-#endif
-
-		//massConverted_g = MIN(TissueO2->GetMass(MassUnit::g), massConverted_g); //Bound oxygen consumed mass to prevent negative mass in the compartment
-		//massConverted_g = MAX(massConverted_g, 0.0);
-
-		double O2TuningParameter = 0.38 + 0.15*(TMR_kcal_Per_s / BMR_kcal_Per_s - 1.0);
-    ULIM(O2TuningParameter, 1.0);
-    massConverted_g *= O2TuningParameter;
-    BLIM(massConverted_g, 0.0, TissueO2->GetMass(MassUnit::g));
-		TissueO2->GetMass().IncrementValue(-massConverted_g, MassUnit::g);
-		if (std::abs(TissueO2->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		{
-			TissueO2->GetMass().SetValue(0.0, MassUnit::ug);
-		}
-		oxygenConsumptionRate_g_Per_s += massConverted_g / time_s;
-
-#ifdef PROBE_BLOOD_GASES
-		m_data.GetDataTrack().Probe(tissue->GetName() + "_Consumed_O2_ug", O2TuningParameter*massConverted_g*1e6);
-#endif
-
-    // CO2 production
-		double co2Production_mol_Per_s = FractionCarbConsumed*anaerobicWeight*FractionOfO2CO2ToGlucose*LocalATPUseRate_mol_Per_s
-			+ (1.0 - FractionCarbConsumed)*FractionOfCO2ToLipid*LocalATPUseRate_mol_Per_s;
-		massConverted_g = co2Production_mol_Per_s*(m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol))*time_s;
-
-		double CO2TuningParameter = 0.36 + m_data.GetEnergy().GetTotalWorkRateLevel().GetValue()*exerciseTuningFactor;
-		TissueCO2->GetMass().IncrementValue(CO2TuningParameter*massConverted_g, MassUnit::g);
-		if (std::abs(TissueCO2->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		{
-			TissueCO2->GetMass().SetValue(0.0, MassUnit::ug);
-		}
-    carbonDioxideProductionRate_g_Per_s += CO2TuningParameter*massConverted_g / time_s;
-
-    if (!gasOnly)
+    double BloodFlowFraction = 0;
+    if (vascular->HasInFlow() && totalFlowRate_mL_Per_min > 0)
     {
-      ///////////////////////////////////////////////////////////////
-      /////// Non-gas substance production //////////////////////////
-      ///////////////////////////////////////////////////////////////
-      //Lactate Production occurs due to anaerobic metabolism of glucose. The anaerobic weighting factor is used to dictate the fraction of glucose metabolized anaerobically.
-      double currentlactateProduction_mol_Per_s = acidDissociationFraction*lactateProductionTuningParameter*(1 - anaerobicWeight)*LocalATPUseRate_mol_Per_s;
-      massConverted_g = currentlactateProduction_mol_Per_s*(m_Lactate->GetMolarMass(MassPerAmountUnit::g_Per_mol))*time_s;
-      //lactateProduction_mol_Per_s += (massConverted_g / m_Lactate->GetMolarMass(MassPerAmountUnit::g_Per_mol)) / time_s;
+      BloodFlowFraction = vascular->GetInFlow(VolumePerTimeUnit::mL_Per_min) / totalFlowRate_mL_Per_min;
+    }
 
-      /// \todo Remove this temporary blood increment when diffusion is fully operational
-      if (massConverted_g < 0.)
-        DistributeMassbyMassWeighted(*vascular, *m_Lactate, massConverted_g, MassUnit::mg);
-      else
-        DistributeMassbyVolumeWeighted(*vascular, *m_Lactate, massConverted_g, MassUnit::mg);
-      vascular->GetSubstanceQuantity(*m_Lactate)->Balance(BalanceLiquidBy::Mass);
-      // End temporary blood increment
+    //First, we'll handle brain consumption/production, since it's special
+    //Brain can only consume glucose and ketones
+    if (tissue == m_BrainTissue)
+    {
+      //First, let's check to see how much TOTAL energy exists in the brain as intracellular glucose
+      //We take the values that represent the cell's [inefficient] ability to conserve energy in ATP and use the efficiency to quantify the energy lost as heat
+      double totalEnergyAsIntracellularBrainGlucose_kcal = (TissueGlucose->GetMolarity(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L) * ATP_Per_Glucose * energyPerMolATP_kcal / glucose_CellularEfficiency;
 
-      ///////////////////////////////////////////////////////////////
-      /////// Non-gas substance consumption /////////////////////////
-      ///////////////////////////////////////////////////////////////
-      double glucoseConsumption_mol_Per_s = FractionCarbConsumed*LocalATPUseRate_mol_Per_s*(anaerobicWeight*FractionOfGlucoseToATP + (1.0 - anaerobicWeight)*FractionOfLactateToGlucose);
-      massConverted_g = glucoseConsumption_mol_Per_s*(m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol))*time_s;
-      massConverted_g = MIN(massConverted_g, TissueGlucose->GetMass(MassUnit::g));
-      TissueGlucose->GetMass().IncrementValue(-massConverted_g, MassUnit::g);
-
-      /// \todo Remove this temporary blood increment when diffusion is fully operational 
-      // The insulin effect is based on the insulin dependent term in the model described in \cite tolic2000modeling
-      double insulinConc_ug_Per_L = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Liver)->GetSubstanceQuantity(*m_Insulin)->GetConcentration(MassPerVolumeUnit::ug_Per_L);
-      double InsulinIndependRate_mg_Per_s = 0.0017623 * glucoseConsumption_mol_Per_s * m_Glucose->GetMolarMass(MassPerAmountUnit::mg_Per_mol); // Tuning parameter to convert existing model max to values found in \cite keener2009mathematical
-      double insulinDependMax = 0.01; //0.015667;
-      double insulinEffectTimeK = 0.8;
-      double insulinDependRate_mg_Per_s = (insulinDependMax - insulinDependMax / exp(insulinEffectTimeK*insulinConc_ug_Per_L));
-      double glucoseIncrement_mg = -(insulinDependRate_mg_Per_s + InsulinIndependRate_mg_Per_s) * arterialGlucose_mg_Per_dL * time_s;
-      if (glucoseIncrement_mg < 0.)
-        DistributeMassbyMassWeighted(*vascular, *m_Glucose, glucoseIncrement_mg, MassUnit::mg);
-      else
-        DistributeMassbyVolumeWeighted(*vascular, *m_Glucose, glucoseIncrement_mg, MassUnit::mg);
-      vascular->GetSubstanceQuantity(*m_Glucose)->Balance(BalanceLiquidBy::Mass);
-      // End temporary blood increment
-
-	    if (std::abs(TissueGlucose->GetMass(MassUnit::ug)) < ZERO_APPROX)
-	    {
-		    TissueGlucose->GetMass().SetValue(0.0, MassUnit::ug);
-	    }
-
-      double TristearinConsumption_mol_Per_s = FractionLipidsAsTristearin*(1.0 - FractionCarbConsumed)*FractionOfLipidToATP*LocalATPUseRate_mol_Per_s;
-      massConverted_g = TristearinConsumption_mol_Per_s*(m_Tristearin->GetMolarMass(MassPerAmountUnit::g_Per_mol))*time_s;
-      massConverted_g = MIN(massConverted_g, TissueTristearin->GetMass(MassUnit::g));
-      TissueTristearin->GetMass().IncrementValue(-massConverted_g, MassUnit::g);
-
-      /// \todo Remove this temporary blood increment when diffusion is operational (0.125 is tuning factor)
-      double tristearinIncrement_mg = -0.125 * TristearinConsumption_mol_Per_s * m_Tristearin->GetMolarMass(MassPerAmountUnit::mg_Per_mol) * time_s;
-      if (tristearinIncrement_mg < 0.)
-        DistributeMassbyMassWeighted(*vascular, *m_Tristearin, tristearinIncrement_mg, MassUnit::mg);
-      else
-        DistributeMassbyVolumeWeighted(*vascular, *m_Tristearin, tristearinIncrement_mg, MassUnit::mg);
-      vascular->GetSubstanceQuantity(*m_Tristearin)->Balance(BalanceLiquidBy::Mass);
-      // End temporary blood increment
-
-	    if (std::abs(TissueTristearin->GetMass(MassUnit::ug)) < ZERO_APPROX)
-	    {
-		    TissueTristearin->GetMass().SetValue(0.0, MassUnit::ug);
-	    }
-
-      ///////////////////////////////////////////////////////////////
-      // Tissue-specific non-gas substance production and consumption 
-      ///////////////////////////////////////////////////////////////
-      if (tissue == m_MuscleTissue)
+      //If we have enough energy as glucose to meet the brain's energy request this timestep, consume it
+      if (totalEnergyAsIntracellularBrainGlucose_kcal >= brainNeededEnergy_kcal)
       {
-        double creatinineProductionRate_mg_Per_s = 2.0e-5; /// \todo Creatinine production rate should be a function of muscle mass.
-        massConverted_g = creatinineProductionRate_mg_Per_s * time_s;
-        TissueCreatinine->GetMass().IncrementValue(massConverted_g, MassUnit::g);
-        if (std::abs(TissueCreatinine->GetMass(MassUnit::ug)) < ZERO_APPROX)
+        //The actual work done by the cell only accounts for a fraction of this energy, the rest is heat
+        double glucoseToConsume_mol = glucose_CellularEfficiency * brainNeededEnergy_kcal / energyPerMolATP_kcal / ATP_Per_Glucose;
+
+        //Since all brain consumption is aerobic and so requires O2, check if there's enough
+        if (TissueO2->GetMass(MassUnit::g) > glucoseToConsume_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
         {
-          TissueCreatinine->GetMass().SetValue(0.0, MassUnit::ug);
+          TissueGlucose->GetMass().IncrementValue(-glucoseToConsume_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(glucoseToConsume_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().IncrementValue(-glucoseToConsume_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          heatGenerated_kcal += (1 - glucose_CellularEfficiency) * brainNeededEnergy_kcal;
+          brainNeededEnergy_kcal = 0;
         }
-        m_data.GetEnergy().GetCreatinineProductionRate().SetValue(massConverted_g / time_s * 1. / m_Creatinine->GetMolarMass(MassPerAmountUnit::g_Per_umol), AmountPerTimeUnit::umol_Per_s);
-        /// \todo Remove this temporary blood increment when diffusion is fully operational
-        double creatinineTuning = 1.0;
-        if (massConverted_g < 0.)
-          DistributeMassbyMassWeighted(*vascular, *m_Creatinine, massConverted_g * creatinineTuning, MassUnit::g);
         else
-          DistributeMassbyVolumeWeighted(*vascular, *m_Creatinine, massConverted_g * creatinineTuning, MassUnit::g);
-        vascular->GetSubstanceQuantity(*m_Creatinine)->Balance(BalanceLiquidBy::Mass);
-      }
-      else if (tissue == m_LiverTissue)
-      {
-        if (TissueLactate->GetMass(MassUnit::g) > 0.0)
         {
-          massConverted_g = lactateConsumptionTuningParameter*FractionOfLactateToGlucose*(TissueLactate->GetMass(MassUnit::g) /
-            m_Lactate->GetMolarMass(MassPerAmountUnit::g_Per_mol)) * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol);
-          TissueGlucose->GetMass().IncrementValue(massConverted_g, MassUnit::g);
-
-		      if (std::abs(TissueGlucose->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		      {
-			      TissueGlucose->GetMass().SetValue(0.0, MassUnit::ug);
-		      }
+          glucoseToConsume_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_Glucose;
+          TissueGlucose->GetMass().IncrementValue(-glucoseToConsume_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(glucoseToConsume_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().SetValue(0, MassUnit::g);
+          double totalEnergyUsed = glucoseToConsume_mol * ATP_Per_Glucose * energyPerMolATP_kcal / glucose_CellularEfficiency; //we consume glucose, but also generate heat
+          brainNeededEnergy_kcal -= totalEnergyUsed;
+          heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
         }
-        /// \todo Fully implement endocrine glucose control and remove this temporary blood increment once diffusion is fully operational
-        // If blood glucose is low, glucose will be pulled from the liver tissue into the vascular region. This is the equivalent of a glucagon response.
-        // 0.05 is a time tuning factor.
-        
-        if (arterialGlucose_mg_Per_dL < 60.0)
-        {
-          double massReleased_mg = 0.02*(60.0 - arterialGlucose_mg_Per_dL)*vascular->GetVolume(VolumeUnit::dL)*time_s;
-          //double massReleased_mg = 1.68 * time_s;
-          DistributeMassbyVolumeWeighted(*vascular, *m_Glucose, massReleased_mg, MassUnit::mg);
-          vascular->GetSubstanceQuantity(*m_Glucose)->Balance(BalanceLiquidBy::Mass);
-        } // End temporary endocrine control of glucose
+        totalO2Consumed_mol += glucoseToConsume_mol * O2_Per_Glucose;
+        totalCO2Produced_mol += glucoseToConsume_mol * CO2_Per_Glucose;
+      }
+      //Otherwise, consume what intracellular glucose is there and track the deficit
+      else
+      {
+        double glucoseToConsume_mol = TissueGlucose->GetMolarity(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L;
 
-        massConverted_g = acidDissociationFraction*KetoneProductionRate_mmol_Per_kg_s * m_data.GetPatient().GetWeight(MassUnit::kg)
-          * m_Acetoacetate->GetMolarMass(MassPerAmountUnit::g_Per_mmol);
+        //We're still limited by O2
+        if (TissueO2->GetMass(MassUnit::g) > glucoseToConsume_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+        {
+          TissueGlucose->GetMass().SetValue(0, MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(glucoseToConsume_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().IncrementValue(-glucoseToConsume_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          double totalEnergyUsed = glucoseToConsume_mol * ATP_Per_Glucose * energyPerMolATP_kcal / glucose_CellularEfficiency;
+          brainNeededEnergy_kcal -= totalEnergyUsed;
+          heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
+        }
+        else
+        {
+          glucoseToConsume_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_Glucose;
+          TissueGlucose->GetMass().IncrementValue(-glucoseToConsume_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(glucoseToConsume_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().SetValue(0, MassUnit::g);
+          double totalEnergyUsed = glucoseToConsume_mol * ATP_Per_Glucose * energyPerMolATP_kcal / glucose_CellularEfficiency;
+          brainNeededEnergy_kcal -= totalEnergyUsed;
+          heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
+        }
+        totalO2Consumed_mol += glucoseToConsume_mol * O2_Per_Glucose;
+        totalCO2Produced_mol += glucoseToConsume_mol * CO2_Per_Glucose;
+      }
+
+      //If we still need energy in the brain, ketones have to cover it
+      double totalEnergyAsIntracellularBrainKetones_kcal = (TissueKetones->GetMolarity(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L) * ATP_Per_Ketone * energyPerMolATP_kcal / ketones_CellularEfficiency;
+
+      //If we still need brain energy and we have enough ketones to cover it
+      if (brainNeededEnergy_kcal > 0 && totalEnergyAsIntracellularBrainKetones_kcal >= brainNeededEnergy_kcal)
+      {
+        double ketonesToConsume_mol = ketones_CellularEfficiency * brainNeededEnergy_kcal / energyPerMolATP_kcal / ATP_Per_Ketone;
+
+        if (TissueO2->GetMass(MassUnit::g) > ketonesToConsume_mol * O2_Per_Ketone * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+        {
+          TissueKetones->GetMass().IncrementValue(-ketonesToConsume_mol * m_Ketones->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(ketonesToConsume_mol * CO2_Per_Ketone * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().IncrementValue(-ketonesToConsume_mol * O2_Per_Ketone * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          heatGenerated_kcal += (1 - glucose_CellularEfficiency) * brainNeededEnergy_kcal;
+          brainNeededEnergy_kcal = 0;
+        }
+        else
+        {
+          ketonesToConsume_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_Ketone;
+          TissueKetones->GetMass().IncrementValue(-ketonesToConsume_mol * m_Ketones->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(ketonesToConsume_mol * CO2_Per_Ketone * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().SetValue(0, MassUnit::g);
+          double totalEnergyUsed = ketonesToConsume_mol * ATP_Per_Ketone * energyPerMolATP_kcal / ketones_CellularEfficiency;
+          brainNeededEnergy_kcal -= totalEnergyUsed;
+          heatGenerated_kcal += totalEnergyUsed * (1 - ketones_CellularEfficiency);
+        }
+        totalO2Consumed_mol += ketonesToConsume_mol * O2_Per_Ketone;
+        totalCO2Produced_mol += ketonesToConsume_mol * CO2_Per_Ketone;
+      }
+      //Otherwise, consume the ketones in the brain and track the deficit
+      else if (brainNeededEnergy_kcal > 0)
+      {
+        double ketonesToConsume_mol = TissueKetones->GetMolarity(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L;
+
+        if (TissueO2->GetMass(MassUnit::g) > ketonesToConsume_mol * O2_Per_Ketone * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+        {
+          TissueKetones->GetMass().SetValue(0, MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(ketonesToConsume_mol * CO2_Per_Ketone * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().IncrementValue(-ketonesToConsume_mol * O2_Per_Ketone * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          double totalEnergyUsed = ketonesToConsume_mol * ATP_Per_Ketone * energyPerMolATP_kcal / ketones_CellularEfficiency;
+          brainNeededEnergy_kcal -= totalEnergyUsed;
+          heatGenerated_kcal += totalEnergyUsed * (1 - ketones_CellularEfficiency);
+        }
+        else
+        {
+          ketonesToConsume_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_Ketone;
+          TissueKetones->GetMass().IncrementValue(-ketonesToConsume_mol * m_Ketones->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(ketonesToConsume_mol * CO2_Per_Ketone * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().SetValue(0, MassUnit::g);
+          double totalEnergyUsed = ketonesToConsume_mol * ATP_Per_Ketone * energyPerMolATP_kcal / ketones_CellularEfficiency;
+          brainNeededEnergy_kcal -= totalEnergyUsed;
+          heatGenerated_kcal += totalEnergyUsed * (1 - ketones_CellularEfficiency);
+        }
+        totalO2Consumed_mol += ketonesToConsume_mol * O2_Per_Ketone;
+        totalCO2Produced_mol += ketonesToConsume_mol * CO2_Per_Ketone;
+      }
+
+      brainEnergyDeficit_kcal = brainNeededEnergy_kcal > 0 ? brainNeededEnergy_kcal : 0; //Any needed energy we have left is a deficit
+
+      //Useful debugging information
+      //m_data.GetDataTrack().Probe("BrainDeficitFraction", brainEnergyDeficit_kcal / (.2 * baseEnergyRequested_kcal));
+
+      TissueGlucose->Balance(BalanceLiquidBy::Mass);
+      TissueO2->Balance(BalanceLiquidBy::Mass);
+      TissueCO2->Balance(BalanceLiquidBy::Mass);
+      TissueKetones->Balance(BalanceLiquidBy::Mass);
+
+      continue; //nothing else to do for this tissue
+    }
+
+    //Now do non-brain tissues, which can consume TAG, AA, and glucose (and glycogen for muscles)
+    //They can also consume ketones in some quantities, but we're not modeling that
+    //The muscles always have some level of anaerobic activity
+    //Additionally, the muscles perform all of the additional work from exercise
+    double tissueNeededEnergy_kcal = nonbrainNeededEnergy_kcal*BloodFlowFraction;
+    double muscleMandatoryAnaerobicNeededEnergy_kcal = 0;
+    if (tissue == m_MuscleTissue)
+    {
+      muscleMandatoryAnaerobicNeededEnergy_kcal = mandatoryMuscleAnaerobicFraction * tissueNeededEnergy_kcal;
+      tissueNeededEnergy_kcal -= muscleMandatoryAnaerobicNeededEnergy_kcal;
+      tissueNeededEnergy_kcal += exerciseEnergyRequested_kcal;
+
+      double creatinineProductionRate_mg_Per_s = 2.0e-5; /// \todo Creatinine production rate should be a function of muscle mass.
+      intracellular.GetSubstanceQuantity(*m_Creatinine)->GetMass().IncrementValue(creatinineProductionRate_mg_Per_s * m_Dt_s, MassUnit::mg);
+    }
+
+    //Start with AA, since obligatory protein loss is 30g/day minimum going up to 125g/day in starvation \cite guyton2006medical
+    //Use hormone factor (based on liver) to determine "how starved" you are and vary AA consumption linearly from 30 to 125
+    double localHormoneFactor = Hepatic::CalculateRelativeHormoneChange(GetLiverInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, GetLiverGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, vascular->GetSubstanceQuantity(*m_Insulin), vascular->GetSubstanceQuantity(*m_Glucagon));
+    BLIM(localHormoneFactor, -2, 0);  //positive hormone factors mean we should consume the expected 30g/day
+    double AAConsumptionRate_g_Per_day = GeneralMath::LinearInterpolator(0, 2, 30, 125, -localHormoneFactor);
+    
+    double AAToConsume_mol = (AAConsumptionRate_g_Per_day * time_s * BloodFlowFraction) / (24 * 3600 * m_AminoAcids->GetMolarMass(MassPerAmountUnit::g_Per_mol));
+
+    //See if we actually have enough AA to meet the request and carry it out
+    double intracellularAA_mol = TissueAA->GetMolarity(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L;
+    double AADeficit_mol = intracellularAA_mol - AAToConsume_mol;
+
+    //There wasn't enough; consume all intracellular AA and track deficit if desired
+    if (AADeficit_mol < 0)
+    {
+      //AA consumption is aerobic
+      if (TissueO2->GetMass(MassUnit::g) > intracellularAA_mol * O2_Per_AA * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+      {
+        TissueAA->GetMass().SetValue(0, MassUnit::g);
+        m_LiverExtracellular->GetSubstanceQuantity(*m_Urea)->GetMass().IncrementValue(intracellularAA_mol * Urea_Per_AA * m_Urea->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(intracellularAA_mol * CO2_Per_AA * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().IncrementValue(-intracellularAA_mol * O2_Per_AA * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        double totalEnergyUsed = intracellularAA_mol * ATP_Per_AA * energyPerMolATP_kcal / AA_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        tissueNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - AA_CellularEfficiency);
+        totalO2Consumed_mol += intracellularAA_mol * O2_Per_AA;
+        totalCO2Produced_mol += intracellularAA_mol * CO2_Per_AA;
+      }
+      else
+      {
+        double AAActuallyConsumed_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_AA;
+        TissueAA->GetMass().IncrementValue(-AAActuallyConsumed_mol * m_AminoAcids->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        m_LiverExtracellular->GetSubstanceQuantity(*m_Urea)->GetMass().IncrementValue(AAActuallyConsumed_mol * Urea_Per_AA * m_Urea->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(AAActuallyConsumed_mol * CO2_Per_AA * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().SetValue(0, MassUnit::g);
+        double totalEnergyUsed = AAActuallyConsumed_mol * ATP_Per_AA * energyPerMolATP_kcal / AA_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        tissueNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - AA_CellularEfficiency);
+        totalO2Consumed_mol += AAActuallyConsumed_mol * O2_Per_AA;
+        totalCO2Produced_mol += AAActuallyConsumed_mol * CO2_Per_AA;
+      }
+    }
+    //There was enough; consume the required amount
+    else
+    {
+      //AA consumption is aerobic
+      if (TissueO2->GetMass(MassUnit::g) > AAToConsume_mol * O2_Per_AA * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+      {
+        TissueAA->GetMass().IncrementValue(-AAToConsume_mol * m_AminoAcids->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        m_LiverExtracellular->GetSubstanceQuantity(*m_Urea)->GetMass().IncrementValue(AAToConsume_mol * Urea_Per_AA * m_Urea->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(AAToConsume_mol * CO2_Per_AA * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().IncrementValue(-AAToConsume_mol * O2_Per_AA * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        double totalEnergyUsed = AAToConsume_mol * ATP_Per_AA * energyPerMolATP_kcal / AA_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        tissueNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - AA_CellularEfficiency);
+        totalO2Consumed_mol += AAToConsume_mol * O2_Per_AA;
+        totalCO2Produced_mol += AAToConsume_mol * CO2_Per_AA;
+      }
+      //O2 is limiting
+      else
+      {
+        double AAActuallyConsumed_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_AA;
+        TissueAA->GetMass().IncrementValue(-AAActuallyConsumed_mol * m_AminoAcids->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        m_LiverExtracellular->GetSubstanceQuantity(*m_Urea)->GetMass().IncrementValue(AAActuallyConsumed_mol * Urea_Per_AA * m_Urea->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(AAActuallyConsumed_mol * CO2_Per_AA * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().SetValue(0, MassUnit::g);
+        double totalEnergyUsed = AAActuallyConsumed_mol * ATP_Per_AA * energyPerMolATP_kcal / AA_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        tissueNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - AA_CellularEfficiency);
+        totalO2Consumed_mol += AAActuallyConsumed_mol * O2_Per_AA;
+        totalCO2Produced_mol += AAActuallyConsumed_mol * CO2_Per_AA;
       }
     }
 
-		TissueO2->Balance(BalanceLiquidBy::Mass);
-		TissueCO2->Balance(BalanceLiquidBy::Mass);
-		TissueGlucose->Balance(BalanceLiquidBy::Mass);
-		TissueTristearin->Balance(BalanceLiquidBy::Mass);
-		TissueLactate->Balance(BalanceLiquidBy::Mass);
-		TissueAcetoacetate->Balance(BalanceLiquidBy::Mass);
-		TissueCreatinine->Balance(BalanceLiquidBy::Mass);
+    //Under aerobic conditions, muscles and other tissues burn intracellular FFA by B-oxidation
+    //When fat consumption is unlimited, glycogen is virtually unused, so limit the rate of fat consumption based on hormone factor
+    //When fat is completely unused, full glycogen stores last almost exactly 12 hours, so vary the rate limitation linearly between 0 for hormone factors >=0 to 1 for the most negative hormone factor
+    //We expect to consume 50-70 or so grams of fat per day, so mols of TAG should be on the order of 1.7e-8, ballpark
+    //todo readdress this scaling with respect to exercise to try to make the respiratory quotient trend correctly
+    double rateLimitingTuningFactor = GeneralMath::LinearInterpolator(0, 2, 0, 1, -localHormoneFactor);
 
-#ifdef PROBE_BLOOD_GASES
-		m_data.GetSubstances().ProbeBloodGases(*vascular);
+    double usableEnergyAsTissueTAG_kcal = rateLimitingTuningFactor*(TissueTAG->GetMolarity(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L) * ATP_Per_TAG * energyPerMolATP_kcal / TAG_CellularEfficiency;
 
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Extracellular_mL", intracellular.GetVolume(VolumeUnit::mL));
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Intracellular_mL", intracellular.GetVolume(VolumeUnit::mL));
+    //If we have enough usable intracellular TAG to meet the request for this tissue
+    if (tissueNeededEnergy_kcal > 0 && usableEnergyAsTissueTAG_kcal >= tissueNeededEnergy_kcal)
+    {
+      double TAGToConsume_mol = TAG_CellularEfficiency * tissueNeededEnergy_kcal / energyPerMolATP_kcal / ATP_Per_TAG;
 
-		//SELiquidSubstanceQuantity *O2 = intracellular.GetSubstanceQuantity(*m_O2);
-		//SELiquidSubstanceQuantity *CO2 = intracellular.GetSubstanceQuantity(*m_CO2);
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Intracellular_O2_ug", O2->GetMass(MassUnit::ug));
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Intracellular_O2_ug_Per_mL", O2->GetConcentration(MassPerVolumeUnit::ug_Per_mL));
-		////m_data.GetDataTrack().Probe(tissue->GetName() + "_Intracellular_O2_mmHg", O2->GetPartialPressure(PressureUnit::mmHg));
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Intracellular_CO2_ug", CO2->GetMass(MassUnit::ug));
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Intracellular_CO2_ug_Per_mL", CO2->GetConcentration(MassPerVolumeUnit::ug_Per_mL));
-		////m_data.GetDataTrack().Probe(tissue->GetName() + "_Intracellular_CO2_mmHg", CO2->GetPartialPressure(PressureUnit::mmHg));
+      //TAG consumption is aerobic
+      if (TissueO2->GetMass(MassUnit::g) > TAGToConsume_mol * O2_Per_TAG * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+      {
+        TissueTAG->GetMass().IncrementValue(-TAGToConsume_mol * m_Triacylglycerol->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(TAGToConsume_mol * CO2_Per_TAG * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().IncrementValue(-TAGToConsume_mol * O2_Per_TAG * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        double totalEnergyUsed = TAGToConsume_mol * ATP_Per_TAG * energyPerMolATP_kcal / TAG_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - TAG_CellularEfficiency);
+        tissueNeededEnergy_kcal = 0;
+      }
+      else
+      {
+        TAGToConsume_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_TAG;
+        TissueTAG->GetMass().IncrementValue(-TAGToConsume_mol * m_Triacylglycerol->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(TAGToConsume_mol * CO2_Per_TAG * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().SetValue(0, MassUnit::g);
+        double totalEnergyUsed = TAGToConsume_mol * ATP_Per_TAG * energyPerMolATP_kcal / TAG_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - TAG_CellularEfficiency);
+        tissueNeededEnergy_kcal -= totalEnergyUsed;
+      }
+      totalO2Consumed_mol += TAGToConsume_mol * O2_Per_TAG;
+      totalCO2Produced_mol += TAGToConsume_mol * CO2_Per_TAG;
+    }
+    //If there's not enough, consume what we can
+    else if (tissueNeededEnergy_kcal > 0 && usableEnergyAsTissueTAG_kcal > 0)
+    {
+      double TAGToConsume_mol = rateLimitingTuningFactor * TissueTAG->GetMolarity(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L;
 
-		//O2 = extracellular.GetSubstanceQuantity(*m_O2);
-		//CO2 = extracellular.GetSubstanceQuantity(*m_CO2);
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Extracellular_O2_ug", O2->GetMass(MassUnit::ug));
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Extracellular_O2_ug_Per_mL", O2->GetConcentration(MassPerVolumeUnit::ug_Per_mL));
-		////m_data.GetDataTrack().Probe(tissue->GetName() + "_Extracellular_O2_mmHg", O2->GetPartialPressure(PressureUnit::mmHg));
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Extracellular_CO2_ug", CO2->GetMass(MassUnit::ug));
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Extracellular_CO2_ug_Per_mL", CO2->GetConcentration(MassPerVolumeUnit::ug_Per_mL));
-		////m_data.GetDataTrack().Probe(tissue->GetName() + "_Extracellular_CO2_mmHg", CO2->GetPartialPressure(PressureUnit::mmHg));
+      //TAG consumption is aerobic
+      if (TissueO2->GetMass(MassUnit::g) > TAGToConsume_mol * O2_Per_TAG * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+      {
+        double massToConsume = ((TissueTAG->GetMolarity().GetValue(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L) - (TAGToConsume_mol * m_Triacylglycerol->GetMolarMass(MassPerAmountUnit::g_Per_mol))) < 0 ? TissueTAG->GetMass().GetValue(MassUnit::g) : (TAGToConsume_mol * m_Triacylglycerol->GetMolarMass(MassPerAmountUnit::g_Per_mol)); //Since we're using the tuning factor, we want to avoid setting to 0 in the wrong cases
+        TissueTAG->GetMass().IncrementValue(-massToConsume, MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(TAGToConsume_mol * CO2_Per_TAG * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().IncrementValue(-TAGToConsume_mol * O2_Per_TAG * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        double totalEnergyUsed = TAGToConsume_mol * ATP_Per_TAG * energyPerMolATP_kcal / TAG_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - TAG_CellularEfficiency);
+        tissueNeededEnergy_kcal -= totalEnergyUsed;
+      }
+      else
+      {
+        TAGToConsume_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_TAG;
+        TissueTAG->GetMass().IncrementValue(-TAGToConsume_mol * m_Triacylglycerol->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(TAGToConsume_mol * CO2_Per_TAG * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().SetValue(0, MassUnit::g);
+        double totalEnergyUsed = TAGToConsume_mol * ATP_Per_TAG * energyPerMolATP_kcal / TAG_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - TAG_CellularEfficiency);
+        tissueNeededEnergy_kcal -= totalEnergyUsed;
+      }
+      totalO2Consumed_mol += TAGToConsume_mol * O2_Per_TAG;
+      totalCO2Produced_mol += TAGToConsume_mol * CO2_Per_TAG;
+    }
 
-		//O2 = vascular->GetSubstanceQuantity(*m_O2);
-		//CO2 = vascular->GetSubstanceQuantity(*m_CO2);
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Vascular_O2_ug", O2->GetMass(MassUnit::ug));
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Vascular_O2_ug_Per_mL", O2->GetConcentration(MassPerVolumeUnit::ug_Per_mL));
-		////m_data.GetDataTrack().Probe(tissue->GetName() + "_Vascular_O2_mmHg", O2->GetPartialPressure(PressureUnit::mmHg));
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Vascular_CO2_ug", CO2->GetMass(MassUnit::ug));
-		//m_data.GetDataTrack().Probe(tissue->GetName() + "_Vascular_CO2_ug_Per_mL", CO2->GetConcentration(MassPerVolumeUnit::ug_Per_mL));
-		////m_data.GetDataTrack().Probe(tissue->GetName() + "_Vascular_CO2_mmHg", CO2->GetPartialPressure(PressureUnit::mmHg));
-#endif
+    //Tissues can consume glucose aerobically via glycolysis and Citric Acid Cycle
+    double totalEnergyAsTissueIntracellularGlucose_kcal = (TissueGlucose->GetMolarity(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L) * ATP_Per_Glucose * energyPerMolATP_kcal / glucose_CellularEfficiency;
 
-	}
-  double oxygenConsumptionRate__mL_Per_s = oxygenConsumptionRate_g_Per_s / m_O2->GetDensity(MassPerVolumeUnit::g_Per_mL);
-  double carbonDioxideProductionRate_mL_Per_s = carbonDioxideProductionRate_g_Per_s / m_CO2->GetDensity(MassPerVolumeUnit::g_Per_mL);
-	GetOxygenConsumptionRate().SetValue(oxygenConsumptionRate__mL_Per_s, VolumePerTimeUnit::mL_Per_s);
-	GetCarbonDioxideProductionRate().SetValue(carbonDioxideProductionRate_mL_Per_s, VolumePerTimeUnit::mL_Per_s);
-	GetRespiratoryExchangeRatio().SetValue(carbonDioxideProductionRate_mL_Per_s / oxygenConsumptionRate__mL_Per_s);
+    //If we have enough intracellular glucose to meet the request
+    if (tissueNeededEnergy_kcal > 0 && totalEnergyAsTissueIntracellularGlucose_kcal >= tissueNeededEnergy_kcal)
+    {
+      double glucoseToConsume_mol = glucose_CellularEfficiency * tissueNeededEnergy_kcal / energyPerMolATP_kcal / ATP_Per_Glucose;
+
+      //This is aerobic glucose consumption, so it's limited by O2
+      if (TissueO2->GetMass(MassUnit::g) > glucoseToConsume_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+      {
+        TissueGlucose->GetMass().IncrementValue(-glucoseToConsume_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(glucoseToConsume_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().IncrementValue(-glucoseToConsume_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        double totalEnergyUsed = glucoseToConsume_mol * ATP_Per_Glucose * energyPerMolATP_kcal / glucose_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
+        tissueNeededEnergy_kcal = 0;
+      }
+      else
+      {
+        glucoseToConsume_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_Glucose;
+        TissueGlucose->GetMass().IncrementValue(-glucoseToConsume_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(glucoseToConsume_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().SetValue(0, MassUnit::g);
+        double totalEnergyUsed = glucoseToConsume_mol * ATP_Per_Glucose * energyPerMolATP_kcal / glucose_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
+        tissueNeededEnergy_kcal -= totalEnergyUsed;
+      }
+      totalO2Consumed_mol += glucoseToConsume_mol * O2_Per_Glucose;
+      totalCO2Produced_mol += glucoseToConsume_mol * CO2_Per_Glucose;
+    }
+    //If we don't have enough glucose
+    else if(tissueNeededEnergy_kcal > 0)
+    {
+      double glucoseToConsume_mol = TissueGlucose->GetMolarity(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L;
+
+      //If we have enough O2
+      if (TissueO2->GetMass(MassUnit::g) > glucoseToConsume_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+      {
+        TissueGlucose->GetMass().SetValue(0, MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(glucoseToConsume_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().IncrementValue(-glucoseToConsume_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        double totalEnergyUsed = glucoseToConsume_mol * ATP_Per_Glucose * energyPerMolATP_kcal / glucose_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
+        tissueNeededEnergy_kcal -= totalEnergyUsed;
+      }
+      else
+      {
+        glucoseToConsume_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_Glucose;
+        TissueGlucose->GetMass().IncrementValue(-glucoseToConsume_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueCO2->GetMass().IncrementValue(glucoseToConsume_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        TissueO2->GetMass().SetValue(0, MassUnit::g);
+        double totalEnergyUsed = glucoseToConsume_mol * ATP_Per_Glucose * energyPerMolATP_kcal / glucose_CellularEfficiency;
+        nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+        heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
+        tissueNeededEnergy_kcal -= totalEnergyUsed;
+      }
+      totalO2Consumed_mol += glucoseToConsume_mol * O2_Per_Glucose;
+      totalCO2Produced_mol += glucoseToConsume_mol * CO2_Per_Glucose;
+    }
+
+    //The muscle compartment has its own stores of glycogen that it can consume aerobically
+    if (tissueNeededEnergy_kcal > 0 && tissue == m_MuscleTissue)
+    {
+      double totalEnergyAsMuscleGlycogen_kcal = (GetMuscleGlycogen(MassUnit::g) / m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol)) * aerobic_ATP_Per_Glycogen * energyPerMolATP_kcal / glucose_CellularEfficiency;
+
+      //If we have enough energy as glycogen, consume it
+      //TODO Glycogen should be consumed at a particular rate, like AA
+      if (totalEnergyAsMuscleGlycogen_kcal >= tissueNeededEnergy_kcal)
+      {
+        double glycogenConsumed_mol = glucose_CellularEfficiency * tissueNeededEnergy_kcal / energyPerMolATP_kcal / aerobic_ATP_Per_Glycogen;
+
+        //If we have enough O2
+        if (TissueO2->GetMass(MassUnit::g) > glycogenConsumed_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+        {
+          GetMuscleGlycogen().IncrementValue(-glycogenConsumed_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(glycogenConsumed_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().IncrementValue(-glycogenConsumed_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          double totalEnergyUsed = glycogenConsumed_mol * aerobic_ATP_Per_Glycogen * energyPerMolATP_kcal / glucose_CellularEfficiency;
+          nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+          heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
+          tissueNeededEnergy_kcal = 0;
+        }
+        else
+        {
+          glycogenConsumed_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_Glucose;
+          GetMuscleGlycogen().IncrementValue(-glycogenConsumed_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(glycogenConsumed_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().SetValue(0, MassUnit::g);
+          double totalEnergyUsed = glycogenConsumed_mol * aerobic_ATP_Per_Glycogen * energyPerMolATP_kcal / glucose_CellularEfficiency;
+          nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+          heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
+          tissueNeededEnergy_kcal -= totalEnergyUsed;
+        }
+        totalO2Consumed_mol += glycogenConsumed_mol * O2_Per_Glucose;
+        totalCO2Produced_mol += glycogenConsumed_mol * CO2_Per_Glucose;
+      }
+      //Otherwise, consume what glycogen we can
+      else
+      {
+        double glycogenConsumed_mol = GetMuscleGlycogen(MassUnit::g) / m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol);
+
+        //If we have enough O2
+        if (TissueO2->GetMass(MassUnit::g) > glycogenConsumed_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol))
+        {
+          GetMuscleGlycogen().SetValue(0, MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(glycogenConsumed_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().IncrementValue(-glycogenConsumed_mol * O2_Per_Glucose * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          double totalEnergyUsed = glycogenConsumed_mol * aerobic_ATP_Per_Glycogen * energyPerMolATP_kcal / glucose_CellularEfficiency;
+          nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+          heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
+          tissueNeededEnergy_kcal -= totalEnergyUsed;
+        }
+        else
+        {
+          glycogenConsumed_mol = TissueO2->GetMass(MassUnit::g) / m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / O2_Per_Glucose;
+          GetMuscleGlycogen().IncrementValue(-glycogenConsumed_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueCO2->GetMass().IncrementValue(glycogenConsumed_mol * CO2_Per_Glucose * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+          TissueO2->GetMass().SetValue(0, MassUnit::g);
+          double totalEnergyUsed = glycogenConsumed_mol * aerobic_ATP_Per_Glycogen * energyPerMolATP_kcal / glucose_CellularEfficiency;
+          nonbrainNeededEnergy_kcal -= totalEnergyUsed;
+          heatGenerated_kcal += totalEnergyUsed * (1 - glucose_CellularEfficiency);
+          tissueNeededEnergy_kcal -= totalEnergyUsed;
+        }
+        totalO2Consumed_mol += glycogenConsumed_mol * O2_Per_Glucose;
+        totalCO2Produced_mol += glycogenConsumed_mol * CO2_Per_Glucose;
+      }
+    }
+
+    //If all O2 is gone, energy can be gotten from glycolysis only, with the pyruvate products converted to lactate (i.e. anaerobic)
+    //Since this metabolic pathway doesn't have the inefficiency of oxidative phosphorylation and citric acid cycle, we won't use the efficiency value
+    //This means we won't generate heat, which is probably not accurate
+    totalEnergyAsTissueIntracellularGlucose_kcal = (TissueGlucose->GetMolarity(AmountPerVolumeUnit::mol_Per_L)*TissueVolume_L) * anaerobic_ATP_Per_Glucose * energyPerMolATP_kcal;
+
+    //If we have enough intracellular glucose to meet the request
+    if (tissueNeededEnergy_kcal > 0 && totalEnergyAsTissueIntracellularGlucose_kcal >= tissueNeededEnergy_kcal)
+    {
+      double glucoseToConsume_mol = tissueNeededEnergy_kcal / energyPerMolATP_kcal / anaerobic_ATP_Per_Glucose;
+      TissueGlucose->GetMass().IncrementValue(-glucoseToConsume_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+      TissueLactate->GetMass().IncrementValue(glucoseToConsume_mol * lactate_Per_Glucose * m_Lactate->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+      nonbrainNeededEnergy_kcal -= glucoseToConsume_mol * anaerobic_ATP_Per_Glucose * energyPerMolATP_kcal;
+      tissueNeededEnergy_kcal = 0;
+      lactateProductionRate_mol_Per_s += glucoseToConsume_mol * lactate_Per_Glucose / time_s;
+      if (m_AnaerobicTissues.find(tissue->GetName()) == std::string::npos)  //for tracking only
+        m_AnaerobicTissues.append(tissue->GetName() + " ");
+    }
+    //If we'll use up all the glucose
+    else if (tissueNeededEnergy_kcal > 0)
+    {
+      double glucoseToConsume_mol = totalEnergyAsTissueIntracellularGlucose_kcal / energyPerMolATP_kcal / anaerobic_ATP_Per_Glucose;
+      TissueGlucose->GetMass().SetValue(0, MassUnit::g);
+      TissueLactate->GetMass().IncrementValue(glucoseToConsume_mol * lactate_Per_Glucose * m_Lactate->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+      nonbrainNeededEnergy_kcal -= glucoseToConsume_mol * anaerobic_ATP_Per_Glucose * energyPerMolATP_kcal;
+      tissueNeededEnergy_kcal -= glucoseToConsume_mol * anaerobic_ATP_Per_Glucose * energyPerMolATP_kcal;
+      lactateProductionRate_mol_Per_s += glucoseToConsume_mol * lactate_Per_Glucose / time_s;
+      if (m_AnaerobicTissues.find(tissue->GetName()) == std::string::npos)  //for tracking only
+        m_AnaerobicTissues.append(tissue->GetName() + " ");
+    }
+
+    //Muscles can convert glycogen anaerobically, too
+    //Note anaerobic glycolysis is limited by low pH, a feedback mechanism that isn't modeled here at this time
+    if ((tissueNeededEnergy_kcal > 0 || muscleMandatoryAnaerobicNeededEnergy_kcal > 0) && tissue == m_MuscleTissue)
+    {
+      double energyAsMuscleGlycogen_kcal = (GetMuscleGlycogen(MassUnit::g) / m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol)) * anaerobic_ATP_Per_Glycogen * energyPerMolATP_kcal;
+
+      //If we have enough
+      if (energyAsMuscleGlycogen_kcal >= (tissueNeededEnergy_kcal+muscleMandatoryAnaerobicNeededEnergy_kcal))
+      {
+        double glycogenConsumed_g = ((tissueNeededEnergy_kcal+muscleMandatoryAnaerobicNeededEnergy_kcal) / energyAsMuscleGlycogen_kcal) * GetMuscleGlycogen(MassUnit::g);
+        double glycogenConsumed_mol = glycogenConsumed_g / m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol);
+        GetMuscleGlycogen().IncrementValue(-glycogenConsumed_g, MassUnit::g);
+        TissueLactate->GetMass().IncrementValue(glycogenConsumed_mol * lactate_Per_Glycogen * m_Lactate->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        nonbrainNeededEnergy_kcal -= glycogenConsumed_mol * anaerobic_ATP_Per_Glycogen * energyPerMolATP_kcal;
+        lactateProductionRate_mol_Per_s += glycogenConsumed_mol * lactate_Per_Glycogen / time_s;
+        if (m_AnaerobicTissues.find(tissue->GetName()) == std::string::npos && tissueNeededEnergy_kcal != 0)  //for tracking only
+          m_AnaerobicTissues.append(tissue->GetName() + " ");
+        muscleMandatoryAnaerobicNeededEnergy_kcal = 0;
+        tissueNeededEnergy_kcal = 0;
+      }
+      //If we still can't meet the energy request, we have an energy deficit
+      else
+      {
+        double glycogenConsumed_mol = GetMuscleGlycogen(MassUnit::g) / m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol);
+        GetMuscleGlycogen().SetValue(0, MassUnit::g);
+        TissueLactate->GetMass().IncrementValue(glycogenConsumed_mol * lactate_Per_Glycogen * m_Lactate->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
+        nonbrainNeededEnergy_kcal -= glycogenConsumed_mol * anaerobic_ATP_Per_Glycogen * energyPerMolATP_kcal;
+        tissueNeededEnergy_kcal -= glycogenConsumed_mol * anaerobic_ATP_Per_Glycogen * energyPerMolATP_kcal;
+        lactateProductionRate_mol_Per_s += glycogenConsumed_mol * lactate_Per_Glycogen / time_s;
+        if (m_AnaerobicTissues.find(tissue->GetName()) == std::string::npos && tissueNeededEnergy_kcal != 0)  //for tracking only
+          m_AnaerobicTissues.append(tissue->GetName() + " ");
+        tissueNeededEnergy_kcal += muscleMandatoryAnaerobicNeededEnergy_kcal; //add the still-needed mandatory anaerobic energy back to muscle's needed energy for tracking of the deficit
+      }
+    }
+
+    //Balance everything
+    TissueO2->Balance(BalanceLiquidBy::Mass);
+    TissueCO2->Balance(BalanceLiquidBy::Mass);
+    TissueGlucose->Balance(BalanceLiquidBy::Mass);
+    TissueTAG->Balance(BalanceLiquidBy::Mass);
+    TissueLactate->Balance(BalanceLiquidBy::Mass);
+    TissueKetones->Balance(BalanceLiquidBy::Mass);
+    TissueAA->Balance(BalanceLiquidBy::Mass);
+    TissueUrea->Balance(BalanceLiquidBy::Mass);
+    intracellular.GetSubstanceQuantity(*m_Creatinine)->Balance(BalanceLiquidBy::Mass);
+
+    //If none of this met our energy needs, we have a deficit (fatigue)
+    nonbrainEnergyDeficit_kcal += (tissueNeededEnergy_kcal > 0 ? tissueNeededEnergy_kcal : 0);
+
+  }//end of the tissue loop
+
+  //Update outputs
+  totalO2Consumed_mol += m_hepaticO2Consumed_mol;
+  totalCO2Produced_mol += m_hepaticCO2Produced_mol;
+  oxygenConsumptionRate_g_Per_s = totalO2Consumed_mol * m_O2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / time_s;
+  carbonDioxideProductionRate_g_Per_s = totalCO2Produced_mol * m_CO2->GetMolarMass(MassPerAmountUnit::g_Per_mol) / time_s;
+  respiratoryQuotient = totalCO2Produced_mol / totalO2Consumed_mol;
+  GetOxygenConsumptionRate().SetValue(oxygenConsumptionRate_g_Per_s / m_O2->GetDensity(MassPerVolumeUnit::g_Per_mL), VolumePerTimeUnit::mL_Per_s);
+  GetCarbonDioxideProductionRate().SetValue(carbonDioxideProductionRate_g_Per_s / m_CO2->GetDensity(MassPerVolumeUnit::g_Per_mL), VolumePerTimeUnit::mL_Per_s);
+  GetRespiratoryExchangeRatio().SetValue(respiratoryQuotient);
+  m_energy->GetLactateProductionRate().SetValue(lactateProductionRate_mol_Per_s, AmountPerTimeUnit::mol_Per_s);
+  achievedWorkRate_W = (1/m_Dt_s)*3600*24*(exerciseEnergyRequested_kcal - brainEnergyDeficit_kcal - nonbrainEnergyDeficit_kcal) / kcal_Per_day_Per_Watt;
+
+  if (m_PatientActions->HasExercise())
+  {
+    m_energy->GetTotalWorkRateLevel().SetValue(achievedWorkRate_W / maxWorkRate_W);
+    double intensity = m_PatientActions->GetExercise()->GetIntensity().GetValue();
+    if (intensity > 1e-6) //approx. zero
+      m_energy->GetAchievedExerciseLevel().SetValue(achievedWorkRate_W / maxWorkRate_W / intensity);
+    else
+      m_energy->GetAchievedExerciseLevel().Clear();
+  }
+  else
+  {
+    m_energy->GetAchievedExerciseLevel().Clear();
+    m_energy->GetTotalWorkRateLevel().Clear();
+  }
+
+  double fatigue = ((brainEnergyDeficit_kcal + nonbrainEnergyDeficit_kcal) / (baseEnergyRequested_kcal + exerciseEnergyRequested_kcal));
+  /// \event Patient: Fatigue - Energy stores are sub-maximal.
+  if (fatigue > 0.0) 
+  {
+    m_Patient->SetEvent(CDM::enumPatientEvent::Fatigue, true, m_data.GetSimulationTime());
+  }
+  else 
+  {
+    m_Patient->SetEvent(CDM::enumPatientEvent::Fatigue, false, m_data.GetSimulationTime());
+  }
+  m_energy->GetFatigueLevel().SetValue(fatigue);
+
+  //Reset O2/CO2 member variables since they're static
+  m_hepaticCO2Produced_mol = 0;
+  m_hepaticO2Consumed_mol = 0;
+
+  //Useful debugging information
+  //m_data.GetDataTrack().Probe("InstantaneousBrainEnergyDeficit_kcal", brainEnergyDeficit_kcal);
+  //m_data.GetDataTrack().Probe("InstantaneousNonBrainEnergyDeficit_kcal", nonbrainEnergyDeficit_kcal);
+  //m_data.GetDataTrack().Probe("NonBrainDeficitFraction", nonbrainEnergyDeficit_kcal / (.8*baseEnergyRequested_kcal + exerciseEnergyRequested_kcal));
+  //m_data.GetDataTrack().Probe("InstantaneousMetabolicHeatGenerated_kcal", heatGenerated_kcal);
+
+  //Gives you an idea of what non-muscle compartments don't get enough O2 flow and is better than using Info every timestep
+  //Can remove once we get everything tuned adequately
+  /*
+  int steps = m_data.GetSimulationTime().GetValue(TimeUnit::s)/time_s;
+  if (steps % 5000 == 0 && m_AnaerobicTissues.length() > 1)
+  {
+    Info(m_AnaerobicTissues + "used anaerobic energy in the last 100 seconds.");
+    m_AnaerobicTissues.clear();
+  }
+  */
 }
 
 //--------------------------------------------------------------------------------------------------
 /// \brief
-/// Regulates blood glucose through movement into/out of the muscle and liver, and lipids into/out of fat.
-///
-///
-/// \param time
-/// The time step
+/// Regulates blood amino acid levels by storing/releasing from muscle tissue.
 ///
 /// \details
-/// The blood glucose is controlled by driving blood glucose into the muscle tissue or removing it from the liver tissue.
-/// The rate of blood glucose transfer in each of these tissues is driven by the difference between the current blood
-/// glucose and the resting blood glucose. An insulin gain is used to modify the rate of glucose transfer into the muscle.
-/// A similar effect occurs with fatty acids. As insulin is released, this drives fatty acids into the adipose tissue. When
-/// fatty acids in the blood are low, they may be taken from the adipose pool.
-/// An improvement to this model is currently in development, and the exsiting model has been rendered inactive.
+/// The blood amino acid level is regulated based on the relative changes in insulin and glucagon. A certain amount of
+/// amino acids are stored in the tissues as protein. When insulin dominates, amino acids are pushed to the muscle tissue
+/// for storage. We don't model their transformation into combined protein; we just use muscle as a storage tank. When
+/// glucagon dominates, amino acids are released from storage into the blood for use in gluconeogenesis.
 //--------------------------------------------------------------------------------------------------
-void Tissue::GlucoseLipidControl(double time_s)
+void Tissue::ProteinStorageAndRelease()
 {
-	double currentBloodGlucose_mg_Per_mL = m_data.GetSubstances().GetGlucose().GetBloodConcentration(MassPerVolumeUnit::mg_Per_mL);
-	double currentBloodLipid_mg_Per_mL = m_data.GetSubstances().GetTristearin().GetBloodConcentration(MassPerVolumeUnit::mg_Per_mL);
-	double currentInsulinConcentration_mg_Per_mL = m_data.GetSubstances().GetInsulin().GetBloodConcentration(MassPerVolumeUnit::mg_Per_mL);
 
-	double bloodGlucoseDelta_mg_Per_mL = (currentBloodGlucose_mg_Per_mL - m_RestingBloodGlucose_g_Per_L);
-	double bloodLipidDelta_mg_Per_mL = (currentBloodLipid_mg_Per_mL - m_RestingBloodLipid_g_Per_L);
-	double insulinFeedback = currentInsulinConcentration_mg_Per_mL / m_RestingBloodInsulin_g_Per_L;
-	double massDelta_mg = 0.0;
-	double evFlow_mL_Per_s = 0.0;
-	double vascularVolume = 0.0;
-	double extravascularVolume = 0.0;
-	double transferTimeConstant_per_s = 0.1;
+  double aminoAcidsBaseline_mg_Per_dL = 50;  // \todo make this a CDM set point like glucose?
 
-	/// \todo Switch to active transport methodology when ready
-	if (bloodGlucoseDelta_mg_Per_mL >= 0.0) //Insulin is required to return blood glucose to normal values
-	{
-		//If blood glucose is above normal levels, the insulin response will drive glucose into the muscle tissue.
-		//This process is limited by the transfer time constant, which is currently set to achieve adequate glucose regulation during resting conditions.
-		/// \todo Determine better value for the transfer time constant from 24 hour glucose and insulin profiles
-		vascularVolume = m_MuscleVascular->GetVolume().GetValue(VolumeUnit::mL);
-		massDelta_mg = insulinFeedback*bloodGlucoseDelta_mg_Per_mL*transferTimeConstant_per_s*vascularVolume*time_s;
-		if (massDelta_mg > m_MuscleVascularGlucose->GetMass(MassUnit::mg))
-			massDelta_mg = m_MuscleVascularGlucose->GetMass(MassUnit::mg);
-		m_MuscleVascularGlucose->GetMass().IncrementValue(-massDelta_mg, MassUnit::mg);
-		if (std::abs(m_MuscleVascularGlucose->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		{
-			m_MuscleVascularGlucose->GetMass().SetValue(0.0, MassUnit::ug);
-		}
-		m_MuscleIntracellular->GetSubstanceQuantity(*m_Glucose)->GetMass().IncrementValue(massDelta_mg, MassUnit::mg);
-		if (std::abs(m_MuscleIntracellular->GetSubstanceQuantity(*m_Glucose)->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		{
-			m_MuscleIntracellular->GetSubstanceQuantity(*m_Glucose)->GetMass().SetValue(0.0, MassUnit::ug);
-		}
-	}
-	else
-	{
-		//If blood glucose is low, glucose will be pulled from the liver tissue into the vascular region. This is the equivalent of a glucagon response
-		extravascularVolume = m_LiverIntracellular->GetVolume().GetValue(VolumeUnit::mL);
-		massDelta_mg = bloodGlucoseDelta_mg_Per_mL*transferTimeConstant_per_s*extravascularVolume*time_s;
-		if (massDelta_mg > m_LiverIntracellular->GetSubstanceQuantity(*m_Glucose)->GetMass(MassUnit::mg))
-			massDelta_mg = m_LiverIntracellular->GetSubstanceQuantity(*m_Glucose)->GetMass(MassUnit::mg);
-		m_LiverVascularGlucose->GetMass().IncrementValue(-massDelta_mg, MassUnit::mg);
-		if (std::abs(m_LiverVascularGlucose->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		{
-			m_LiverVascularGlucose->GetMass().SetValue(0.0, MassUnit::ug);
-		}
-		m_LiverIntracellular->GetSubstanceQuantity(*m_Glucose)->GetMass().IncrementValue(massDelta_mg, MassUnit::mg);
-		if (std::abs(m_LiverIntracellular->GetSubstanceQuantity(*m_Glucose)->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		{
-			m_LiverIntracellular->GetSubstanceQuantity(*m_Glucose)->GetMass().SetValue(0.0, MassUnit::ug);
-		}
-	}
+   double hormoneFactor = Hepatic::CalculateRelativeHormoneChange(GetMuscleInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, GetMuscleGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_MuscleInsulin, m_MuscleGlucagon);
 
-	if (bloodLipidDelta_mg_Per_mL >= 0.0)
-	{
-		vascularVolume = m_FatVascular->GetVolume().GetValue(VolumeUnit::mL);
-		massDelta_mg = insulinFeedback*bloodLipidDelta_mg_Per_mL*transferTimeConstant_per_s*vascularVolume*time_s;
-		if (massDelta_mg > m_FatIntracellular->GetSubstanceQuantity(*m_Tristearin)->GetMass(MassUnit::mg))
-			massDelta_mg = m_FatIntracellular->GetSubstanceQuantity(*m_Tristearin)->GetMass(MassUnit::mg);
-		m_FatVascularLipid->GetMass().IncrementValue(-massDelta_mg, MassUnit::mg);
-		if (std::abs(m_FatVascularLipid->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		{
-			m_FatVascularLipid->GetMass().SetValue(0.0, MassUnit::ug);
-		}
-		m_FatIntracellular->GetSubstanceQuantity(*m_Tristearin)->GetMass().IncrementValue(massDelta_mg, MassUnit::mg);
-		if (std::abs(m_FatIntracellular->GetSubstanceQuantity(*m_Tristearin)->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		{
-			m_FatIntracellular->GetSubstanceQuantity(*m_Tristearin)->GetMass().SetValue(0.0, MassUnit::ug);
-		}
-	}
-	else
-	{
-		vascularVolume = m_FatVascular->GetVolume().GetValue(VolumeUnit::mL);
-		massDelta_mg = bloodLipidDelta_mg_Per_mL*transferTimeConstant_per_s*vascularVolume*time_s;
-		if (massDelta_mg > m_FatIntracellular->GetSubstanceQuantity(*m_Tristearin)->GetMass(MassUnit::mg))
-			massDelta_mg = m_FatIntracellular->GetSubstanceQuantity(*m_Tristearin)->GetMass(MassUnit::mg);
-		m_FatVascularLipid->GetMass().IncrementValue(-massDelta_mg, MassUnit::mg);
-		if (std::abs(m_FatVascularLipid->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		{
-			m_FatVascularLipid->GetMass().SetValue(0.0, MassUnit::ug);
-		}
-		m_FatIntracellular->GetSubstanceQuantity(*m_Tristearin)->GetMass().IncrementValue(massDelta_mg, MassUnit::mg);
-		if (std::abs(m_FatIntracellular->GetSubstanceQuantity(*m_Tristearin)->GetMass(MassUnit::ug)) < ZERO_APPROX)
-		{
-			m_FatIntracellular->GetSubstanceQuantity(*m_Tristearin)->GetMass().SetValue(0.0, MassUnit::ug);
-		}
-	}
+  //Guyton says protein blood concentrations should only rise 2-3 mg/dL even after eating because of absorption into tissues
+  //These values allow a 75g protein meal to only raise amino acid blood concentration ~7 mg/dL
+  //These might need to change if rate at which protein is absorbed into blood changes
+  double proteinStorageLowerRate_g_Per_s = .3;
+  double proteinStorageUpperRate_g_Per_s = .6;
+
+  //https://www.wolframalpha.com/input/?i=y%3D.3%2B.3%2F(1%2Be%5E(-6(x-1)))+from+0%3Cy%3C.6+and+0%3Cx%3C2
+  double proteinStorageRate_g_Per_s = proteinStorageLowerRate_g_Per_s + GeneralMath::LogisticFunction(proteinStorageUpperRate_g_Per_s - proteinStorageLowerRate_g_Per_s, 1, 6, hormoneFactor);
+
+  //Assume protein breakdown rates are similar to storage rates, maybe a bit slower; could be adjusted
+  double proteinBreakdownLowerRate_g_Per_s = .1;
+  double proteinBreakdownUpperRate_g_Per_s = .2;
+
+  //https://www.wolframalpha.com/input/?i=y%3D.1%2B.1%2F(1%2Be%5E(-15(x-.75)))+from+0%3Cy%3C.2+and+0%3Cx%3C2
+  double proteinBreakdownRate_g_Per_s = proteinBreakdownLowerRate_g_Per_s + GeneralMath::LogisticFunction(proteinBreakdownUpperRate_g_Per_s - proteinBreakdownLowerRate_g_Per_s, .75, 15, -hormoneFactor);
+
+  //remove excess amino acids from blood and store in muscle while there's room
+  //Body mobilizes protein when glucagon dominates, but we'll have protein shift toward storage unless insulin drops significantly
+  if (hormoneFactor >= -.2 && GetStoredProtein(MassUnit::g) < m_maxProteinStorage_g &&  m_MuscleAA->GetConcentration().GetValue(MassPerVolumeUnit::mg_Per_dL) > aminoAcidsBaseline_mg_Per_dL)
+  {
+    if (m_MuscleAA->GetMass(MassUnit::g) < proteinStorageRate_g_Per_s * m_Dt_s)
+    {
+      m_ss << "Not enough amino acids in blood to store!";
+      Info(m_ss);
+    }
+    else
+    {
+      m_MuscleAA->GetMass().IncrementValue(-proteinStorageRate_g_Per_s * m_Dt_s, MassUnit::g);
+      GetStoredProtein().IncrementValue(proteinStorageRate_g_Per_s * m_Dt_s, MassUnit::g);
+      m_MuscleAA->Balance(BalanceLiquidBy::Mass);
+    }
+  }
+
+  //remove amino acids from protein stores and dump into blood
+  //This is not the same as muscle degradation during starvation
+  //We don't dump AA into blood if blood concentration is already at basal level
+  else if (hormoneFactor < 0 && m_MuscleAA->GetConcentration().GetValue(MassPerVolumeUnit::mg_Per_dL) < aminoAcidsBaseline_mg_Per_dL)
+  {
+    if (GetStoredProtein(MassUnit::g) < proteinBreakdownRate_g_Per_s * m_Dt_s)
+    {
+      //m_ss << "Not enough stored amino acids remaining!";
+      //Info(m_ss);
+    }
+    else
+    {
+      m_MuscleAA->GetMass().IncrementValue(proteinBreakdownRate_g_Per_s * m_Dt_s, MassUnit::g);
+      GetStoredProtein().IncrementValue(-proteinBreakdownRate_g_Per_s * m_Dt_s, MassUnit::g);
+      m_MuscleAA->Balance(BalanceLiquidBy::Mass);
+    }
+  }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// \brief
+/// Regulates blood triacylglyceride levels by storing/releasing in fat tissue.
+///
+/// \details
+/// The blood triacylglyceride level is regulated based on the relative changes in insulin and glucagon.
+/// Fat is stored in the adipocytes of the fat tissue. When insulin dominates, triacylglycerides are pushed to the fat tissue
+/// for storage. When glucagon dominates, triacylglycerol is released from storage into the blood for use in metabolism.
+//--------------------------------------------------------------------------------------------------
+void Tissue::FatStorageAndRelease()
+{
+  double triacylglycerolBaseline_mg_Per_dL = 75;  // \todo make this a CDM set point like glucose?
+
+  double hormoneFactor = Hepatic::CalculateRelativeHormoneChange(GetFatInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, GetFatGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_FatInsulin, m_FatGlucagon);
+
+  //Guyton says triglycerides in chylomicrons are clear from blood in "a few hours" with chylomicrons having half-life <1 hour
+  //Other sources show triglycerides returning to normal in ~4 hours after peak
+  //These values currently allow 75g of fat to be absorbed into bloodstream in ~4 hours, with all being stored in ~6 hours
+  //Peak triglyceride levels are about 5x normal, maybe too high
+  double fatStorageLowerRate_g_Per_s = .004;
+  double fatStorageUpperRate_g_Per_s = .012;
+
+  //https://www.wolframalpha.com/input/?i=y%3D.4%2B.8%2F(1%2Be%5E(-6(x-.5)))+from+0%3Cy%3C1.2+and+0%3Cx%3C2
+  double fatStorageRate_g_Per_s = fatStorageLowerRate_g_Per_s + GeneralMath::LogisticFunction(fatStorageUpperRate_g_Per_s - fatStorageLowerRate_g_Per_s, 1, 6, hormoneFactor);
+
+  //Assume fat release rates are similar to glycogen for now... but this could be revisited
+  double fatReleaseLowerRate_g_Per_s = .002546; //maxStoredProtein_g/ 12 * 3600
+  double fatReleaseUpperRate_g_Per_s = .061111; //maxStoredProtein_g/ .5 * 3600
+
+  //https://www.wolframalpha.com/input/?i=y%3D.002546%2B.058565%2F(1%2Be%5E(-15(x-.75)))+from+0%3Cy%3C.08+and+0%3Cx%3C2
+  double fatReleaseRate_g_Per_s = fatReleaseLowerRate_g_Per_s + GeneralMath::LogisticFunction(fatReleaseUpperRate_g_Per_s - fatReleaseLowerRate_g_Per_s, .75, 15, -hormoneFactor);
+
+  //remove excess triacylglycerol from blood and store in fat tissue
+  if (hormoneFactor >= -.2 &&  m_FatTAG->GetConcentration().GetValue(MassPerVolumeUnit::mg_Per_dL) > triacylglycerolBaseline_mg_Per_dL)
+  {
+    if (m_FatTAG->GetMass(MassUnit::g) < fatStorageRate_g_Per_s * m_Dt_s)
+    {
+      m_ss << "Not enough triacylglycerol in blood to store!";
+      Info(m_ss);
+    }
+    else
+    {
+      m_FatTAG->GetMass().IncrementValue(-fatStorageRate_g_Per_s * m_Dt_s, MassUnit::g);
+      GetStoredFat().IncrementValue(fatStorageRate_g_Per_s * m_Dt_s, MassUnit::g);
+      m_FatTAG->Balance(BalanceLiquidBy::Mass);
+    }
+  }
+
+  //remove triacylglycerol from fat stores and dump into blood
+  //Guyton says during starvation (i.e. glucagon dominant times) triacylglycerol blood concentration can be 5-8x normal
+  //We won't continue to dump TAG into blood if blood concentration is already high, but we will try to maintain base level
+  else if ((hormoneFactor < 0 && m_FatTAG->GetConcentration().GetValue(MassPerVolumeUnit::mg_Per_dL) < triacylglycerolBaseline_mg_Per_dL*6.5) || m_FatTAG->GetConcentration().GetValue(MassPerVolumeUnit::mg_Per_dL) < triacylglycerolBaseline_mg_Per_dL)
+  {
+    if (GetStoredFat(MassUnit::g) < fatReleaseRate_g_Per_s * m_Dt_s)
+    {
+      //m_ss << "Not enough stored fat remaining!";
+      //Info(m_ss);
+    }
+    else
+    {
+      m_FatTAG->GetMass().IncrementValue(fatReleaseRate_g_Per_s * m_Dt_s, MassUnit::g);
+      GetStoredFat().IncrementValue(-fatReleaseRate_g_Per_s * m_Dt_s, MassUnit::g);
+      m_FatTAG->Balance(BalanceLiquidBy::Mass);
+    }
+  }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -1150,10 +1512,68 @@ void Tissue::CalculateVitals()
 
 //--------------------------------------------------------------------------------------------------
 /// \brief
+/// Checks glycogen levels and throws events if necessary
+///
+/// \details
+/// Throws events for depleted glycogen levels in the liver and/or muscle
+//--------------------------------------------------------------------------------------------------
+void Tissue::CheckGlycogenLevels()
+{
+  //liver glycogen
+  if (GetLiverGlycogen().GetValue(MassUnit::g) < 1)
+  {
+    m_Patient->SetEvent(CDM::enumPatientEvent::LiverGlycogenDepleted, true, m_data.GetSimulationTime());
+  }
+  else if (m_Patient->IsEventActive(CDM::enumPatientEvent::LiverGlycogenDepleted) && GetLiverGlycogen().GetValue(MassUnit::g) > 10)
+  {
+    m_Patient->SetEvent(CDM::enumPatientEvent::LiverGlycogenDepleted, false, m_data.GetSimulationTime());
+  }
+
+  //muscle glycogen
+  if (GetMuscleGlycogen().GetValue(MassUnit::g) < 1)
+  {
+    m_Patient->SetEvent(CDM::enumPatientEvent::MuscleGlycogenDepleted, true, m_data.GetSimulationTime());
+  }
+  else if (m_Patient->IsEventActive(CDM::enumPatientEvent::MuscleGlycogenDepleted) && GetMuscleGlycogen().GetValue(MassUnit::g) > 10)
+  {
+    m_Patient->SetEvent(CDM::enumPatientEvent::MuscleGlycogenDepleted, false, m_data.GetSimulationTime());
+  }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// \brief
+/// Sets body state with regard to some substances and manages blood gas distribution
+///
+/// \details
+/// Until substance fidelity is improved, some values for blood pH are hardcoded. This funciton
+/// also manages the calls to blood gas distribution so it doesn't clutter up Process().
+//--------------------------------------------------------------------------------------------------
+void Tissue::ManageSubstancesAndSaturation()
+{
+  SEScalarMassPerVolume albuminConcentration;
+  albuminConcentration.SetValue(45.0, MassPerVolumeUnit::g_Per_L);
+  // Currently, substances are not where they need to be, we will hard code this for now until we fix them
+  /// \todo Remove SetBodyState hardcode and replace with computed values after substance redux is complete
+  m_data.GetSaturationCalculator().SetBodyState(albuminConcentration,
+    m_data.GetBloodChemistry().GetHematocrit(),
+    m_data.GetEnergy().GetCoreTemperature(),
+    m_data.GetBloodChemistry().GetStrongIonDifference(),
+    m_data.GetBloodChemistry().GetPhosphate());
+  for (SELiquidCompartment* cmpt : m_data.GetCompartments().GetVascularLeafCompartments())
+  {
+    if (cmpt->HasVolume())
+    {
+      m_data.GetSaturationCalculator().CalculateBloodGasDistribution(*cmpt);
+    }
+  }
+}
+
+//--------------------------------------------------------------------------------------------------
+/// \brief
 /// Distributes mass to child compartments by volume-weighted distribution
 ///
 /// \param  cmpt  Parent compartment
-/// \param  sub   Substance being distribute.
+/// \param  sub   Substance being distributed.
 /// \param  mass  mass of substance to distribute.
 /// \param  unit  unit of mass.
 ///
@@ -1203,7 +1623,7 @@ void Tissue::DistributeMassbyVolumeWeighted(SELiquidCompartment& cmpt, const SES
 /// Distributes mass to child compartments by mass-weighted distribution
 ///
 /// \param  cmpt  Parent compartment
-/// \param  sub   Substance being distribute.
+/// \param  sub   Substance being distributed.
 /// \param  mass  mass of substance to distribute.
 /// \param  unit  unit of mass.
 ///
@@ -1223,10 +1643,10 @@ void Tissue::DistributeMassbyMassWeighted(SELiquidCompartment& cmpt, const SESub
   if (!cmpt.HasChildren())
   {
     subQ->GetMass().IncrementValue(mass, unit);
-	if (std::abs(subQ->GetMass(MassUnit::ug)) < ZERO_APPROX)
-	{
-		subQ->GetMass().SetValue(0.0, MassUnit::ug);
-	}
+	  if (std::abs(subQ->GetMass(MassUnit::ug)) < ZERO_APPROX)
+	  {
+		  subQ->GetMass().SetValue(0.0, MassUnit::ug);
+	  }
   }
   else
   {
@@ -1234,16 +1654,16 @@ void Tissue::DistributeMassbyMassWeighted(SELiquidCompartment& cmpt, const SESub
     for (SELiquidCompartment* leaf : cmpt.GetLeaves())
     {
       SELiquidSubstanceQuantity* subQ = leaf->GetSubstanceQuantity(sub);
-	  double leafMass = 0.0;
-	  if (mass_ug != 0.0)
-	  {
-		  leafMass = mass * (subQ->GetMass(MassUnit::ug) / mass_ug);
-	  }
+      double leafMass = 0.0;
+      if (mass_ug != 0.0)
+      {
+        leafMass = mass * (subQ->GetMass(MassUnit::ug) / mass_ug);
+      }
       subQ->GetMass().IncrementValue(leafMass, unit);
-	  if (std::abs(subQ->GetMass(MassUnit::ug)) < ZERO_APPROX)
-	  {
-		  subQ->GetMass().SetValue(0.0, MassUnit::ug);
-	  }
+      if (std::abs(subQ->GetMass(MassUnit::ug)) < ZERO_APPROX)
+      {
+        subQ->GetMass().SetValue(0.0, MassUnit::ug);
+      }
     }
   }
 }
@@ -1466,8 +1886,6 @@ double Tissue::MoveMassByInstantDiffusion(SELiquidCompartment& source, SELiquidC
 	const SELiquidSubstanceQuantity* srcQ = source.GetSubstanceQuantity(sub);
 	const SELiquidSubstanceQuantity* tgtQ = target.GetSubstanceQuantity(sub);
 
-	double sConc_ug = srcQ->GetMass(MassUnit::ug);
-	double tConc_ug = tgtQ->GetMass(MassUnit::ug);
 	double sConc_ug_Per_mL = srcQ->GetConcentration(MassPerVolumeUnit::ug_Per_mL);
 	double tConc_ug_Per_mL = tgtQ->GetConcentration(MassPerVolumeUnit::ug_Per_mL);
 	double sVol_mL = source.GetVolume(VolumeUnit::mL);

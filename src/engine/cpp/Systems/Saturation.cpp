@@ -81,7 +81,7 @@ public:
       //scaling factor is linear such that when CO2 mM is 27, factor is .4; when CO2 mM is 29, factor is 1
       double totalCO2_mM = co2_mM / .05;
       double CO2_scaling_factor = .4*totalCO2_mM - 10.6;
-      if (CO2_scaling_factor > 1.0) CO2_scaling_factor = 1.0;
+      if (CO2_scaling_factor > 1) CO2_scaling_factor = 1;
       else if (CO2_scaling_factor < 0.1) CO2_scaling_factor = 0.1;
 
       m_SatCalc.CalculateHemoglobinSaturations(O2PartialPressureGuess_mmHg, CO2PartialPressureGuess_mmHg, pH, m_SatCalc.m_temperature_C, m_SatCalc.m_hematocrit, OxygenSaturation, CarbonDioxideSaturation, CO2_scaling_factor);
@@ -398,7 +398,8 @@ void SaturationCalculator::CalculateBloodGasDistribution(SELiquidCompartment& cm
     {
       m_subCOQ = subQ;
       continue;
-    }if (&subQ->GetSubstance() == m_HbCO)
+    }
+    if (&subQ->GetSubstance() == m_HbCO)
     {
       m_subHbCOQ = subQ;
       continue;
@@ -442,22 +443,22 @@ void SaturationCalculator::CalculateBloodGasDistribution(SELiquidCompartment& cm
       if (abs(diffTotal) > 1.0e-8)
         Warning(debugSS.str());
     }
+
+    HbO2_mM = m_subHbO2Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);		  // Hemoglobin with Oxygen bound to 4 sites
+    HbCO2_mM = m_subHbCO2Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);	  // Hemoglobin with Carbon Dioxide bound to 4 sites
+    HbO2CO2_mM = m_subHbO2CO2Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);// Hemoglobin with Oxygen and Carbon Dioxide bound to 4 sites
+    Hb_mM = m_subHbQ->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);		      // Hemoglobin with nothing bound
+    O2_mM = m_subO2Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);			    // Dissolved Oxygen
+    CO2_mM = m_subCO2Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);	      // Dissolved Carbon Dioxide
+    HCO3_mM = m_subHCO3Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);		  // Bicarbonate
+
+    // Current amounts
+    InputAmountTotalHb_mM = HbO2_mM + HbCO2_mM + HbO2CO2_mM + Hb_mM;
+    InputAmountTotalO2_mM = O2_mM + 4.0 * (HbO2_mM + HbO2CO2_mM);
+    InputAmountTotalCO2_mM = CO2_mM + HCO3_mM + 4.0 * (HbCO2_mM + HbO2CO2_mM);
   }
 
-  HbO2_mM = m_subHbO2Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);		  // Hemoglobin with Oxygen bound to 4 sites
-  HbCO2_mM = m_subHbCO2Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);	  // Hemoglobin with Carbon Dioxide bound to 4 sites
-  HbO2CO2_mM = m_subHbO2CO2Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);// Hemoglobin with Oxygen and Carbon Dioxide bound to 4 sites
-  Hb_mM = m_subHbQ->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);		      // Hemoglobin with nothing bound
-  O2_mM = m_subO2Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);			    // Dissolved Oxygen
-  CO2_mM = m_subCO2Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);	      // Dissolved Carbon Dioxide
-  HCO3_mM = m_subHCO3Q->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);		  // Bicarbonate
-
-  // Current amounts
-  InputAmountTotalHb_mM = HbO2_mM + HbCO2_mM + HbO2CO2_mM + Hb_mM;
-  InputAmountTotalO2_mM = O2_mM + 4.0 * (HbO2_mM + HbO2CO2_mM);
-  InputAmountTotalCO2_mM = CO2_mM + HCO3_mM + 4.0 * (HbCO2_mM + HbO2CO2_mM);
-
-  // We do not compute the distribution if the is very little or no hemoglobin.
+  // We do not compute the distribution if there is very little or no hemoglobin.
   // Some renal compartments do not have hemoglobin under physiological conditions, 
   // and during pathophysiological conditions the concentrations are below the range of model resolution.
   if (InputAmountTotalHb_mM < 1e-6) //Approx. 0
@@ -910,7 +911,7 @@ void SaturationCalculator::CalculateBloodGasDistribution(SELiquidCompartment& cm
 
 //--------------------------------------------------------------------------------------------------
 /// \brief
-/// Computes the percent saturation of hemoglobin of oxygen and carbon dioxide.
+/// Computes the percent saturation of hemoglobin by oxygen and carbon dioxide.
 ///
 ///
 /// \details

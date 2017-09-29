@@ -26,9 +26,9 @@ public:
   
 	virtual const SEScalar* GetScalar(const std::string& name);
 
-	virtual bool HasChymeAbsorbtionRate() const;
-	virtual SEScalarVolumePerTime& GetChymeAbsorbtionRate();
-  virtual double GetChymeAbsorbtionRate(const VolumePerTimeUnit& unit) const;
+	virtual bool HasChymeAbsorptionRate() const;
+	virtual SEScalarVolumePerTime& GetChymeAbsorptionRate();
+  virtual double GetChymeAbsorptionRate(const VolumePerTimeUnit& unit) const;
 
   virtual bool HasStomachContents() const;
   virtual SENutrition& GetStomachContents();
@@ -42,6 +42,6 @@ protected:
 
 protected:
 
-	SEScalarVolumePerTime* m_ChymeAbsorbtionRate;
+	SEScalarVolumePerTime* m_ChymeAbsorptionRate;
 	SENutrition* m_StomachContents;
 };

@@ -61,6 +61,7 @@ private:
   void UpdateHeatResistance();
   // Actions/Conditions
   void Exercise();
+  void OldExercise();
   // These are both part of the consume meal condition.
   //void Dehydration(double time); // Need to revisit
   //void Starvation(double time); // Need to revisit

@@ -143,5 +143,14 @@ void BioGearsEngineTest::FillFunctionMap()
   bgeMap.insert(std::make_pair("AcidBaseFourCompartmentTestWithProductionConsumption", &BioGearsEngineTest::AcidBaseFourCompartmentTestWithProductionConsumption));
   bgeMap.insert(std::make_pair("AcidBaseFiveCompartmentTestWithDiffusion", &BioGearsEngineTest::AcidBaseFiveCompartmentTestWithDiffusion));
   bgeMap.insert(std::make_pair("AcidBaseFiveCompartmentTestWithProductionConsumptionAndDiffusion", &BioGearsEngineTest::AcidBaseFiveCompartmentTestWithProductionConsumptionAndDiffusion));
+
+  bgeMap.insert(std::make_pair("CustomNutrientKineticsTest", &BioGearsEngineTest::CustomNutrientKineticsTest));
+  bgeMap.insert(std::make_pair("ProteinGluconeogenesisTest", &BioGearsEngineTest::ProteinGluconeogenesisTest));
+  bgeMap.insert(std::make_pair("StarvingKetogenesisTest", &BioGearsEngineTest::StarvingKetogenesisTest));
+  bgeMap.insert(std::make_pair("AnaerobicExerciseTest", &BioGearsEngineTest::AnaerobicExerciseTest));
+  bgeMap.insert(std::make_pair("HormoneStabilityTest", &BioGearsEngineTest::HormoneStabilityTest));
+  bgeMap.insert(std::make_pair("StorageTest", &BioGearsEngineTest::StorageTest));
+  bgeMap.insert(std::make_pair("FullStoresFastingTest", &BioGearsEngineTest::FullStoresFastingTest));
+  bgeMap.insert(std::make_pair("LipogenesisTest", &BioGearsEngineTest::LipogenesisTest));
   
 }

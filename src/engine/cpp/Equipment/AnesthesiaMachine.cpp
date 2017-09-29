@@ -382,6 +382,11 @@ void AnesthesiaMachine::CalculateScrubber()
 /// The gas mixture is determined based on the right and left chamber activity and specified substances and the oxygen percent
 /// setting on the anesthesia machine. The oxygen source (bottle and wall) are checked to ensure no equipment failures exist. 
 /// The volume fractions are adjusted according to gas composition, the sources, and any failures present. 
+/// All of the gases enter the anesthesia machine from a single source. The volume fractions of vapor (two vaporizor chambers)
+/// and oxygen can be specified. If the sum of the specified fractions is greater than one an error is logged
+/// and all substance volume fractions are scaled according the specified proportions. If the sum of the fractions
+/// specified is less than one then the remaining will be either nitrogen or the ambient gas substance, depending on
+/// whether nitrogen or air is specified as the primary gas.
 //--------------------------------------------------------------------------------------------------
 void AnesthesiaMachine::CalculateGasSource()
 {
@@ -400,6 +405,8 @@ void AnesthesiaMachine::CalculateGasSource()
 	{
 		VaporizerFailureSeverity = m_data.GetActions().GetAnesthesiaMachineActions().GetVaporizerFailure()->GetSeverity().GetValue();
 	}
+
+  // Substances are vaporized in the left and right chambers
 	if(GetLeftChamber().GetState() == CDM::enumOnOff::On && GetLeftChamber().HasSubstance())
 	{
     SEGasSubstanceQuantity* gasSrcSubQ = m_gasSource->GetSubstanceQuantity(*GetLeftChamber().GetSubstance());
@@ -415,7 +422,18 @@ void AnesthesiaMachine::CalculateGasSource()
     gasSrcSubQ->GetVolumeFraction().SetValue(RightInhaledAgentVolumeFraction);
 	}
 
-	double RemainingVolumeFraction = 1.0 - (LeftInhaledAgentVolumeFraction + RightInhaledAgentVolumeFraction);
+  double AM_O2Fraction = GetOxygenFraction().GetValue();
+  if (AM_O2Fraction + LeftInhaledAgentVolumeFraction + RightInhaledAgentVolumeFraction > 1.0)
+  {
+    std::stringstream ss;
+    double totalUnadjustedFraction = AM_O2Fraction + LeftInhaledAgentVolumeFraction + RightInhaledAgentVolumeFraction;
+    LeftInhaledAgentVolumeFraction = LeftInhaledAgentVolumeFraction / totalUnadjustedFraction;
+    RightInhaledAgentVolumeFraction = RightInhaledAgentVolumeFraction / totalUnadjustedFraction;
+    AM_O2Fraction = AM_O2Fraction / totalUnadjustedFraction;
+    ss << "Total of requested AM volume fractions = " << totalUnadjustedFraction << ". New fractions: Left Agent " << 
+      LeftInhaledAgentVolumeFraction << ", Right Agent " << RightInhaledAgentVolumeFraction << ", Oxygen " << AM_O2Fraction << ".";
+    Warning(ss.str());
+  }
 	
 	//Check the O2 Source
 	//Note: You're only allowed to use one at a time
@@ -423,22 +441,17 @@ void AnesthesiaMachine::CalculateGasSource()
 	{
 		if (m_actions->HasOxygenWallPortPressureLoss())
 		{		
-      m_O2InletVolumeFraction.SetValue(0.0);
-		}
-		else
-		{
-      m_O2InletVolumeFraction.SetValue(RemainingVolumeFraction * GetOxygenFraction().GetValue());
+      AM_O2Fraction = 0.0;
+      /// \todo put these messages into a verbose for debugging
+      //Info("Wall port pressure loss.");
 		}
 	}
 	else if (GetOxygenSource() == CDM::enumAnesthesiaMachineOxygenSource::BottleOne || GetOxygenSource() == CDM::enumAnesthesiaMachineOxygenSource::BottleTwo)
 	{
 		if (m_actions->HasOxygenTankPressureLoss())
 		{
-      m_O2InletVolumeFraction.SetValue(0.0);
-		}
-		else
-		{
-      m_O2InletVolumeFraction.SetValue(RemainingVolumeFraction * GetOxygenFraction().GetValue());
+      AM_O2Fraction = 0.0;
+      //Info("Oxygen tank pressure loss.");
 		}
 	}
 	
@@ -447,34 +460,45 @@ void AnesthesiaMachine::CalculateGasSource()
 	{
 		if (GetOxygenBottleOne().GetVolume().GetValue(VolumeUnit::L) <= 0.0)
 		{
-      m_O2InletVolumeFraction.SetValue(0.0);
+      AM_O2Fraction = 0.0;
+      //Info("Oxygen bottle 1 empty");
 		}
 	}
 	else if(GetOxygenSource() == CDM::enumAnesthesiaMachineOxygenSource::BottleTwo)
 	{
 		if (GetOxygenBottleTwo().GetVolume().GetValue(VolumeUnit::L) <= 0.0)
 		{
-      m_O2InletVolumeFraction.SetValue(0.0);
+      AM_O2Fraction = 0.0;
+      //Info("Oxygen bottle 2 empty");
 		}
 	}
-	
+  m_O2InletVolumeFraction.SetValue(AM_O2Fraction);
+
+  // If there is any fraction left over, then it will be filled in with nitrogen or ambient air
+  double RemainingVolumeFraction = 1.0 - (AM_O2Fraction + LeftInhaledAgentVolumeFraction + RightInhaledAgentVolumeFraction);
+
 	double dO2VolumeFraction = 0.0;
 	double dCO2VolumeFraction = 0.0;
-
-	///\todo: Do this stuff more generically by looping over all substances
+  double dN2VolumeFraction = 0.0;
 
 	if (GetPrimaryGas() == CDM::enumAnesthesiaMachinePrimaryGas::Air)
 	{
-		dO2VolumeFraction = RemainingVolumeFraction * m_ambientO2->GetVolumeFraction().GetValue();
-		dCO2VolumeFraction = RemainingVolumeFraction * m_ambientCO2->GetVolumeFraction().GetValue();
+		/// \todo loop over all ambient substances and set each volume fraction
+    // For now we set O2, CO2, and N2 in the anesthesia machine
+    dO2VolumeFraction = RemainingVolumeFraction * m_ambientO2->GetVolumeFraction().GetValue();
+    dCO2VolumeFraction = RemainingVolumeFraction * m_ambientCO2->GetVolumeFraction().GetValue();
 	}
-	//else Nitrogen, no additional O2 or CO2
 
-	dO2VolumeFraction += m_O2InletVolumeFraction.GetValue();
-	double dN2VolumeFraction = 1.0 - dO2VolumeFraction - dCO2VolumeFraction - LeftInhaledAgentVolumeFraction - RightInhaledAgentVolumeFraction;
+  dN2VolumeFraction = RemainingVolumeFraction - dCO2VolumeFraction - dO2VolumeFraction;
+  if (dN2VolumeFraction < 0.0)
+  {
+    // This should be impossible because volume fractions cannot be negative, but check just in case.
+    Warning("Negative nitrogen volume fraction computed in AnesthesiaMachine::CalculateGasSource. Setting to zero. Check results.");
+    dN2VolumeFraction = 0.0;
+  }
 
-	//Make sure we don't get a super small negative value
-	dN2VolumeFraction = MAX(dN2VolumeFraction, 0.0);
+  // Total oxygen fraction is the sum because we just computed the fraction of ONLY remaining, not of the total fraction.
+  dO2VolumeFraction += AM_O2Fraction;
 
   m_gasSourceO2->GetVolumeFraction().SetValue(dO2VolumeFraction);
   m_gasSourceCO2->GetVolumeFraction().SetValue(dCO2VolumeFraction);

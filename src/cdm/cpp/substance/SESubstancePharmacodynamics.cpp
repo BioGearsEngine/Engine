@@ -17,6 +17,8 @@ specific language governing permissions and limitations under the License.
 #include "bind/ScalarFractionData.hxx"
 #include "properties/SEScalarMassPerVolume.h"
 #include "bind/ScalarMassPerVolumeData.hxx"
+#include "properties/SEScalarFrequency.h"
+#include "bind/ScalarFrequencyData.hxx"
 
 SESubstancePharmacodynamics::SESubstancePharmacodynamics(Logger* logger) : Loggable(logger)
 {
@@ -32,6 +34,8 @@ SESubstancePharmacodynamics::SESubstancePharmacodynamics(Logger* logger) : Logga
 	m_SystolicPressureModifier = nullptr;
   m_TidalVolumeModifier = nullptr;
   m_TubularPermeabilityModifier = nullptr;
+	m_CentralNervousModifier = nullptr;
+	m_EffectSiteRateConstant = nullptr;
 }
 
 SESubstancePharmacodynamics::~SESubstancePharmacodynamics() 
@@ -53,6 +57,8 @@ void SESubstancePharmacodynamics::Clear()
 	SAFE_DELETE(m_SystolicPressureModifier);
 	SAFE_DELETE(m_TidalVolumeModifier);
   SAFE_DELETE(m_TubularPermeabilityModifier);
+  SAFE_DELETE(m_CentralNervousModifier);
+  SAFE_DELETE(m_EffectSiteRateConstant);
 }
 
 bool SESubstancePharmacodynamics::IsValid() const
@@ -81,6 +87,10 @@ bool SESubstancePharmacodynamics::IsValid() const
     return false;
   if (!HasTubularPermeabilityModifier())
     return false;
+  if (!HasCentralNervousModifier())
+	  return false;
+  if (!HasEffectSiteRateConstant())
+	  return false;
   return true;
 }
 
@@ -108,6 +118,10 @@ const SEScalar* SESubstancePharmacodynamics::GetScalar(const std::string& name)
 		return &GetTidalVolumeModifier();
   if (name.compare("TubularPermeabilityModifier") == 0)
     return &GetTubularPermeabilityModifier();
+  if (name.compare("CentralNervousModifier") == 0)
+	  return &GetCentralNervousModifier();
+  if (name.compare("EffectSiteRateConstant") == 0)
+	  return &GetEffectSiteRateConstant();
 
   return GetPupillaryResponse().GetScalar(name);
 }
@@ -126,6 +140,8 @@ bool SESubstancePharmacodynamics::Load(const CDM::SubstancePharmacodynamicsData&
 	GetSystolicPressureModifier().Load(in.SystolicPressureModifier());
 	GetTidalVolumeModifier().Load(in.TidalVolumeModifier());
   GetTubularPermeabilityModifier().Load(in.TubularPermeabilityModifier());
+  GetCentralNervousModifier().Load(in.CentralNervousModifier());
+  GetEffectSiteRateConstant().Load(in.EffectSiteRateConstant());
 	CalculateDerived();
 	return true;
 }
@@ -165,6 +181,10 @@ void SESubstancePharmacodynamics::Unload(CDM::SubstancePharmacodynamicsData& dat
 		data.TidalVolumeModifier(std::unique_ptr<CDM::ScalarFractionData>(m_TidalVolumeModifier->Unload()));
   if (HasTubularPermeabilityModifier())
     data.TubularPermeabilityModifier(std::unique_ptr<CDM::ScalarFractionData>(m_TubularPermeabilityModifier->Unload()));
+  if (HasCentralNervousModifier())
+	  data.CentralNervousModifier(std::unique_ptr<CDM::ScalarFractionData>(m_CentralNervousModifier->Unload()));
+  if (HasEffectSiteRateConstant())
+	  data.EffectSiteRateConstant(std::unique_ptr<CDM::ScalarFrequencyData>(m_EffectSiteRateConstant->Unload()));
 }
 
 void SESubstancePharmacodynamics::CalculateDerived()
@@ -376,4 +396,38 @@ double SESubstancePharmacodynamics::GetTubularPermeabilityModifier() const
   if (m_TubularPermeabilityModifier == nullptr)
     return SEScalar::dNaN();
   return m_TubularPermeabilityModifier->GetValue();
+}
+
+bool SESubstancePharmacodynamics::HasCentralNervousModifier() const
+{
+	return (m_CentralNervousModifier == nullptr) ? false : m_CentralNervousModifier->IsValid();
+}
+SEScalarFraction& SESubstancePharmacodynamics::GetCentralNervousModifier()
+{
+	if (m_CentralNervousModifier == nullptr)
+		m_CentralNervousModifier = new SEScalarFraction();
+	return *m_CentralNervousModifier;
+}
+double SESubstancePharmacodynamics::GetCentralNervousModifier() const
+{
+	if (m_CentralNervousModifier == nullptr)
+		return SEScalar::dNaN();
+	return m_CentralNervousModifier->GetValue();
+}
+
+bool SESubstancePharmacodynamics::HasEffectSiteRateConstant() const
+{
+	return (m_EffectSiteRateConstant == nullptr) ? false : m_EffectSiteRateConstant->IsValid();
+}
+SEScalarFrequency& SESubstancePharmacodynamics::GetEffectSiteRateConstant()
+{
+	if (m_EffectSiteRateConstant == nullptr)
+		m_EffectSiteRateConstant = new SEScalarFrequency();
+	return *m_EffectSiteRateConstant;
+}
+double SESubstancePharmacodynamics::GetEffectSiteRateConstant(const FrequencyUnit& unit) const
+{
+	if (m_EffectSiteRateConstant == nullptr)
+		return SEScalar::dNaN();
+	return m_EffectSiteRateConstant->GetValue(unit);
 }

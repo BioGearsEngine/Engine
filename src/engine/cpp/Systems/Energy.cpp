@@ -292,192 +292,46 @@ void Energy::PreProcess()
 
 //--------------------------------------------------------------------------------------------------
 /// \brief
-/// The exercise function updates the patient's metabolic rate if the exercise action is present and
-/// computes energy-store recovery post exercise.
+/// The exercise function updates the patient's metabolic rate if the exercise action is present
 ///
 /// \details
 /// The exercise function adds to the body's basal metabolic rate a value that is specified by 
-/// the exercise action. The metabolic rate set-point is specified by the action but limited by 
-/// the amount of energy available. The energy limit is computed, and the actual metabolic rate is
-/// ramped to the limited set-point. The body's actual work rate as a fraction of the total possible
-/// work rate and the body's actual work rate as a fraction of the action-requested work rate are set
-/// in this method.
+/// the exercise action. The actual metabolic rate is ramped up to this value. The body's actual
+/// work rate is determined by the nutrients and oxygen available. Exercise-related outputs are
+/// set in Tissue::CalculateMetabolicConsumptionAndProduction().
 //--------------------------------------------------------------------------------------------------
 void Energy::Exercise()
-{	
-	// If there is no exercise action and no fatigue, then return.
-	// Any exercise action will reduce energy stores and induce some fatigue, setting the fatigue event.
-	// While the fatigue event is active, the exercise method will execute even if there is no exercise action.
-	// This allows the energy stores to refill post-exercise.
-	if (!m_PatientActions->HasExercise() && !m_Patient->IsEventActive(CDM::enumPatientEvent::Fatigue))
-		return;
+{
+  //if (!m_PatientActions->HasExercise() && !m_Patient->IsEventActive(CDM::enumPatientEvent::Fatigue))  //remove fatigue check?
+    //return;
 
-	double exerciseIntensity = 0.0;
-	double currentMetabolicRate_kcal_Per_day = GetTotalMetabolicRate().GetValue(PowerUnit::kcal_Per_day);
+  double exerciseIntensity = 0.0;
+  double currentMetabolicRate_kcal_Per_day = GetTotalMetabolicRate().GetValue(PowerUnit::kcal_Per_day);
   double basalMetabolicRate_kcal_Per_day = m_Patient->GetBasalMetabolicRate().GetValue(PowerUnit::kcal_Per_day);
-
-	// Only try to get intensity if the exercise action is active. Otherwise, we are just refilling energy buckets post-exercise.
-	if (m_PatientActions->HasExercise())
+  double maxWorkRate_W = 1200.0;
+  double kcal_Per_day_Per_Watt = 20.6362855;
+  
+  // Only try to get intensity if the exercise action is active
+  if (m_PatientActions->HasExercise())
   {
-		if (m_PatientActions->GetExercise()->HasIntensity())
-		{
-			exerciseIntensity = m_PatientActions->GetExercise()->GetIntensity().GetValue();
-		}		
-		else
-		{
-			Warning("Exercise call with no severity. Action ignored.");
-		}
-	}
-	
-	if (exerciseIntensity > 0.5)
-	{
-		// Need to limit the exercise intensity due to current (as of 2/03/2016) engine limitations (CO2 solution error).
-		Warning("Exercise intensity currently limited to 0.5. Setting intensity to 0.5.");
-	}
-	
-	
-	// Fatigue calculations
-	double energyIncrement_J = 0.0;
+    if (m_PatientActions->GetExercise()->HasIntensity())
+    {
+      exerciseIntensity = m_PatientActions->GetExercise()->GetIntensity().GetValue();
+    }
+    else
+    {
+      Warning("Exercise call with no severity. Action ignored.");
+    }
+  }
+  else
+    return;
 
-	// There are four individual energy stores that comprise the fatigue system.
-	// The usable and peak power stores together can be thought of as similar to the phosphagen energy system.
-	// The medium power store can be thought of as similar to the glycogen-lactic acid energy system.
-	// The endurance energy store can be thought of as similar to the aerobic energy system.
-	// The energy store full levels and the maximum work rate are currently hard-coded, but will be a function of physical conditioning,
-	// body composition, and starvation levels. See Future Work section in BioGears Energy documentation.
-	double usableEnergyStoreFull_J = 2600.0;
-	double peakPowerEnergyStoreFull_J = 4200.0;
-	double mediumPowerEnergyStoreFull_J = 35000.0;
-	double enduranceEnergyStoreFull_J = 400000.0;
-	double maxWorkRate_W = 1200.0;
-	// The maximum depletion rates will also scale with the body composition, physical conditioning, and
-	// fed/starvation state of the BioGears body.
-	double maxEnduranceOutRate_W = 240.0;
-	double maxPeakOutRate_W = 621.0;
-	double maxMediumOutRate_W = 420.0;
-
-	// The following rates dictate the fill rate of the endurance energy store.
-	// These rates are currently hard-coded, but will be tied to the concentration
-	// of nutrient substances in the blood in the future. See Future Work section in BioGears Energy documentation.
-	double glucoseConstant_W = 10.0;
-	double lactateConstant_W = 10.0;
-	double tristearinConstant_W = 10.0;
-
-	double workRateDesired_W = exerciseIntensity*maxWorkRate_W;
-	double workRate_W = 0.0;
-	double normalizedUsableEnergyDeficit = (usableEnergyStoreFull_J - m_UsableEnergyStore_J) / usableEnergyStoreFull_J;
-	double normalizedPeakEnergyDeficit = (peakPowerEnergyStoreFull_J - m_PeakPowerEnergyStore_J) / peakPowerEnergyStoreFull_J;
-	double normalizedMediumEnergyDeficit = (mediumPowerEnergyStoreFull_J - m_MediumPowerEnergyStore_J) / mediumPowerEnergyStoreFull_J;
-	double normalizedEnduranceEnergyDeficit = (enduranceEnergyStoreFull_J - m_EnduranceEnergyStore_J) / enduranceEnergyStoreFull_J;
-
-	// Modify the rates based on the usable energy deficit.
-	// This effectively creates piecewise rate functions so that all of the storage
-	// outflow rates are zero until the immediate energy storage tank is almost depleted.
-	double energyRateModifier = 6.0*normalizedUsableEnergyDeficit - 5.0;
-	LLIM(energyRateModifier, 0.0);
-
-	double glucoseRate_W = glucoseConstant_W*(normalizedUsableEnergyDeficit + normalizedPeakEnergyDeficit + normalizedMediumEnergyDeficit + normalizedEnduranceEnergyDeficit) / 4.0;
-	double lactateRate_W = lactateConstant_W*(normalizedUsableEnergyDeficit + normalizedPeakEnergyDeficit + normalizedMediumEnergyDeficit + normalizedEnduranceEnergyDeficit) / 4.0;
-	double tristearinRate_W = tristearinConstant_W*(normalizedUsableEnergyDeficit + normalizedPeakEnergyDeficit + normalizedMediumEnergyDeficit + normalizedEnduranceEnergyDeficit) / 4.0;
-
-	energyIncrement_J = (glucoseRate_W + lactateRate_W + tristearinRate_W)*m_dT_s;
-
-	if (m_EnduranceEnergyStore_J + energyIncrement_J > enduranceEnergyStoreFull_J){
-		glucoseRate_W = lactateRate_W = tristearinRate_W = 0.0;
-		energyIncrement_J = 0.0;
-	}
-
-	double enduranceOutRate_W = (normalizedUsableEnergyDeficit + normalizedPeakEnergyDeficit + normalizedMediumEnergyDeficit)*maxEnduranceOutRate_W;
-	BLIM(enduranceOutRate_W, 0.0, maxEnduranceOutRate_W);
-	if (m_EnduranceEnergyStore_J + energyIncrement_J < enduranceOutRate_W*m_dT_s){
-		enduranceOutRate_W = (m_EnduranceEnergyStore_J + energyIncrement_J) / m_dT_s;
-	}
-	m_EnduranceEnergyStore_J += energyIncrement_J - enduranceOutRate_W*m_dT_s;
-
-	// The aerobic store has multiple outflow paths. One path represents purely aerobic energy
-	// usage, and the other paths represent the aerobic replenishment of the anaerobic stores. The following
-	// algorithm computes the percent energy flow at the path junctions. There are two junctions.
-	// First junction:
-	double splitFraction = 1.0;
-	if (normalizedUsableEnergyDeficit + normalizedPeakEnergyDeficit + normalizedMediumEnergyDeficit > 0.00000001){
-		splitFraction = normalizedUsableEnergyDeficit / (normalizedUsableEnergyDeficit + (normalizedMediumEnergyDeficit + normalizedPeakEnergyDeficit) / 2.0);
-	}
-	double enduranceToUsableRate_W = splitFraction*enduranceOutRate_W;
-	double enduranceToFillRate_W = (1.0 - splitFraction)*enduranceOutRate_W;
-	// Second junction:
-	splitFraction = 1.0;
-	if (normalizedUsableEnergyDeficit + normalizedPeakEnergyDeficit + normalizedMediumEnergyDeficit > 0.00000001){
-		if (normalizedPeakEnergyDeficit > 0.00000001)
-		splitFraction = normalizedPeakEnergyDeficit / (normalizedPeakEnergyDeficit + normalizedMediumEnergyDeficit);
-	}
-	double peakFillRate_W = splitFraction*enduranceToFillRate_W;
-	double mediumFillRate_W = (1.0 - splitFraction)*enduranceToFillRate_W;
-
-	// Advance peak store state
-	energyIncrement_J = peakFillRate_W*m_dT_s;
-	double peakOutRate_W = normalizedUsableEnergyDeficit*maxPeakOutRate_W*energyRateModifier;
-	BLIM(peakOutRate_W, 0.0, maxPeakOutRate_W);
-	if (m_PeakPowerEnergyStore_J + energyIncrement_J < peakOutRate_W*m_dT_s){
-		peakOutRate_W = (m_PeakPowerEnergyStore_J + energyIncrement_J) / m_dT_s;
-	}
-	m_PeakPowerEnergyStore_J += energyIncrement_J - peakOutRate_W*m_dT_s;
-	// Advance medium store state
-	energyIncrement_J = mediumFillRate_W*m_dT_s;
-	double mediumOutRate_W = normalizedUsableEnergyDeficit*maxMediumOutRate_W*energyRateModifier;
-	BLIM(mediumOutRate_W, 0.0, maxMediumOutRate_W);
-	if (m_MediumPowerEnergyStore_J + energyIncrement_J < mediumOutRate_W*m_dT_s){
-		mediumOutRate_W = (m_MediumPowerEnergyStore_J + energyIncrement_J) / m_dT_s;
-	}
-	m_MediumPowerEnergyStore_J += energyIncrement_J - mediumOutRate_W*m_dT_s;
-
-	// Advance usable bucket state
-	energyIncrement_J = (enduranceToUsableRate_W + mediumOutRate_W + peakOutRate_W)*m_dT_s;
-	if (m_UsableEnergyStore_J + energyIncrement_J < workRateDesired_W*m_dT_s)
-	{
-		workRate_W = (m_UsableEnergyStore_J + energyIncrement_J) / m_dT_s;
-	}
-	else 
-	{
-		workRate_W = workRateDesired_W;
-	}
-
-	m_UsableEnergyStore_J += energyIncrement_J - workRate_W*m_dT_s;
-
-  GetTotalWorkRateLevel().SetValue(workRate_W / maxWorkRate_W);
-	double fatigue = (normalizedEnduranceEnergyDeficit + normalizedMediumEnergyDeficit + normalizedPeakEnergyDeficit + normalizedUsableEnergyDeficit) / 4.0;
-  /// \event Patient: Fatigue - Energy stores are sub-maximal.
-	if (fatigue > 0.0){
-		m_Patient->SetEvent(CDM::enumPatientEvent::Fatigue, true, m_data.GetSimulationTime());
-	}
-	else {
-    m_Patient->SetEvent(CDM::enumPatientEvent::Fatigue, false, m_data.GetSimulationTime());
-	}
-	GetFatigueLevel().SetValue(fatigue);
-
-	double kcal_Per_day_Per_Watt = 20.6362855;
-
-	if (exerciseIntensity > 0.0)
-  {
-    double  achievedExerciseFraction = GetTotalWorkRateLevel().GetValue() / exerciseIntensity;
-    /// \todo Log an event or info message that available energy is insufficient to meet demand.
-    //if (achievedExerciseFraction < 1.0)
-    //  Info("Available energy insufficient to meet requested work rate.");
-    GetAchievedExerciseLevel().SetValue(achievedExerciseFraction);
-  }		
-	else
-		GetAchievedExerciseLevel().Clear();
-	// End fatigue calculations
-	
-	double TotalMetabolicRateSetPoint_kcal_Per_day = basalMetabolicRate_kcal_Per_day + workRate_W*kcal_Per_day_Per_Watt;
-
-	// The MetabolicRateGain is used to ramp the metabolic rate to the value specified by the user's exercise intensity.
-	double MetabolicRateGain = 1.0;
-	// We only let exercise control the metabolic rate if it is active, otherwise the heat generation method is in charge of the metabolic rate.
-	if (m_PatientActions->HasExercise())
-  {
-		double TotalMetabolicRateProduced_kcal_Per_day = currentMetabolicRate_kcal_Per_day + MetabolicRateGain*(TotalMetabolicRateSetPoint_kcal_Per_day - currentMetabolicRate_kcal_Per_day)*m_dT_s;
-		GetTotalMetabolicRate().SetValue(TotalMetabolicRateProduced_kcal_Per_day, PowerUnit::kcal_Per_day);
-	}
+  // The MetabolicRateGain is used to ramp the metabolic rate to the value specified by the user's exercise intensity.
+  double MetabolicRateGain = 1.0;
+  double workRateDesired_W = exerciseIntensity*maxWorkRate_W;
+  double TotalMetabolicRateSetPoint_kcal_Per_day = basalMetabolicRate_kcal_Per_day + workRateDesired_W*kcal_Per_day_Per_Watt;
+  double TotalMetabolicRateProduced_kcal_Per_day = currentMetabolicRate_kcal_Per_day + MetabolicRateGain*(TotalMetabolicRateSetPoint_kcal_Per_day - currentMetabolicRate_kcal_Per_day)*m_dT_s;
+  GetTotalMetabolicRate().SetValue(TotalMetabolicRateProduced_kcal_Per_day, PowerUnit::kcal_Per_day);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -515,8 +369,8 @@ void Energy::PostProcess()
 ///
 /// \details
 /// The core and skin temperatures are recorded in this function. In addition, the current metabolic
-/// state of the patient may trigger the following events: hypothermia, hyperthermia, dehydration, fasciculation
-/// or fatigue. These events are only triggered if the current state falls within the criteria of the specific event
+/// state of the patient may trigger the following events: hypothermia, hyperthermia, and metabolic
+/// acidosis/alkalosis. These events are only triggered if the current state falls within the criteria of the specific event
 //--------------------------------------------------------------------------------------------------
 void Energy::CalculateVitalSigns()
 {
@@ -651,7 +505,7 @@ void Energy::CalculateMetabolicHeatGeneration()
 	else if (coreTemperature_degC >= 36.8 && coreTemperature_degC < 42.5 && !m_PatientActions->HasExercise()) //Basic Metabolic rate
 	{
 		double TotalMetabolicRateSetPoint_kcal_Per_day = basalMetabolicRate_kcal_Per_day;
-		double MetabolicRateGain = 0.0001;	//Used to ramp the metabolic rate from its current value to the basal value if the patient meet's the basal criteria
+		double MetabolicRateGain = 0.0001;	//Used to ramp the metabolic rate from its current value to the basal value if the patient meets the basal criteria
 		double TotalMetabolicRateProduced_kcal_Per_day = currentMetabolicRate_kcal_Per_day + MetabolicRateGain*(TotalMetabolicRateSetPoint_kcal_Per_day - currentMetabolicRate_kcal_Per_day);
 		GetTotalMetabolicRate().SetValue(TotalMetabolicRateProduced_kcal_Per_day, PowerUnit::kcal_Per_day);
 	}

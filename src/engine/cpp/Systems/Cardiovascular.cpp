@@ -783,19 +783,19 @@ void Cardiovascular::CalculateVitalSigns()
 
   if (m_data.GetState() > EngineState::InitialStabilization)
   {// Don't throw events if we are initializing
-
+	  
   // Check for hypovolemic shock
   /// \event Patient: Hypovolemic Shock: blood volume below 65% of its normal value
     if (GetBloodVolume().GetValue(VolumeUnit::mL) <= (m_data.GetConfiguration().GetMinimumBloodVolumeFraction()*m_patient->GetBloodVolumeBaseline(VolumeUnit::mL)))
     {
       m_patient->SetEvent(CDM::enumPatientEvent::HypovolemicShock, true, m_data.GetSimulationTime());
 
-      /// \event Patient: blood loss below 50%, irreversible state enacted 
-      // @cite Gutierrez2004HemorrhagicShock
+      /// \event Patient: blood loss below 50%, state enacted 
+      // @cite Gutierrez2004HemorrhagicShock, champion2003profile
       double hypovolemicShock = 0.5*m_patient->GetBloodVolumeBaseline(VolumeUnit::mL);
       if (GetBloodVolume().GetValue(VolumeUnit::mL) <= hypovolemicShock)
       {
-        m_ss << "Over half the patients blood volume has been lost. The patient is now in an irreversible state.";
+        m_ss << "50% of the patients blood volume has been lost. The patient is now in an irreversible state.";
         Warning(m_ss);
         /// \irreversible Over half the patients blood volume has been lost.
         m_patient->SetEvent(CDM::enumPatientEvent::IrreversibleState, true, m_data.GetSimulationTime());
@@ -997,8 +997,11 @@ void Cardiovascular::TraumaticBrainInjury()
 
   //Interpolate linearly between multipliers of 1 (for severity of 0) to max (for severity of 1)
   //These multipliers are chosen to result in ICP > 25 mmHg and CBF < 1.8 mL/s
-  double usMult = GeneralMath::LinearInterpolator(0, 1, 1, 4.775, severity);
-  double dsMult = GeneralMath::LinearInterpolator(0, 1, 1, 30.409, severity);
+  //The commented out values are from the unit test; not sure why they have to be scaled by .5 in engine to get good response
+  //double usMult = GeneralMath::LinearInterpolator(0, 1, 1, 4.87814, severity);
+  double usMult = GeneralMath::LinearInterpolator(0, 1, 1, 2.43907, severity);
+  //double dsMult = GeneralMath::LinearInterpolator(0, 1, 1, 30.7993, severity);
+  double dsMult = GeneralMath::LinearInterpolator(0, 1, 1, 15.3997, severity);
 
   m_pBrainResistanceDownstream->GetNextResistance().SetValue(dsMult * m_pBrainResistanceDownstream->GetResistanceBaseline().GetValue(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
   m_pBrainResistanceUpstream->GetNextResistance().SetValue(usMult * m_pBrainResistanceUpstream->GetResistanceBaseline().GetValue(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
@@ -1019,39 +1022,67 @@ void Cardiovascular::Hemorrhage()
 {
   /// \todo Enforce limits and remove fatal errors.
   SEHemorrhage* h;
-  double TotalLossRate_mL_Per_s = 0;
+  SEFluidCircuitPath* targetPath=nullptr;
+
+  //This minimum resistance causes most organs to reach irreversible state between 15-30 minutes.
+  double resistanceFunMin = 5.0;
+  double resistanceFunMax = 1000.0;
+
+  //Need to read in severity from MCIS code
+  int MCIS1_severity = 0;
+ //Values for tracking physiological metrics
+  double resistance = 0.0;
+  double TotalLossRate_mL_Per_s=0.0;
+  double TotalLoss_mL = 0;
+  double probabilitySurvival = 0.0;
+  double bleedoutTime = 0.0;
+
+  double bloodVolume_mL = GetBloodVolume(VolumeUnit::mL);
+  double baselineBloodVolume_mL = m_patient->GetBloodVolumeBaseline(VolumeUnit::mL);
+
   const std::map <std::string, SEHemorrhage*> & hems = m_data.GetActions().GetPatientActions().GetHemorrhages();
   for (auto hem : hems)
   {
-    h = hem.second;
-    /// \error Fatal: Bleeding rate cannot exceed cardiac output
-    if (h->GetRate().GetValue(VolumePerTimeUnit::mL_Per_s) > GetCardiacOutput().GetValue(VolumePerTimeUnit::mL_Per_s))
-    {      
-      m_ss << "Cannot have bleeding rate greater than cardiac output. \n\tCurrent cardiac output is: " << GetCardiacOutput()
-        << "\n\tAnd specified bleeding rate is: " << h->GetRate();
-      Fatal(m_ss);
-      return;
-    }
-    /// \error Fatal: Bleeding rate cannot be less than zero
-    if (h->GetRate().GetValue(VolumePerTimeUnit::mL_Per_s) < 0)
-    {
-      m_ss << "Cannot specify bleeding less than 0";
-      Fatal(m_ss);
-      return;
-    }
-    TotalLossRate_mL_Per_s += h->GetRate().GetValue(VolumePerTimeUnit::mL_Per_s);
-  }
-  if (TotalLossRate_mL_Per_s == 0)
-    return;
+	  h = hem.second;
+	  MCIS1_severity = h->GetMCIS()[0];
+	  targetPath = m_CirculatoryCircuit->GetPath(h->GetBleedName());
+	  
+	  //We need to adjust the resistance functions for main aorta and vena cava because they have very high/low pressures relative to other compartments
+	  if (h->GetCompartment() == "VenaCava")
+	  {
+		  resistanceFunMin = 0.5;
+		  resistanceFunMax = 50.0;
 
-  //Remove blood from the vena cava
-  m_pVenaCavaHemorrhage->GetNextFlowSource().SetValue(TotalLossRate_mL_Per_s, VolumePerTimeUnit::mL_Per_s);
+	  }
+	  if (h->GetCompartment() == "Major Artery")
+	  {
+		  resistanceFunMin = 12.5;
+		  resistanceFunMax = 1500.0;
+	  }
+	  
+	  //The values for this function were chosen empirically to produce following severity->resistance map with flow rates that seem reasonable
+	  //with data in @cite lawnick2013combat and @cite guitierrez2004clinical.  Values can be adjusted as needed to incorporate more data
+	  //Severity->Resistance:  1->383, 2->122, 3->39, 4->12.5, 5->4 (not for aorta or vena cava)
+	  resistance = GeneralMath::ResistanceFunction(10.0, resistanceFunMin, resistanceFunMax, MCIS1_severity / 5.0);
+
+	  targetPath->GetNextResistance().SetValue(resistance, FlowResistanceUnit::mmHg_s_Per_mL);
+
+	  TotalLossRate_mL_Per_s += targetPath->GetFlow(VolumePerTimeUnit::mL_Per_s);
+	  TotalLoss_mL += targetPath->GetFlow(VolumePerTimeUnit::mL_Per_s)*m_dT_s;
+	  bleedoutTime = (bloodVolume_mL - (0.5*baselineBloodVolume_mL)) / TotalLossRate_mL_Per_s*(1.0 / 60.0);
+	  
+  }
+
+  if (bleedoutTime!=0)
+	probabilitySurvival = 100.0-100.0*(0.9127*exp(-0.008*bleedoutTime));	//relationship from Table 5 in champion2003profile
+  
 
   double bloodDensity_kg_Per_mL = m_data.GetBloodChemistry().GetBloodDensity(MassPerVolumeUnit::kg_Per_mL);
   double massLost_kg = TotalLossRate_mL_Per_s*bloodDensity_kg_Per_mL*m_dT_s;
   double patientMass_kg = m_patient->GetWeight(MassUnit::kg);
   patientMass_kg -= massLost_kg;
 
+  
   m_patient->GetWeight().SetValue(patientMass_kg, MassUnit::kg);
 }
 
@@ -1893,7 +1924,8 @@ void Cardiovascular::CalculateHeartRate()
 {
   // The time that the flow actually decreased below the threshold was last time slice (when m_HeartFlowDetected
   // was set back to false), so we need to subtract one time step from the interval.
-  double HeartRate_Per_s = 1.0 / (m_CurrentCardiacCycleDuration_s - m_dT_s);
-  GetHeartRate().SetValue(HeartRate_Per_s * 60.0, FrequencyUnit::Per_min);
-  m_CurrentCardiacCycleDuration_s = 0;
+	
+	double HeartRate_Per_s = 1.0 / (m_CurrentCardiacCycleDuration_s - m_dT_s);
+	GetHeartRate().SetValue(HeartRate_Per_s * 60.0, FrequencyUnit::Per_min);
+	m_CurrentCardiacCycleDuration_s = 0;
 }

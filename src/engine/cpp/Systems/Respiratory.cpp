@@ -854,8 +854,8 @@ void Respiratory::MechanicalVentilation()
 //--------------------------------------------------------------------------------------------------
 void Respiratory::RespiratoryDriver()
 {
-  m_BreathingCycleTime_s += m_dt_s;
 
+	m_BreathingCycleTime_s += m_dt_s;
   //Keep a running average of the Arterial Partial Pressures	
   m_ArterialO2RunningAverage_mmHg.Sample(m_AortaO2->GetPartialPressure(PressureUnit::mmHg));
   m_ArterialCO2RunningAverage_mmHg.Sample(m_AortaCO2->GetPartialPressure(PressureUnit::mmHg));
@@ -940,6 +940,7 @@ void Respiratory::RespiratoryDriver()
       SEDrugSystem& Drugs = m_data.GetDrugs();
       double DrugRRChange_Per_min = Drugs.GetRespirationRateChange(FrequencyUnit::Per_min);
       double DrugsTVChange_L = Drugs.GetTidalVolumeChange(VolumeUnit::L);
+	  double CNSChange = Drugs.GetCentralNervousResponse().GetValue();		//central nervous response
       double NMBModifier = 1.0;
       double SedationModifier = 1.0;
       //Make changes to Respiration Rate change based on the neuromuscular block level
@@ -962,9 +963,13 @@ void Respiratory::RespiratoryDriver()
         DrugsTVChange_L = 0.0;
       }
 
-      //Calculate the target Alveolar Ventilation based on the Arterial O2 and CO2 concentrations
-      double dTargetAlveolarVentilation_L_Per_min = m_PeripheralControlGainConstant*exp(-0.05*m_ArterialO2PartialPressure_mmHg)*MAX(0., m_ArterialCO2PartialPressure_mmHg - PeripheralCO2PartialPressureSetPoint); //Peripheral portion
-      dTargetAlveolarVentilation_L_Per_min += m_CentralControlGainConstant*MAX(0., m_ArterialCO2PartialPressure_mmHg - CentralCO2PartialPressureSetPoint); //Central portion
+
+
+	  //Calculate the target Alveolar Ventilation based on the Arterial O2 and CO2 concentrations.  Lower target as a function of central nervous
+	  //depressant effects of any drugs (currently only morphine has this effect)
+		double dTargetAlveolarVentilation_L_Per_min = m_PeripheralControlGainConstant*exp(-0.05*m_ArterialO2PartialPressure_mmHg)*MAX(0., m_ArterialCO2PartialPressure_mmHg - PeripheralCO2PartialPressureSetPoint); //Peripheral portion
+		dTargetAlveolarVentilation_L_Per_min += m_CentralControlGainConstant*MAX(0., m_ArterialCO2PartialPressure_mmHg - CentralCO2PartialPressureSetPoint); //Central portion
+		dTargetAlveolarVentilation_L_Per_min *= (1 - CNSChange);
 
     //Metabolic modifier is used to drive the system to reasonable levels achievable during increased metabolic exertion
     //The modifier is tuned to achieve the correct respiratory response for near maximal exercise. A linear relationship is assumed
@@ -988,9 +993,11 @@ void Respiratory::RespiratoryDriver()
         //This keeps it from going crazy with modifiers applied
         changeFraction = std::abs(m_ArterialCO2PartialPressure_mmHg - targetCO2PP_mmHg) / targetCO2PP_mmHg * 0.5;
       }
+
       changeFraction = MIN(changeFraction, 1.0);
+
       dTargetAlveolarVentilation_L_Per_min = m_PreviousTargetAlveolarVentilation_L_Per_min + (dTargetAlveolarVentilation_L_Per_min - m_PreviousTargetAlveolarVentilation_L_Per_min) * changeFraction;
-      m_PreviousTargetAlveolarVentilation_L_Per_min = dTargetAlveolarVentilation_L_Per_min;
+	  m_PreviousTargetAlveolarVentilation_L_Per_min = dTargetAlveolarVentilation_L_Per_min;
 
       //Target Tidal Volume (i.e. Driver amplitude) *************************************************************************
       //Calculate the target Tidal Volume based on the Alveolar Ventilation
@@ -1105,9 +1112,10 @@ void Respiratory::RespiratoryDriver()
       m_DriverPressure_cmH2O = m_DefaultDrivePressure_cmH2O;
     }
   }
-
+  
   //Push Driving Data to the Circuit -------------------------------------------------------------------------------
   m_DriverPressurePath->GetNextPressureSource().SetValue(m_DriverPressure_cmH2O, PressureUnit::cmH2O);
+
 }
 //--------------------------------------------------------------------------------------------------
 /// \brief
@@ -1983,7 +1991,7 @@ void Respiratory::UpdateObstructiveResistance()
 	{
 		double dSeverity = m_PatientActions->GetAsthmaAttack()->GetSeverity().GetValue();
 		// Resistance function: Base = 10, Min = 1.0, Max = 90.0 (increasing with severity)
-		double dResistanceScalingFactor = GeneralMath::ResistanceFunction(10, 90, 1, dSeverity);
+		double dResistanceScalingFactor = GeneralMath::ResistanceFunction(10, 110, 1, dSeverity);
 		combinedResistanceScalingFactor = dResistanceScalingFactor;
 	}
 	//COPD on

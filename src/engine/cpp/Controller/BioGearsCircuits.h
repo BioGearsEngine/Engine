@@ -554,6 +554,20 @@ namespace mil {
           DEFINE_STATIC_STRING(VenaCavaToGround);
           DEFINE_STATIC_STRING(VenaCavaBleed);
           DEFINE_STATIC_STRING(IVToVenaCava);
+		  //Hemorrhage
+		  DEFINE_STATIC_STRING(AortaBleed);
+		  DEFINE_STATIC_STRING(BrainBleed);
+		  DEFINE_STATIC_STRING(HeartBleed);
+		  DEFINE_STATIC_STRING(LungBleed);
+		  DEFINE_STATIC_STRING(ArmBleed);
+		  DEFINE_STATIC_STRING(SpleenBleed);
+		  DEFINE_STATIC_STRING(SmallIntestineBleed);
+		  DEFINE_STATIC_STRING(LargeIntestineBleed);
+		  DEFINE_STATIC_STRING(SplanchnicBleed);
+		  DEFINE_STATIC_STRING(KidneyBleed);
+		  DEFINE_STATIC_STRING(LiverBleed);
+		  DEFINE_STATIC_STRING(PortalBleed);
+		  DEFINE_STATIC_STRING(LegBleed);
         };
 
         class TissueNode

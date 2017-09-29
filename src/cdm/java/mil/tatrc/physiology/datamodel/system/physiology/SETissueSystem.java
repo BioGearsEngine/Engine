@@ -19,13 +19,23 @@ import mil.tatrc.physiology.datamodel.system.SESystem;
 
 public class SETissueSystem extends SEPhysiologySystem implements SESystem
 {
-  protected SEScalarVolumePerTime carbonDioxideProductionRate;
-  protected SEScalarVolume        extracellularFluidVolume;
-  protected SEScalarVolume        extravascularFluidVolume;
-  protected SEScalarVolume        intracellularFluidVolume;
-  protected SEScalar              intracellularFluidPH;  
-  protected SEScalarVolumePerTime oxygenConsumptionRate;
-  protected SEScalar				      respiratoryExchangeRatio;
+  protected SEScalarVolumePerTime 			carbonDioxideProductionRate;
+  protected SEScalarVolume        			extracellularFluidVolume;
+  protected SEScalarVolume        			extravascularFluidVolume;
+  protected SEScalarVolume        			intracellularFluidVolume;
+  protected SEScalar              			intracellularFluidPH;  
+  protected SEScalarVolumePerTime 			oxygenConsumptionRate;
+  protected SEScalar				      			respiratoryExchangeRatio;
+  protected SEScalarAmountPerVolume			liverInsulinSetPoint;
+  protected SEScalarMassPerVolume				liverGlucagonSetPoint;
+  protected SEScalarAmountPerVolume			muscleInsulinSetPoint;
+  protected SEScalarMassPerVolume				muscleGlucagonSetPoint;
+  protected SEScalarAmountPerVolume			fatInsulinSetPoint;
+  protected SEScalarMassPerVolume				fatGlucagonSetPoint;
+  protected SEScalarMass								liverGlycogen;
+  protected SEScalarMass								muscleGlycogen;
+  protected SEScalarMass								storedProtein;
+  protected SEScalarMass								storedFat;
 
   public SETissueSystem()
   {
@@ -36,6 +46,16 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
     intracellularFluidPH = null;
     oxygenConsumptionRate = null;
     respiratoryExchangeRatio = null;
+    liverInsulinSetPoint = null;
+    liverGlucagonSetPoint = null;
+    muscleInsulinSetPoint = null;
+    muscleGlucagonSetPoint = null;
+    fatInsulinSetPoint = null;
+    fatGlucagonSetPoint = null;
+    liverGlycogen = null;
+    muscleGlycogen = null;
+    storedProtein = null;
+    storedFat = null;
   }
 
   public void reset()
@@ -54,6 +74,26 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
       oxygenConsumptionRate.invalidate();
     if (respiratoryExchangeRatio != null)
       respiratoryExchangeRatio.invalidate();
+    if (liverInsulinSetPoint != null)
+    	liverInsulinSetPoint.invalidate();
+    if (liverGlucagonSetPoint != null)
+    	liverGlucagonSetPoint.invalidate();
+    if (muscleInsulinSetPoint != null)
+    	muscleInsulinSetPoint.invalidate();
+    if (muscleGlucagonSetPoint != null)
+    	muscleGlucagonSetPoint.invalidate();
+    if (fatInsulinSetPoint != null)
+    	fatInsulinSetPoint.invalidate();
+    if (fatGlucagonSetPoint != null)
+    	fatGlucagonSetPoint.invalidate();
+    if (liverGlycogen != null)
+    	liverGlycogen.invalidate();
+    if (muscleGlycogen != null)
+    	muscleGlycogen.invalidate();
+    if (storedProtein != null)
+    	storedProtein.invalidate();
+    if (storedFat != null)
+    	storedFat.invalidate();
   }
 
   public boolean load(TissueSystemData in)
@@ -72,6 +112,26 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
       getOxygenConsumptionRate().load(in.getOxygenConsumptionRate());
     if (in.getRespiratoryExchangeRatio() != null)
       getRespiratoryExchangeRatio().load(in.getRespiratoryExchangeRatio());
+    if (in.getLiverInsulinSetPoint() != null)
+      getLiverInsulinSetPoint().load(in.getLiverInsulinSetPoint());
+    if (in.getLiverGlucagonSetPoint() != null)
+      getLiverGlucagonSetPoint().load(in.getLiverGlucagonSetPoint());
+    if (in.getMuscleInsulinSetPoint() != null)
+      getMuscleInsulinSetPoint().load(in.getMuscleInsulinSetPoint());
+    if (in.getMuscleGlucagonSetPoint() != null)
+      getMuscleGlucagonSetPoint().load(in.getMuscleGlucagonSetPoint());
+    if (in.getFatInsulinSetPoint() != null)
+      getFatInsulinSetPoint().load(in.getFatInsulinSetPoint());
+    if (in.getFatGlucagonSetPoint() != null)
+      getFatGlucagonSetPoint().load(in.getFatGlucagonSetPoint());
+    if (in.getLiverGlycogen() != null)
+    	getLiverGlycogen().load(in.getLiverGlycogen());
+    if (in.getMuscleGlycogen() != null)
+    	getMuscleGlycogen().load(in.getMuscleGlycogen());
+    if (in.getStoredProtein() != null)
+    	getStoredProtein().load(in.getStoredProtein());
+    if (in.getStoredFat() != null)
+    	getStoredFat().load(in.getStoredFat());
    
     return true;
   }
@@ -99,6 +159,27 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
       data.setOxygenConsumptionRate(oxygenConsumptionRate.unload());
     if (hasRespiratoryExchangeRatio())
       data.setRespiratoryExchangeRatio(respiratoryExchangeRatio.unload());    
+    if (hasLiverInsulinSetPoint())
+      data.setLiverInsulinSetPoint(liverInsulinSetPoint.unload());  
+    if (hasLiverGlucagonSetPoint())
+      data.setLiverGlucagonSetPoint(liverGlucagonSetPoint.unload());  
+    if (hasMuscleInsulinSetPoint())
+      data.setMuscleInsulinSetPoint(muscleInsulinSetPoint.unload());  
+    if (hasMuscleGlucagonSetPoint())
+      data.setMuscleGlucagonSetPoint(muscleGlucagonSetPoint.unload()); 
+    if (hasFatInsulinSetPoint())
+      data.setFatInsulinSetPoint(fatInsulinSetPoint.unload());  
+    if (hasFatGlucagonSetPoint())
+      data.setFatGlucagonSetPoint(fatGlucagonSetPoint.unload()); 
+    
+    if (hasLiverGlycogen())
+      data.setLiverGlycogen(liverGlycogen.unload()); 
+    if (hasMuscleGlycogen())
+      data.setMuscleGlycogen(muscleGlycogen.unload()); 
+    if (hasStoredProtein())
+      data.setStoredProtein(storedProtein.unload()); 
+    if (hasStoredFat())
+      data.setStoredFat(storedFat.unload()); 
   }
 
   public boolean hasCarbonDioxideProductionRate()
@@ -176,5 +257,115 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
     if (respiratoryExchangeRatio == null)
       respiratoryExchangeRatio = new SEScalar();
     return respiratoryExchangeRatio;
+  }
+  
+  public boolean hasLiverInsulinSetPoint()
+  {
+    return liverInsulinSetPoint == null ? false : liverInsulinSetPoint.isValid();
+  }
+  public SEScalarAmountPerVolume getLiverInsulinSetPoint()
+  {
+    if (liverInsulinSetPoint == null)
+    	liverInsulinSetPoint = new SEScalarAmountPerVolume();
+    return liverInsulinSetPoint;
+  }
+  
+  public boolean hasLiverGlucagonSetPoint()
+  {
+    return liverGlucagonSetPoint == null ? false : liverGlucagonSetPoint.isValid();
+  }
+  public SEScalarMassPerVolume getLiverGlucagonSetPoint()
+  {
+    if (liverGlucagonSetPoint == null)
+    	liverGlucagonSetPoint = new SEScalarMassPerVolume();
+    return liverGlucagonSetPoint;
+  }
+  
+  public boolean hasMuscleInsulinSetPoint()
+  {
+    return muscleInsulinSetPoint == null ? false : muscleInsulinSetPoint.isValid();
+  }
+  public SEScalarAmountPerVolume getMuscleInsulinSetPoint()
+  {
+    if (muscleInsulinSetPoint == null)
+    	muscleInsulinSetPoint = new SEScalarAmountPerVolume();
+    return muscleInsulinSetPoint;
+  }
+  
+  public boolean hasMuscleGlucagonSetPoint()
+  {
+    return muscleGlucagonSetPoint == null ? false : muscleGlucagonSetPoint.isValid();
+  }
+  public SEScalarMassPerVolume getMuscleGlucagonSetPoint()
+  {
+    if (muscleGlucagonSetPoint == null)
+    	muscleGlucagonSetPoint = new SEScalarMassPerVolume();
+    return muscleGlucagonSetPoint;
+  }
+
+  public boolean hasFatInsulinSetPoint()
+  {
+    return fatInsulinSetPoint == null ? false : fatInsulinSetPoint.isValid();
+  }
+  public SEScalarAmountPerVolume getFatInsulinSetPoint()
+  {
+    if (fatInsulinSetPoint == null)
+    	fatInsulinSetPoint = new SEScalarAmountPerVolume();
+    return fatInsulinSetPoint;
+  }
+  
+  public boolean hasFatGlucagonSetPoint()
+  {
+    return fatGlucagonSetPoint == null ? false : fatGlucagonSetPoint.isValid();
+  }
+  public SEScalarMassPerVolume getFatGlucagonSetPoint()
+  {
+    if (fatGlucagonSetPoint == null)
+    	fatGlucagonSetPoint = new SEScalarMassPerVolume();
+    return fatGlucagonSetPoint;
+  }
+  
+  public boolean hasLiverGlycogen()
+  {
+    return liverGlycogen == null ? false : liverGlycogen.isValid();
+  }
+  public SEScalarMass getLiverGlycogen()
+  {
+    if (liverGlycogen == null)
+    	liverGlycogen = new SEScalarMass();
+    return liverGlycogen;
+  }
+  
+  public boolean hasMuscleGlycogen()
+  {
+    return muscleGlycogen == null ? false : muscleGlycogen.isValid();
+  }
+  public SEScalarMass getMuscleGlycogen()
+  {
+    if (muscleGlycogen == null)
+    	muscleGlycogen = new SEScalarMass();
+    return muscleGlycogen;
+  }
+  
+  public boolean hasStoredProtein()
+  {
+    return storedProtein == null ? false : storedProtein.isValid();
+  }
+  public SEScalarMass getStoredProtein()
+  {
+    if (storedProtein == null)
+    	storedProtein = new SEScalarMass();
+    return storedProtein;
+  }
+  
+  public boolean hasStoredFat()
+  {
+    return storedFat == null ? false : storedFat.isValid();
+  }
+  public SEScalarMass getStoredFat()
+  {
+    if (storedFat == null)
+    	storedFat = new SEScalarMass();
+    return storedFat;
   }
 }

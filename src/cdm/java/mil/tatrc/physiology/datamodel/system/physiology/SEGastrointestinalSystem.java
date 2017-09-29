@@ -20,27 +20,27 @@ import mil.tatrc.physiology.datamodel.system.SESystem;
 
 public class SEGastrointestinalSystem extends SEPhysiologySystem implements SESystem
 {
-	protected SEScalarVolumePerTime chymeAbsorbtionRate;
+	protected SEScalarVolumePerTime chymeAbsorptionRate;
 	protected SENutrition			      stomachContents;
 
 	public SEGastrointestinalSystem()
 	{
-		chymeAbsorbtionRate = null;
+		chymeAbsorptionRate = null;
 		stomachContents = null;
 	}
 
 	public void reset()
 	{		
-		if (chymeAbsorbtionRate != null)
-			chymeAbsorbtionRate.invalidate();
+		if (chymeAbsorptionRate != null)
+			chymeAbsorptionRate.invalidate();
 		if (stomachContents != null)
 			stomachContents.reset();
 	}
 
 	public boolean load(GastrointestinalSystemData in)
 	{		
-		if (in.getChymeAbsorbtionRate() != null)
-			getChymeAbsorbtionRate().load(in.getChymeAbsorbtionRate());
+		if (in.getChymeAbsorptionRate() != null)
+			getChymeAbsorptionRate().load(in.getChymeAbsorptionRate());
 		if (in.getStomachContents() != null)
 			getStomachContents().load(in.getStomachContents());
 
@@ -56,21 +56,21 @@ public class SEGastrointestinalSystem extends SEPhysiologySystem implements SESy
 
 	protected void unload(GastrointestinalSystemData data)
 	{		
-		if (getChymeAbsorbtionRate() != null)
-			data.setChymeAbsorbtionRate(chymeAbsorbtionRate.unload());
+		if (getChymeAbsorptionRate() != null)
+			data.setChymeAbsorptionRate(chymeAbsorptionRate.unload());
 		if (getStomachContents() != null)
 			data.setStomachContents(stomachContents.unload());
 	}
 
-	public boolean hasChymeAbsorbtionRate()
+	public boolean hasChymeAbsorptionRate()
 	{
-		return chymeAbsorbtionRate == null ? false : chymeAbsorbtionRate.isValid();
+		return chymeAbsorptionRate == null ? false : chymeAbsorptionRate.isValid();
 	}
-	public SEScalarVolumePerTime getChymeAbsorbtionRate()
+	public SEScalarVolumePerTime getChymeAbsorptionRate()
 	{
-		if (chymeAbsorbtionRate == null)
-			chymeAbsorbtionRate = new SEScalarVolumePerTime();
-		return chymeAbsorbtionRate;
+		if (chymeAbsorptionRate == null)
+			chymeAbsorptionRate = new SEScalarVolumePerTime();
+		return chymeAbsorptionRate;
 	}
 
 	public boolean hasStomachContents()

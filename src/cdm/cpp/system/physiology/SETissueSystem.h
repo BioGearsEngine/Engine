@@ -60,15 +60,64 @@ public:
   virtual SEScalar& GetRespiratoryExchangeRatio();
   virtual double GetRespiratoryExchangeRatio() const;
 
+  virtual bool HasLiverInsulinSetPoint() const;
+  virtual SEScalarAmountPerVolume& GetLiverInsulinSetPoint();
+  virtual double GetLiverInsulinSetPoint(const AmountPerVolumeUnit& unit) const;
+
+  virtual bool HasLiverGlucagonSetPoint() const;
+  virtual SEScalarMassPerVolume& GetLiverGlucagonSetPoint();
+  virtual double GetLiverGlucagonSetPoint(const MassPerVolumeUnit& unit) const;
+
+  virtual bool HasMuscleInsulinSetPoint() const;
+  virtual SEScalarAmountPerVolume& GetMuscleInsulinSetPoint();
+  virtual double GetMuscleInsulinSetPoint(const AmountPerVolumeUnit& unit) const;
+
+  virtual bool HasMuscleGlucagonSetPoint() const;
+  virtual SEScalarMassPerVolume& GetMuscleGlucagonSetPoint();
+  virtual double GetMuscleGlucagonSetPoint(const MassPerVolumeUnit& unit) const;
+
+  virtual bool HasFatInsulinSetPoint() const;
+  virtual SEScalarAmountPerVolume& GetFatInsulinSetPoint();
+  virtual double GetFatInsulinSetPoint(const AmountPerVolumeUnit& unit) const;
+
+  virtual bool HasFatGlucagonSetPoint() const;
+  virtual SEScalarMassPerVolume& GetFatGlucagonSetPoint();
+  virtual double GetFatGlucagonSetPoint(const MassPerVolumeUnit& unit) const;
+
+  virtual bool HasLiverGlycogen() const;
+  virtual SEScalarMass& GetLiverGlycogen();
+  virtual double GetLiverGlycogen(const MassUnit& unit) const;
+
+  virtual bool HasMuscleGlycogen() const;
+  virtual SEScalarMass& GetMuscleGlycogen();
+  virtual double GetMuscleGlycogen(const MassUnit& unit) const;
+
+  virtual bool HasStoredProtein() const;
+  virtual SEScalarMass& GetStoredProtein();
+  virtual double GetStoredProtein(const MassUnit& unit) const;
+
+  virtual bool HasStoredFat() const;
+  virtual SEScalarMass& GetStoredFat();
+  virtual double GetStoredFat(const MassUnit& unit) const;
+
 
 protected:
-  SEScalarVolumePerTime*  m_CarbonDioxideProductionRate;
-  SEScalarVolume*         m_ExtracellularFluidVolume;//planned
-  SEScalarVolume*         m_ExtravascularFluidVolume;//planned
-  SEScalarVolume*         m_IntracellularFluidVolume;//planned
-  SEScalar*               m_IntracellularFluidPH;
-  SEScalarVolumePerTime*	m_OxygenConsumptionRate;
-  SEScalar*				        m_RespiratoryExchangeRatio;
-
+  SEScalarVolumePerTime*    m_CarbonDioxideProductionRate;
+  SEScalarVolume*           m_ExtracellularFluidVolume;//planned
+  SEScalarVolume*           m_ExtravascularFluidVolume;//planned
+  SEScalarVolume*           m_IntracellularFluidVolume;//planned
+  SEScalar*                 m_IntracellularFluidPH;
+  SEScalarVolumePerTime*	  m_OxygenConsumptionRate;
+  SEScalar*				          m_RespiratoryExchangeRatio;
+  SEScalarAmountPerVolume*  m_LiverInsulinSetPoint;
+  SEScalarMassPerVolume*    m_LiverGlucagonSetPoint;
+  SEScalarAmountPerVolume*  m_MuscleInsulinSetPoint;
+  SEScalarMassPerVolume*    m_MuscleGlucagonSetPoint;
+  SEScalarAmountPerVolume*  m_FatInsulinSetPoint;
+  SEScalarMassPerVolume*    m_FatGlucagonSetPoint;
+  SEScalarMass*             m_LiverGlycogen;
+  SEScalarMass*             m_MuscleGlycogen;
+  SEScalarMass*             m_StoredProtein;
+  SEScalarMass*             m_StoredFat;
 
 };

@@ -52,19 +52,25 @@ public:
 	void Process();
 	void PostProcess();
 
+  //Used to add Hepatic O2/CO2 changes to Tissue outputs (there's probably a better way to transfer this data)
+  static double m_hepaticO2Consumed_mol;
+  static double m_hepaticCO2Produced_mol;
+
 protected:
 
   // Preprocess Methods
-  void ProduceAlbumin(double duration_s);
+  void ProteinStorageAndRelease();
+  void FatStorageAndRelease();
 
     /*Tissue System*/
   void CalculateMetabolicConsumptionAndProduction(double time);
-  void GlucoseLipidControl(double time);
 
   /*Process Methods*/
   void CalculateDiffusion();
   void CalculatePulmonaryCapillarySubstanceTransfer();
   void CalculateVitals();
+  void CheckGlycogenLevels();
+  void ManageSubstancesAndSaturation();
   
 
   /*Postprocess Methods*/	
@@ -79,9 +85,9 @@ protected:
   double MoveMassByInstantDiffusion(SELiquidCompartment& source, SELiquidCompartment& target, const SESubstance& sub, double timestep_s);
   double MoveMassBySimpleDiffusion(SELiquidCompartment& source, SELiquidCompartment& target, const SESubstance& sub, double permeabilityCofficient_mL_Per_s, double timestep_s);  
   double MoveMassByFacilitatedDiffusion(SELiquidCompartment& source, SELiquidCompartment& target, const SESubstance& sub, double combinedCoefficient_g_Per_s, double timestep_s);
-  double MoveMassByActiveTransport(SELiquidCompartment& source, SELiquidCompartment& target, const SESubstance& sub, double DiffusingCapacityO2_mL_Per_s_mmHg, double timestep_s);
+  double MoveMassByActiveTransport(SELiquidCompartment& source, SELiquidCompartment& target, const SESubstance& sub, double pumpRate_g_Per_s, double timestep_s);
 
-  // Serializable member variables (Set in Initialize and in schema
+  // Serializable member variables (Set in Initialize and in schema)
   double m_RestingTissueGlucose_g;
   double m_RestingBloodGlucose_g_Per_L;
   double m_RestingBloodLipid_g_Per_L;
@@ -91,32 +97,44 @@ protected:
 
   // Stateless member variable (Set in SetUp())
 	double m_Dt_s;
-	double m_AlbuminProdutionRate_g_Per_s;
+  double m_maxProteinStorage_g;
+
+  std::stringstream           m_ss;
 	SESubstance*                m_Albumin;
+  SESubstance*                m_AminoAcids;
+  SESubstance*                m_Glucagon;
   SESubstance*                m_Glucose;
-  SESubstance*                m_Tristearin;
+  SESubstance*                m_Triacylglycerol;
   SESubstance*                m_O2;
   SESubstance*                m_CO2;
   SESubstance*                m_CO; 
   SESubstance*                m_Lactate;
-  SESubstance*                m_Acetoacetate;
+  SESubstance*                m_Ketones;
   SESubstance*                m_Creatinine;
   SESubstance*                m_Sodium;
   SESubstance*                m_Calcium;
   SESubstance*                m_Insulin;
+  SESubstance*                m_Urea;
 
   SEFluidCircuitNode*         m_GutT1;
   SEFluidCircuitPath*         m_GutT1ToGutT3;
 
-  SELiquidSubstanceQuantity*  m_LiverTissueAlbumin;
+  SELiquidSubstanceQuantity*  m_MuscleInsulin;
+  SELiquidSubstanceQuantity*  m_MuscleGlucagon;
+  SELiquidSubstanceQuantity*  m_MuscleAA;
+  SELiquidSubstanceQuantity*  m_FatInsulin;
+  SELiquidSubstanceQuantity*  m_FatGlucagon;
+  SELiquidSubstanceQuantity*  m_FatTAG;
   SETissueCompartment*        m_LeftLungTissue;
   SETissueCompartment*        m_RightLungTissue;
   SETissueCompartment*        m_MuscleTissue;
   SELiquidCompartment*        m_MuscleIntracellular;
   SETissueCompartment*        m_LiverTissue;
   SELiquidCompartment*        m_LiverIntracellular;
+  SELiquidCompartment*        m_LiverExtracellular;
   SETissueCompartment*        m_FatTissue;
   SELiquidCompartment*        m_FatIntracellular;
+  SETissueCompartment*        m_BrainTissue;
 
   SELiquidCompartment*        m_FatVascular;
   SELiquidSubstanceQuantity*  m_FatVascularLipid;
@@ -130,9 +148,12 @@ protected:
   SELiquidCompartment*        m_RightPulmonaryCapillaries;
   
   SEPatientActionCollection*  m_PatientActions;  
+  SEPatient*                  m_Patient;
+  SEEnergySystem*             m_energy;
 
   std::map<SETissueCompartment*, SELiquidCompartment*> m_TissueToVascular;
   std::vector<SETissueCompartment*>                    m_ConsumptionProdutionTissues;
+  std::string                 m_AnaerobicTissues;
 };
 
 

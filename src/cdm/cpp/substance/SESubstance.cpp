@@ -47,6 +47,7 @@ SESubstance::SESubstance(Logger* logger) : Loggable(logger)
 	m_MassInBlood = nullptr;
 	m_MassInTissue = nullptr;
 	m_PlasmaConcentration = nullptr;
+	m_EffectSiteConcentration = nullptr;
 	m_SystemicMassCleared = nullptr;
   m_TissueConcentration = nullptr;
 
@@ -82,6 +83,7 @@ void SESubstance::Clear()
 	SAFE_DELETE(m_MassInBlood);
 	SAFE_DELETE(m_MassInTissue);
 	SAFE_DELETE(m_PlasmaConcentration);
+	SAFE_DELETE(m_EffectSiteConcentration);
 	SAFE_DELETE(m_SystemicMassCleared);
   SAFE_DELETE(m_TissueConcentration);
 
@@ -122,6 +124,8 @@ const SEScalar* SESubstance::GetScalar(const std::string& name)
 		return &GetMassInTissue();
 	if (name.compare("PlasmaConcentration") == 0)
 		return &GetPlasmaConcentration();
+	if (name.compare("EffectSiteConcentration") == 0)
+		return &GetEffectSiteConcentration();
 	if (name.compare("SystemicMassCleared") == 0)
 		return &GetSystemicMassCleared();
   if (name.compare("TissueConcentration") == 0)
@@ -185,6 +189,8 @@ bool SESubstance::Load(const CDM::SubstanceData& in)
 		GetMassInTissue().Load(in.MassInTissue().get());
 	if (in.PlasmaConcentration().present())
 		GetPlasmaConcentration().Load(in.PlasmaConcentration().get());
+	if (in.EffectSiteConcentration().present())
+		GetEffectSiteConcentration().Load(in.EffectSiteConcentration().get());
 	if (in.SystemicMassCleared().present())
 		GetSystemicMassCleared().Load(in.SystemicMassCleared().get());
   if (in.TissueConcentration().present())
@@ -255,6 +261,8 @@ void SESubstance::Unload(CDM::SubstanceData& data) const
 		data.MassInTissue(std::unique_ptr<CDM::ScalarMassData>(m_MassInTissue->Unload()));
 	if (HasPlasmaConcentration())
 		data.PlasmaConcentration(std::unique_ptr<CDM::ScalarMassPerVolumeData>(m_PlasmaConcentration->Unload()));
+	if (HasEffectSiteConcentration())
+		data.EffectSiteConcentration(std::unique_ptr<CDM::ScalarMassPerVolumeData>(m_EffectSiteConcentration->Unload()));
 	if (HasSystemicMassCleared())
 		data.SystemicMassCleared(std::unique_ptr<CDM::ScalarMassData>(m_SystemicMassCleared->Unload()));
   if (HasTissueConcentration())
@@ -487,6 +495,23 @@ double SESubstance::GetPlasmaConcentration(const MassPerVolumeUnit& unit) const
 	if (m_PlasmaConcentration == nullptr)
 		return SEScalar::dNaN();
 	return m_PlasmaConcentration->GetValue(unit);
+}
+
+bool SESubstance::HasEffectSiteConcentration() const
+{
+	return (m_EffectSiteConcentration == nullptr) ? false : m_EffectSiteConcentration->IsValid();
+}
+SEScalarMassPerVolume& SESubstance::GetEffectSiteConcentration()
+{
+	if (m_EffectSiteConcentration == nullptr)
+		m_EffectSiteConcentration = new SEScalarMassPerVolume();
+	return *m_EffectSiteConcentration;
+}
+double SESubstance::GetEffectSiteConcentration(const MassPerVolumeUnit& unit) const
+{
+	if (m_EffectSiteConcentration == nullptr)
+		return SEScalar::dNaN();
+	return m_EffectSiteConcentration->GetValue(unit);
 }
 
 bool SESubstance::HasSystemicMassCleared() const

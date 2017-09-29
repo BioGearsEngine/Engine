@@ -43,7 +43,7 @@ public class CSVComparePlotter
 			}
 			else
 			{
-				Log.fatal("Expected inputs : [expected results file path] [computed results file path] [percentDifference] [time to start comparing at] [track differences] [output folder] [zip results]");
+				Log.fatal("Expected inputs : [expected results file path] [computed results file path] [plot all points?]");
 				return;
 			}
 		}
@@ -126,7 +126,7 @@ public class CSVComparePlotter
 			expectedResults = new CSVContents(expectedFilePath);
 			if(this.plotType == PlotType.FastPlot || this.plotType == PlotType.FastPlotErrors)
 			{
-				expectedResults.abreviateContents = 5;
+				expectedResults.abbreviateContents = 5;
 			}
 			expectedHeaders = expectedResults.getHeaders();
 			if(readAll)
@@ -142,7 +142,7 @@ public class CSVComparePlotter
 			computedResults = new CSVContents(computedFilePath);
 			if(this.plotType == PlotType.FastPlot || this.plotType == PlotType.FastPlotErrors)
 			{
-				computedResults.abreviateContents = 5;
+				computedResults.abbreviateContents = 5;	//change this to a higher number to plot less data (even faster)
 			}
 			computedHeaders = computedResults.getHeaders();
 			if(computedHeaders==null)

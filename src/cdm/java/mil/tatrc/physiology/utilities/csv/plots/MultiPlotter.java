@@ -72,7 +72,7 @@ public class MultiPlotter implements Plotter
 	    try
 	    {
 		    CSVContents csv = new CSVContents(job.dataPath + job.dataFile);
-		    csv.abreviateContents = job.resultsSkipNum;
+		    csv.abbreviateContents = job.resultsSkipNum;
 		    for (int i = 0; i < job.headers.size(); i++)
 		    {
 			    List<Double> headerData = new ArrayList<Double>();
@@ -93,7 +93,7 @@ public class MultiPlotter implements Plotter
 	    try
 	    {
 	    	dataCsv = new CSVContents(job.dataPath + job.dataFile);
-	    	dataCsv.abreviateContents = job.resultsSkipNum;
+	    	dataCsv.abbreviateContents = job.resultsSkipNum;
 	    } catch (IOException e)
 	    {
 		    Log.error("Could not analyze file " + job.dataPath + job.dataFile);
@@ -101,7 +101,7 @@ public class MultiPlotter implements Plotter
 	    try
 	    {
 		    expCsv = new CSVContents(job.experimentalData);
-		    expCsv.abreviateContents = 0;	//we'll use all of the experimental data
+		    expCsv.abbreviateContents = 0;	//we'll use all of the experimental data
 	    } catch (IOException e)
 	    {
 		    Log.error("Could not analyze file " + job.experimentalData);

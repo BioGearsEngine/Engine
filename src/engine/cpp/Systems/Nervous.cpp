@@ -141,7 +141,7 @@ void Nervous::AtSteadyState()
 //--------------------------------------------------------------------------------------------------
 void Nervous::PreProcess()
 {
-	BaroreceptorFeedback();
+  BaroreceptorFeedback();
   ChemoreceptorFeedback();
 }
 
@@ -280,11 +280,13 @@ void Nervous::CheckBrainStatus()
 //--------------------------------------------------------------------------------------------------
 void Nervous::ChemoreceptorFeedback()
 {
-  if (!m_FeedbackActive)
-    return;
 
+  if (!m_FeedbackActive)
+	return;
+  
   double normalized_pO2 = m_data.GetBloodChemistry().GetArterialOxygenPressure(PressureUnit::mmHg) / m_ArterialOxygenSetPoint_mmHg;
   double normalized_pCO2 = m_data.GetBloodChemistry().GetArterialCarbonDioxidePressure(PressureUnit::mmHg) / m_ArterialCarbonDioxideSetPoint_mmHg;
+  
 
   // The chemoreceptor heart rate modification function shape parameters.
   // See NervousMethodology documentation for details.
@@ -310,13 +312,28 @@ void Nervous::ChemoreceptorFeedback()
   modifier += GeneralMath::LogisticFunction(bmax, b50, beta, normalized_pCO2);
   modifier += GeneralMath::LogisticFunction(cmax, c50, ceta, normalized_pO2);
   modifier += GeneralMath::LogisticFunction(dmax, d50, deta, normalized_pO2);
-  
+
+  //Apply central nervous depressant effects (currently only applies to morphine)
+  SEDrugSystem& Drugs = m_data.GetDrugs();
+  double CNSChange = Drugs.GetCentralNervousResponse().GetValue();
+  if (CNSChange >= 0.25)
+	  modifier = 0.0;
+
+
+
+  //set to zero if below .1 percent 
+  if (modifier < 0.001)
+    modifier = 0.0;
+
   GetChemoreceptorHeartRateScale().SetValue(maxHeartRateDelta*modifier);
+
+ 
 
   // Calculate the normalized change in heart elastance
   double normalizedHeartElastance = 1.0;
   /// \todo Compute and apply chemoreceptor-mediated contractility changes
   GetChemoreceptorHeartElastanceScale().SetValue(normalizedHeartElastance);
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -347,20 +364,22 @@ void Nervous::SetPupilEffects()
 
       if (b->GetType() == CDM::enumBrainInjuryType::Diffuse)
       {
-        leftPupilSizeResponseLevel += (1 / (1 + exp(-2.3*(icp_mmHg - 22.5))));
-        leftPupilReactivityResponseLevel += -.001*pow(10, .3*(icp_mmHg - 15));
+        //https://www.wolframalpha.com/input/?i=y%3D(1+%2F+(1+%2B+exp(-2.0*(x+-+24))))+from+18%3Cx%3C28
+        leftPupilSizeResponseLevel += (1 / (1 + exp(-2.0*(icp_mmHg - 24))));
+        //https://www.wolframalpha.com/input/?i=y%3D-.001*pow(10,+.27*(x+-+15))+from+18%3Cx%3C28+and+-1%3Cy%3C0
+        leftPupilReactivityResponseLevel += -.001*pow(10, .27*(icp_mmHg - 15));
         rightPupilSizeResponseLevel = leftPupilSizeResponseLevel;
         rightPupilReactivityResponseLevel = leftPupilReactivityResponseLevel;
       }
       else if (b->GetType() == CDM::enumBrainInjuryType::LeftFocal)
       {
-        leftPupilSizeResponseLevel += (1 / (1 + exp(-2.3*(icp_mmHg - 22.5))));
-        leftPupilReactivityResponseLevel += -.001*pow(10, .3*(icp_mmHg - 15));
+        leftPupilSizeResponseLevel += (1 / (1 + exp(-2.0*(icp_mmHg - 24))));
+        leftPupilReactivityResponseLevel += -.001*pow(10, .27*(icp_mmHg - 15));
       }
       else if(b->GetType() == CDM::enumBrainInjuryType::RightFocal)
       {
-        rightPupilSizeResponseLevel += (1 / (1 + exp(-2.3*(icp_mmHg - 22.5))));
-        rightPupilReactivityResponseLevel += -.001*pow(10, .3*(icp_mmHg - 15));
+        rightPupilSizeResponseLevel += (1 / (1 + exp(-2.0*(icp_mmHg - 24))));
+        rightPupilReactivityResponseLevel += -.001*pow(10, .27*(icp_mmHg - 15));
       }
     }
   }

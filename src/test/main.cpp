@@ -64,14 +64,14 @@ int main(int argc, char* argv[])
       //bgeTest.CombinedInternalAndEnvironmentSkinTempDropCircuitTest(bgDir);
       //bgeTest.EnvironmentISO7730ComparisonTest(bgDir);
 
-      bgeTest.DiffusionClearanceExcretionTests(bgDir);
-      bgeTest.AlveolarOxygenDiffusionTest(bgDir);
-      bgeTest.AlveolarCarbonDioxideDiffusionTest(bgDir);
-      bgeTest.InstantPlusSimpleDiffusionTest(bgDir);
-      bgeTest.SimpleDiffusionTwoCompartmentTest(bgDir);
-      bgeTest.SimpleDiffusionFourCompartmentTest(bgDir);
-      bgeTest.SimpleDiffusionHierarchyTest(bgDir);
-      bgeTest.FacilitatedDiffusionTest(bgDir);
+      //bgeTest.DiffusionClearanceExcretionTests(bgDir);
+      //bgeTest.AlveolarOxygenDiffusionTest(bgDir);
+      //bgeTest.AlveolarCarbonDioxideDiffusionTest(bgDir);
+      //bgeTest.InstantPlusSimpleDiffusionTest(bgDir);
+      //bgeTest.SimpleDiffusionTwoCompartmentTest(bgDir);
+      //bgeTest.SimpleDiffusionFourCompartmentTest(bgDir);
+      //bgeTest.SimpleDiffusionHierarchyTest(bgDir);
+      //bgeTest.FacilitatedDiffusionTest(bgDir);
 
       //bgeTest.BrainInjuryTest(bgDir);
 
@@ -80,16 +80,22 @@ int main(int argc, char* argv[])
       //bgeTest.SerializationTest(bgDir);
       //bgeTest.SolverSpeedTest(bgDir);
 
-      //Acid Base Tests
       //bgeTest.AcidBaseMathTest(bgDir);
       //bgeTest.AcidBaseFeedbackTest(bgDir);
       //bgeTest.AcidBaseLimitsTest(bgDir);
       //bgeTest.AcidBaseExtremeTest(bgDir);
       //bgeTest.AcidBaseBloodGasTests(bgDir);
 
-      //Aerosol Tests
       //bgeTest.AerosolTest(bgDir);
 
+      //bgeTest.DigestionCarbs(bgDir);
+      //bgeTest.DigestionProtein(bgDir);
+      //bgeTest.DigestionFat(bgDir);
+      //bgeTest.DigestionMixed(bgDir);
+      //bgeTest.AbsorptionCarbs(bgDir);
+      //bgeTest.AbsorptionFat(bgDir);
+      //bgeTest.AbsorptionProtein(bgDir);
+      //bgeTest.NutrientKineticsTestSimple(bgDir);
       //bgeTest.FourCompartmentTestSimple(bgDir);
       //bgeTest.AcidBaseFourCompartmentTest(bgDir);
       //bgeTest.FiveCompartmentTestWithDiffusion(bgDir);

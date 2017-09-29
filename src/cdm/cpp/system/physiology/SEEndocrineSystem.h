@@ -36,8 +36,13 @@ public:
 	virtual SEScalarAmountPerTime& GetInsulinSynthesisRate();
   virtual double GetInsulinSynthesisRate(const AmountPerTimeUnit& unit) const;
 
+  virtual bool HasGlucagonSynthesisRate() const;
+  virtual SEScalarAmountPerTime& GetGlucagonSynthesisRate();
+  virtual double GetGlucagonSynthesisRate(const AmountPerTimeUnit& unit) const;
+
 protected:
 
 	SEScalarAmountPerTime* m_InsulinSynthesisRate;
+  SEScalarAmountPerTime* m_GlucagonSynthesisRate;
 
 };

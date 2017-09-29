@@ -252,9 +252,8 @@ specific language governing permissions and limitations under the License.
 		<xs:complexContent>
 			<xs:extension base="PatientActionData">
 				<xs:sequence>
-					<xs:element name="Rate" type="ScalarVolumePerTimeData" minOccurs="1" maxOccurs="1"/><!--<< @brief The flow rate of blood exiting the specified compartment. Set to zero to stop the bleeding rate. -->
-				</xs:sequence>              
-				<xs:attribute name="Compartment" type="xs:string" use="required"/><!--<< @brief Origin of the hemorrhage -->   
+					<xs:element name="MCIS" type="IntegerArray" minOccurs="0" maxOccurs="1"/><!--<< @brief Code decribing both location and severity of hemorrhage.  Will eventually replace compartment -->
+				</xs:sequence>                
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
