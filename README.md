@@ -217,10 +217,8 @@ The BioGears source is structured as follows:
 
 Tentative Near-Term Timeline
 ============================
-Planned model updates:
+Planned model updates Oct 2, 2017:
 
-* Proper nutrient kinetics
-* Intoxication model with morphine example 
 * Exocrine and secretory functions
 * Starvation and dehydration states
 * Nerve agent model
