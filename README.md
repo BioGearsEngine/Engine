@@ -102,7 +102,7 @@ these are necessary for command line builds.  After Xcode loads the project it c
 src directory to build.
 
 After BioGears is built, navigate to the bin directory and launch the scenario driver from there, specifying the scenario you want to run as the first parameter
-(e.g. `./Release/BioGearsScenarioDriver ../verification/Scenarios/Basic/Basic1.xml`).
+(e.g. `./Release/BioGearsScenarioDriver ../verification/Scenarios/Patient/BasicStandard.xml`).
 
 
 ### Building with GCC on Linux  LINUX
@@ -115,9 +115,12 @@ Make sure the following tools are installed:
 - Java JDK 8
 - GCC
 
-Add a JAVA_HOME variable to point to the Java installation and add it to the system PATH.  This can be done by adding the following lines to ~/.profile:
+To begin, get these tools through the linux package manager of your choice (apt, yum ect...). This build was tested on Ubuntu 16.04 with tools installed via apt-get. Build supports open JDK or oracle JDK. Linking should be automatically done through the package manager.
+
+
+Add a JAVA_HOME variable to point to the Java installation and add it to the system PATH (if it was not sufficiently linked through the package manager, you can double check this with a quick `$ java -version`). This can be done by adding the following lines to ~/.profile (again this will depend on where you java installation is on your machine, this is an example of the location when installed via apt-get on Ubuntu):
 ```
-JAVA_HOME=/usr/local/jdk1.8.0_45
+JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
 PATH=$PATH:$JAVA_HOME_bin
 ```
 
@@ -126,12 +129,13 @@ Replace the JAVA_HOME value with the correct installation directory.
 #### Build Xerces
 
 Navigate in a terminal window to the xerces-3.1.2 directory in the BioGears lib directory.  Build Xerces by running
-`./configure --disable-threads --disable-network --enable-transcoder-gnuiconv --disable-pretty-make CXXFLAGS=-O3 CFLAGS=-O3` and then `make`.
+`./configure --disable-threads --disable-network --enable-transcoder-gnuiconv --disable-pretty-make CXXFLAGS=-O3 CFLAGS=-O3` and then `make`. Note, this step may require administrative privileges, if you are getting an error here type `$ chmod +x configure` and re-run the command, this should fix things.
+
 <br/>
 
 #### Building BioGears from the Command Line
 
-Navigate in a terminal window to the BioGears src directory and run `ant cmake -Denv=unixMake` and then `ant compile -Denv=unixMake`.
+Navigate in a terminal window to the BioGears src directory and run `ant cmake -Denv=unixMake `. There may be a couple errors that pop up here due to lack of administrator privleges. These are tied to running the xsd file to auto-gen the schema classes. To get around this type `$ chmod +x ../lib/xsd-4.0.0-x86_64-linux-gnu/bin/xsd` which should give you the requirements you need to run the xsd code to generate the schema. To compile the code just type `ant compile -Denv=unixMake`.
 
 ### Cross-compiling with GCC for the Raspberry Pi  RPI
 
