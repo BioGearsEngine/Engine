@@ -626,16 +626,6 @@
 	<target name="buildSDK-windows" depends="copyToSDK-windows" if="deployWindows">
 		<!-- Make sure howto files compile -->
 		<ant antfile="build.xml" dir="${biogears.SDK}" target="all" /> 
-		<!-- Zip it! -->
-		<delete file="${biogears.deploy}/${biogears.version}-sdk-windows.zip"/>
-		<zip destfile="${biogears.deploy}/${biogears.version}-sdk-windows.zip">
-      <zipfileset dir="${biogears.home}" prefix="${biogears.version}">
-        <include name="LICENSE"/>
-        <include name="NOTICE"/>
-      </zipfileset>
-			<zipfileset dir="${biogears.SDK}" excludes="howto/build/**, /cmake/msvs*/**" prefix="${biogears.version}"/>
-			<zipfileset dir="${biogears.doxy}" includes="html/**, Mainpage.html, ReadMe.txt" prefix="${biogears.version}/docs/"/>
-		</zip>
 	</target>
 	<target name="copyToSDK-windows" if="deployWindows">
 		<!-- Clean out the sdk folder of any previous deployment -->
