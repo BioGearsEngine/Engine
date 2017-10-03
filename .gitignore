@@ -17,6 +17,7 @@
 /bin/*.jar
 /bin/*.log
 /bin/*.xml
+!/bin/BioGearsConfiguration.xml
 
 
 /deploy/toolkit/BioGears.jar
