@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Substance xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
+<Substance xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.1-beta" xsi:schemaLocation="">
     <Name>Desflurane</Name>
-    <Density value="1496000.0" unit="g/m^3"/>
+    <Density value="6610.0" unit="g/m^3"/>
     <MolarMass value="168.038" unit="g/mol"/>
     <State>Gas</State>
-    <RelativeDiffusionCoefficient value="4.685"/>
-    <SolubilityCoefficient value="0.27" unit="1/atm"/>
+    <RelativeDiffusionCoefficient value="0.25"/>
+    <SolubilityCoefficient value="0.42" unit="1/atm"/>
     <Clearance>
         <Systemic>
             <FractionExcretedInFeces value="0.0"/>
@@ -30,19 +30,21 @@
     </Pharmacokinetics>
     <Pharmacodynamics>
         <Bronchodilation value="0.0"/>
-        <DiastolicPressureModifier value="-0.5"/>
-        <EC50 value="0.1" unit="ug/mL"/>
-        <EMaxShapeParameter value="1.0"/>
-        <HeartRateModifier value="0.025"/>
+        <DiastolicPressureModifier value="-0.35"/>
+        <EC50 value="100.0" unit="ug/mL"/>
+        <EMaxShapeParameter value="10.0"/>
+        <HeartRateModifier value="0.8"/>
         <NeuromuscularBlock value="0.0"/>
         <PupillaryResponse>
             <ReactivityModifier value="0.0"/>
             <SizeModifier value="0.0"/>
         </PupillaryResponse>
-        <RespirationRateModifier value="0.05"/>
-        <Sedation value="1.0"/>
-        <SystolicPressureModifier value="-0.5"/>
-        <TidalVolumeModifier value="0.0"/>
+        <RespirationRateModifier value="0.0"/>
+        <Sedation value="0.0"/>
+        <SystolicPressureModifier value="-0.35"/>
+        <TidalVolumeModifier value="-0.55"/>
         <TubularPermeabilityModifier value="0.0"/>
+        <CentralNervousModifier value="0.0"/>
+        <EffectSiteRateConstant value="0.0" unit="1/min"/>
     </Pharmacodynamics>
 </Substance>
