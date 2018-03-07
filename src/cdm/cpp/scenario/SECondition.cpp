@@ -26,8 +26,14 @@ specific language governing permissions and limitations under the License.
 #include "bind/ChronicRenalStenosisData.hxx"
 #include "patient/conditions/SEChronicVentricularSystolicDysfunction.h"
 #include "bind/ChronicVentricularSystolicDysfunctionData.hxx"
-#include "patient/conditions/SEConsumeMeal.h"
-#include "bind/ConsumeMealData.hxx"
+#include "patient/conditions/SEStarvation.h"
+#include "bind/StarvationData.hxx"
+#include "patient/conditions/SEDiabetesType1.h"
+#include "bind/DiabetesType1Data.hxx"
+#include "patient/conditions/SEDiabetesType2.h"
+#include "bind/DiabetesType2Data.hxx"
+#include "patient/conditions/SEDehydration.h"
+#include "bind/DehydrationData.hxx"
 #include "patient/conditions/SELobarPneumonia.h"
 #include "bind/LobarPneumoniaData.hxx"
 #include "patient/conditions/SEChronicPericardialEffusion.h"
@@ -92,11 +98,32 @@ SECondition* SECondition::newFromBind(const CDM::ConditionData& data, SESubstanc
 		cc->Load(*ccRenalStenosisData);
 		return cc;
 	}
-	const CDM::ConsumeMealData* ccConsumeMealData = dynamic_cast<const CDM::ConsumeMealData*>(&data);
-	if (ccConsumeMealData != nullptr)
+  const CDM::DehydrationData* ccDehydrationData = dynamic_cast<const CDM::DehydrationData*>(&data);
+  if (ccDehydrationData != nullptr)
+  {
+    SEDehydration* cc = new SEDehydration();
+    cc->Load(*ccDehydrationData);
+    return cc;
+  }
+  const CDM::DiabetesType1Data* ccDiabetesType1Data = dynamic_cast<const CDM::DiabetesType1Data*>(&data);
+  if (ccDiabetesType1Data != nullptr)
+  {
+    SEDiabetesType1* cc = new SEDiabetesType1();
+    cc->Load(*ccDiabetesType1Data);
+    return cc;
+  }
+  const CDM::DiabetesType2Data* ccDiabetesType2Data = dynamic_cast<const CDM::DiabetesType2Data*>(&data);
+  if (ccDiabetesType2Data != nullptr)
+  {
+    SEDiabetesType2* cc = new SEDiabetesType2();
+    cc->Load(*ccDiabetesType2Data);
+    return cc;
+  }
+	const CDM::StarvationData* ccStarvationData = dynamic_cast<const CDM::StarvationData*>(&data);
+	if (ccStarvationData != nullptr)
 	{
-		SEConsumeMeal* cc = new SEConsumeMeal();
-		cc->Load(*ccConsumeMealData);
+		SEStarvation* cc = new SEStarvation();
+		cc->Load(*ccStarvationData);
 		return cc;
 	}
   const CDM::ImpairedAlveolarExchangeData* ccImpairedAlveolarExchangeData = dynamic_cast<const CDM::ImpairedAlveolarExchangeData*>(&data);

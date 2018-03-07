@@ -242,7 +242,7 @@ void Environment::PreProcess()
 	//Set clothing resistor
 	double dClothingResistance_rsi = GetConditions().GetClothingResistance(HeatResistanceAreaUnit::rsi); //1 rsi = 1 m^2-K/W
 	double dSurfaceArea_m2 = m_Patient->GetSkinSurfaceArea(AreaUnit::m2);
-	m_SkinToClothing->GetNextResistance().SetValue(dClothingResistance_rsi / dSurfaceArea_m2, HeatResistanceUnit::K_Per_W);
+	m_SkinToClothing->GetNextResistance().SetValue(MAX((dClothingResistance_rsi / dSurfaceArea_m2), m_data.GetConfiguration().GetDefaultClosedHeatResistance(HeatResistanceUnit::K_Per_W)), HeatResistanceUnit::K_Per_W);
 
 	//Set the skin heat loss
 	double dSkinHeatLoss_W = 0.0;
@@ -598,12 +598,13 @@ void Environment::CalculateConvection()
 		//Submerged - therefore, convection is most important
 		double dClothingTemperature_K = m_ClothingNode->GetTemperature().GetValue(TemperatureUnit::K);
 		double dWaterTemperature_K = GetConditions().GetAmbientTemperature(TemperatureUnit::K);
-		double dWaterDensity_kg_Per_m3 = m_data.GetConfiguration().GetWaterDensity(MassPerVolumeUnit::kg_Per_m3);
+		SEScalarMassPerVolume dWaterDensity;
+    GeneralMath::CalculateWaterDensity(GetConditions().GetAmbientTemperature(), dWaterDensity);
 		double dGravity_m_Per_s2 = 9.81;
 
 		//Calculate the coefficient
 		//Heat transfer coefficient for submerged water convection. C. Boutelier et al. Experimental study of convective heat transfer coefficient for the human body in water. Journal of Applied Physiology. 1977. Vol. 42. p.93-100
-		double dGrashofNumber = dGravity_m_Per_s2*m_ThermalExpansion_Per_K*(std::abs(dClothingTemperature_K - dWaterTemperature_K))*pow(m_PatientEquivalentDiameter_m, 3.0) / (m_WaterViscosity_N_s_Per_m2 / dWaterDensity_kg_Per_m3);
+		double dGrashofNumber = dGravity_m_Per_s2*m_ThermalExpansion_Per_K*(std::abs(dClothingTemperature_K - dWaterTemperature_K))*pow(m_PatientEquivalentDiameter_m, 3.0) / (m_WaterViscosity_N_s_Per_m2 / dWaterDensity.GetValue(MassPerVolumeUnit::kg_Per_m3));
 		double dPrandtlNumber = m_WaterSpecificHeat_J_Per_kg_K*m_WaterViscosity_N_s_Per_m2 / m_WaterThermalConductivity_W_Per_m_K;
 		dConvectiveHeatTransferCoefficient_WPerM2_K = 0.09*(dGrashofNumber - dPrandtlNumber)*0.275;
 	}

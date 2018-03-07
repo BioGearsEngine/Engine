@@ -121,6 +121,7 @@ void BioGearsEngineTest::FillFunctionMap()
   bgeMap.insert(std::make_pair("SimpleDiffusionFourCompartmentTest", &BioGearsEngineTest::SimpleDiffusionFourCompartmentTest));
   bgeMap.insert(std::make_pair("SimpleDiffusionHierarchyTest", &BioGearsEngineTest::SimpleDiffusionHierarchyTest));
   bgeMap.insert(std::make_pair("FacilitatedDiffusionTest", &BioGearsEngineTest::FacilitatedDiffusionTest));
+  bgeMap.insert(std::make_pair("ActiveIonDiffusionTest", &BioGearsEngineTest::ActiveIonTransportTest));
 
   bgeMap.insert(std::make_pair("BrainInjuryTest", &BioGearsEngineTest::BrainInjuryTest));
 

@@ -486,7 +486,7 @@ void BioGearsEngineTest::NutrientKineticsTest(bool usingAbsorption, bool usingDy
     //Nutrient storage handling
     if (usingGlycogen)
     {
-      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cLiverVascular->GetSubstanceQuantity(insulin), cLiverVascular->GetSubstanceQuantity(glucagon));
+      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cLiverVascular->GetSubstanceQuantity(insulin), cLiverVascular->GetSubstanceQuantity(glucagon), bg);
       if(i % trackSkipper == 0)
         trk.Track("LiverHormoneFactor", time, hormoneFactor);
       //double insulinDeviation = (cLiverVascular.GetSubstanceQuantity(insulin)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L)*1e9 - insulinBaseline_pmol_Per_L) / insulinBaseline_pmol_Per_L;
@@ -546,7 +546,7 @@ void BioGearsEngineTest::NutrientKineticsTest(bool usingAbsorption, bool usingDy
       }
 
       //Now check the hormone factor in the muscle for storage of muscle glycogen
-      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cMuscleVascular->GetSubstanceQuantity(insulin), cMuscleVascular->GetSubstanceQuantity(glucagon));
+      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cMuscleVascular->GetSubstanceQuantity(insulin), cMuscleVascular->GetSubstanceQuantity(glucagon), bg);
 
       //remove excess glucose from blood and store in muscle glycogen while there's room
       if ((hormoneFactor > 0) && (muscleGlycogen_g < maxMuscleGlycogen_g))
@@ -568,7 +568,7 @@ void BioGearsEngineTest::NutrientKineticsTest(bool usingAbsorption, bool usingDy
 
     if (usingProteinStorage)
     {
-      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cMuscleVascular->GetSubstanceQuantity(insulin), cMuscleVascular->GetSubstanceQuantity(glucagon));
+      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cMuscleVascular->GetSubstanceQuantity(insulin), cMuscleVascular->GetSubstanceQuantity(glucagon), bg);
       if (i % trackSkipper == 0)
         trk.Track("MuscleHormoneFactor", time, hormoneFactor);
 
@@ -627,7 +627,7 @@ void BioGearsEngineTest::NutrientKineticsTest(bool usingAbsorption, bool usingDy
 
     if (usingFatStorage)
     {
-      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cFatVascular->GetSubstanceQuantity(insulin), cFatVascular->GetSubstanceQuantity(glucagon));
+      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cFatVascular->GetSubstanceQuantity(insulin), cFatVascular->GetSubstanceQuantity(glucagon), bg);
       if (i % trackSkipper == 0)
         trk.Track("FatHormoneFactor", time, hormoneFactor);
 
@@ -694,7 +694,7 @@ void BioGearsEngineTest::NutrientKineticsTest(bool usingAbsorption, bool usingDy
     //Lipogenesis (liver making new TAG from AA and glucose in times of excess)
     if (usingLipogenesis)
     {
-      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cLiverVascular->GetSubstanceQuantity(insulin), cLiverVascular->GetSubstanceQuantity(glucagon));
+      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cLiverVascular->GetSubstanceQuantity(insulin), cLiverVascular->GetSubstanceQuantity(glucagon), bg);
 
       //Get ratio of glucose to AA in liver to determine proportions that get converted to fat (will be a percentage of nutrients as glucose)
       //Really, what gets broken down to fat depends on concentrations of the facilitating enzymes
@@ -792,7 +792,7 @@ void BioGearsEngineTest::NutrientKineticsTest(bool usingAbsorption, bool usingDy
     //Another note: These processes consume O2, so we will skip them under anaerobic conditions
     if (usingGluconeogenesis)
     {
-      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cLiverVascular->GetSubstanceQuantity(insulin), cLiverVascular->GetSubstanceQuantity(glucagon));
+      hormoneFactor = hptc.CalculateRelativeHormoneChange(insulinBaseline_pmol_Per_L, glucagonBaseline_pg_Per_mL, cLiverVascular->GetSubstanceQuantity(insulin), cLiverVascular->GetSubstanceQuantity(glucagon), bg);
 
       //Handle lactate conversion
       //TODO should this only be done when hormone factor is negative? This would allow for some lactate excretion and maybe make it so that the blood maintains the expected 2-23 mg/dL

@@ -70,8 +70,10 @@ int main(int argc, char* argv[])
       //bgeTest.InstantPlusSimpleDiffusionTest(bgDir);
       //bgeTest.SimpleDiffusionTwoCompartmentTest(bgDir);
       //bgeTest.SimpleDiffusionFourCompartmentTest(bgDir);
+	  //bgeTest.ActiveTransportTest(bgDir);
       //bgeTest.SimpleDiffusionHierarchyTest(bgDir);
-      //bgeTest.FacilitatedDiffusionTest(bgDir);
+      // bgeTest.FacilitatedDiffusionTest(bgDir);
+	  //bgeTest.ActiveIonTransportTest(bgDir);
 
       //bgeTest.BrainInjuryTest(bgDir);
 
@@ -99,6 +101,7 @@ int main(int argc, char* argv[])
       //bgeTest.FourCompartmentTestSimple(bgDir);
       //bgeTest.AcidBaseFourCompartmentTest(bgDir);
       //bgeTest.FiveCompartmentTestWithDiffusion(bgDir);
+	  //bgeTest.FiveCompartmentTestWithActiveDiffusion(bgDir);
       //bgeTest.AcidBaseFourCompartmentTestWithProductionConsumption(bgDir);
       //bgeTest.AcidBaseFiveCompartmentTestWithDiffusion(bgDir);
       //bgeTest.AcidBaseFiveCompartmentTestWithProductionConsumptionAndDiffusion(bgDir);

@@ -16,20 +16,22 @@ package mil.tatrc.physiology.datamodel.patient.actions;
 import java.util.*;
 import mil.tatrc.physiology.datamodel.CDMSerializer;
 import mil.tatrc.physiology.datamodel.bind.HemorrhageData;
-import mil.tatrc.physiology.datamodel.bind.IntegerArray;
+import mil.tatrc.physiology.datamodel.properties.SEScalar0To1;
 
 public class SEHemorrhage extends SEPatientAction
 {
+	//Required to specify a hemorrhage action
 	protected String compartment;
-	protected IntegerArray mcis;
-	protected String bleedname;
-	Map<List<Integer>,String> organMap = new HashMap<List<Integer>,String>();
+	protected SEScalar0To1 severity;
+	protected List<Integer> mcis;
+	Map<String,List<Integer>> organMap = new HashMap<String,List<Integer>>();
+
 	
 	public SEHemorrhage()
 	{
 		compartment = null;
 		mcis = null;
-		bleedname=null;
+		severity = null;
 		makeOrganMap(organMap);
 	}
 	
@@ -39,28 +41,33 @@ public class SEHemorrhage extends SEPatientAction
 			return;
 		super.copy(other);
 		mcis = other.mcis;
-
+		compartment = other.compartment;
+		severity = other.severity;
 	}
 	
 	public void reset()
 	{
 		super.reset();
-		compartment = null;
-		mcis = null;
-
+		if(severity!=null)
+			this.severity.invalidate();
+		this.compartment=null;
+		this.mcis = null;
 	}
 	
 	public boolean isValid()
 	{
-		return hasMCIS();
+		return hasCompartment() && hasSeverity();
 	}
 	
 	public boolean load(HemorrhageData in)
 	{
 		super.load(in);
-    mcis = in.getMCIS();
-    setCompartment();
-		return isValid();
+    this.compartment=in.getCompartment();
+    this.getSeverity().load(in.getSeverity());
+    
+    this.setMCIS();
+		
+    return isValid();
 	}
 	
 	public HemorrhageData unload()
@@ -73,74 +80,104 @@ public class SEHemorrhage extends SEPatientAction
 	protected void unload(HemorrhageData data)
 	{
 		super.unload(data);
-		if(mcis!=null)
-			data.setMCIS(getMCIS());
+		if(this.severity!=null)
+			data.setSeverity(severity.unload());
+		if(this.compartment!=null)
+			data.setCompartment(compartment);
 	}
 	
-	public IntegerArray getMCIS()
-	{
-		if(mcis==null)
-			mcis = new IntegerArray();
-		return mcis;
-	}
-	public boolean hasMCIS()
-	{
-		return mcis == null ? false : !mcis.getIntegerList().isEmpty();
-	}
-	
+// Standard Get/Has and ToString methods needed for all BioGears Patient Actions
 	public String getCompartment()
 	{
 		return compartment;
 	}
-	public void setCompartment()
+	public boolean hasCompartment()
 	{
-		int region = mcis.getIntegerList().get(1);
-		
-		switch(region){
-			case 1:
-				if(mcis.getIntegerList().get(3)==1)
-					compartment = "Head";
-				else
-					compartment = "Major Artery";
-				break;
-			case 2:
-				if(organMap.containsKey(mcis.getIntegerList().subList(2, 4)))
-					compartment=organMap.get(mcis.getIntegerList().subList(2, 4));
-				else
-					compartment="Major Artery";
-				break;
-			case 3:
-				compartment = "Arm";
-				break;
-			case 4:
-				compartment = "Leg";
-				break;
-			default:
-				compartment = "Major Artery";
-				break;
-		}		
+		return compartment==null?false:true;
+	}
+	public void setCompartment(String compartment)
+	{
+		this.compartment = compartment;
+		this.setMCIS();
 	}
 	
-	private void makeOrganMap(Map<List<Integer>, String> organs)
+	public SEScalar0To1 getSeverity()
 	{
-		organs.put(new ArrayList<Integer>(Arrays.asList(6,4)), "Major Artery");
-		organs.put(new ArrayList<Integer>(Arrays.asList(6,6)), "Vena Cava");
-		organs.put(new ArrayList<Integer>(Arrays.asList(6,5)), "Major Artery");
-		organs.put(new ArrayList<Integer>(Arrays.asList(7,1)), "Lungs");
-		organs.put(new ArrayList<Integer>(Arrays.asList(7,2)), "Heart");
-		organs.put(new ArrayList<Integer>(Arrays.asList(8,1)), "Liver");
-		organs.put(new ArrayList<Integer>(Arrays.asList(8,2)), "Spleen");
-		organs.put(new ArrayList<Integer>(Arrays.asList(8,3)), "Splanchnic");
-		organs.put(new ArrayList<Integer>(Arrays.asList(8,4)), "Kidney");
-		organs.put(new ArrayList<Integer>(Arrays.asList(8,5)), "Small Intestine");
-		organs.put(new ArrayList<Integer>(Arrays.asList(8,6)), "Large Intestine");
+		if (severity==null)
+			{
+				severity = new SEScalar0To1();
+			}
+		return severity;
+	}
+	public boolean hasSeverity()
+	{
+		return severity==null?false:true;
+	}
+
+	
+
+	private void setMCIS()
+	{
+		int sev = (int)Math.ceil(5.0*this.severity.getValue());
+	
+		this.mcis = new ArrayList<Integer>();
+		this.mcis.add(0,sev);
+		
+		switch(compartment){
+			case "Arm":
+				this.mcis.addAll(new ArrayList<Integer>(Arrays.asList(3,0,0,0)));
+				break;
+			case "Leg":
+				this.mcis.addAll(new ArrayList<Integer>(Arrays.asList(4,0,0,0)));
+				break;
+			case "Major Artery":
+				this.mcis.addAll(new ArrayList<Integer>(Arrays.asList(2,6,4,0)));
+				break;
+			case "Head":
+				this.mcis.addAll(new ArrayList<Integer>(Arrays.asList(2,6,1,0)));
+				break;
+			default:
+				//If we get in here, then we it's one of the comparments in the torso and it's easier to just map the rest
+						this.mcis.add(2);
+						this.mcis.addAll(organMap.get(compartment));
+						this.mcis.add(0);
+						break;		
+		}
+		if(mcis.size()<5)
+		{
+			//If we can't find it, assign it the code for aorta
+			this.mcis.addAll(new ArrayList<Integer>(Arrays.asList(2,6,4,0)));
+		}
+	}
+	
+	private void makeOrganMap(Map<String,List<Integer>> organs)
+	{
+		organs.put("Vena Cava", new ArrayList<Integer>(Arrays.asList(6,6)));
+		organs.put("Lung", new ArrayList<Integer>(Arrays.asList(7,1)));
+		organs.put("Heart", new ArrayList<Integer>(Arrays.asList(7,2)));
+		organs.put("Liver", new ArrayList<Integer>(Arrays.asList(8,1)));
+		organs.put("Spleen", new ArrayList<Integer>(Arrays.asList(8,2)));
+		organs.put("Splanchnic", new ArrayList<Integer>(Arrays.asList(8,3)));
+		organs.put("Kidney", new ArrayList<Integer>(Arrays.asList(8,4)));
+		organs.put("Small Intestine", new ArrayList<Integer>(Arrays.asList(8,5)));
+		organs.put("Large Intestine", new ArrayList<Integer>(Arrays.asList(8,6)));
+	}
+	
+	private String mcisToString()
+	{
+		String str = "";
+		for (int i=0; i<mcis.size(); i++)
+		{
+			 str+=mcis.get(i).toString();
+		}
+		return str;
 	}
 	
 	public String toString()
 	{
 		if (mcis != null)
 			{
-					if(mcis.getIntegerList().get(0)==0)
+					if(severity.getValue()==0.0)
 					{
 							return "Stop Hemorrhage"
 									+"\n\tCompartment: " + getCompartment();
@@ -148,8 +185,10 @@ public class SEHemorrhage extends SEPatientAction
 					else
 					{
 						return "Hemorrhage"
-								+"\n\tSeverity: " + Integer.toString(mcis.getIntegerList().get(0))
-								+"\n\tCompartment: " + getCompartment();
+								+"\n\tCompartment: " + getCompartment()
+								+"\n\tSeverity: " + Double.toString(severity.getValue())
+								+"\n\tInjury Code: " + mcisToString();
+								
 					}
 			}
 		else

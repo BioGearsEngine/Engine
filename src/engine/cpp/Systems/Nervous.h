@@ -52,7 +52,7 @@ public:
 
 protected:
   void BaroreceptorFeedback();
-  void CheckBrainStatus();
+  void CheckNervousStatus();
   void ChemoreceptorFeedback();
   void SetPupilEffects();
 
@@ -63,6 +63,9 @@ protected:
   // Stateless member variable (Set in SetUp())
 	bool m_FeedbackActive;
 	double m_dt_s;
+	SESubstance* m_Succinylcholine;
+	SESubstance* m_Sarin;
+	bool m_blockActive;
 	// Configuration fractions representing the amount by which each quantity can change due to baroreceptors;
 	double m_normalizedGammaHeartRate;
 	double m_normalizedGammaElastance;
@@ -73,4 +76,5 @@ protected:
 	double m_normalizedAlphaCompliance;
 	double m_normalizedAlphaResistance;
 	double m_normalizedBetaHeartRate;
+
 };

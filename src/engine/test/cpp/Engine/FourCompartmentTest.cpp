@@ -51,33 +51,37 @@ double TotalHbMols(SELiquidCompartmentGraph& Graph, SESubstance& Hb, SESubstance
   return totalHb_g / Hb_g_Per_mol + totalHbO2_g / HbO2_g_Per_mol + totalHbCO2_g / HbCO2_g_Per_mol + totalHBO2CO2_g / HbO2CO2_g_Per_mol;
 }
 
-void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProductionConsumption, bool usingDiffusion, const std::string& rptDirectory)
+void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProductionConsumption, bool usingDiffusion, bool activeDiffusion, const std::string& rptDirectory)
 {
   DataTrack trk;
   std::string outputName;
-  if (!usingAcidBase && !usingProductionConsumption && !usingDiffusion)
+  if (!usingAcidBase && !usingProductionConsumption && !usingDiffusion && !activeDiffusion)
   {
     outputName = "\\FourCompartmentTestSimple";
   }
-  else if (usingAcidBase && !usingProductionConsumption && !usingDiffusion)
+  else if (usingAcidBase && !usingProductionConsumption && !usingDiffusion && !activeDiffusion)
   {
     outputName = "\\AcidBaseFourCompartmentTest";
   }
-  else if (!usingAcidBase && !usingProductionConsumption && usingDiffusion)
+  else if (!usingAcidBase && !usingProductionConsumption && usingDiffusion && !activeDiffusion)
   {
     outputName = "\\FiveCompartmentTestWithDiffusion";
   }
-  else if (usingAcidBase && usingProductionConsumption && !usingDiffusion)
+  else if (usingAcidBase && usingProductionConsumption && !usingDiffusion && !activeDiffusion)
   {
     outputName = "\\AcidBaseFourCompartmentTestWithProductionConsumption";
   }
-  else if (usingAcidBase && !usingProductionConsumption && usingDiffusion)
+  else if (usingAcidBase && !usingProductionConsumption && usingDiffusion && !activeDiffusion)
   {
     outputName = "\\AcidBaseFiveCompartmentTestWithDiffusion";
   }
-  else if (usingAcidBase && usingProductionConsumption && usingDiffusion)
+  else if (usingAcidBase && usingProductionConsumption && usingDiffusion && !activeDiffusion)
   {
     outputName = "\\AcidBaseFiveCompartmentTestWithProductionConsumptionAndDiffusion";
+  }
+  else if (!usingAcidBase && !usingProductionConsumption && usingDiffusion && activeDiffusion)
+  {
+	  outputName = "\\FiveCompartmentTestWithActiveDiffusion";
   }
   m_Logger->ResetLogFile(rptDirectory + outputName + ".log");
   std::ofstream file;
@@ -152,7 +156,11 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
   SELiquidCompartment& cCapillaries = bg.GetCompartments().CreateLiquidCompartment("Capillaries");
   cCapillaries.MapNode(nCapillaries);
 
-  SELiquidCompartment& cTissue = bg.GetCompartments().CreateLiquidCompartment("Tissue");
+
+  SELiquidCompartment& cTissue = bg.GetCompartments().CreateLiquidCompartment("Tissue");	//for simple diffusion
+  
+  SELiquidCompartment& tisExtra = bg.GetCompartments().CreateLiquidCompartment("TissueExtracellular"); //for active diffusion with nernst potentials
+  SELiquidCompartment& tisIntra = bg.GetCompartments().CreateLiquidCompartment("TissueIntracellular"); //for active diffusion with nernst potentials
 
   //Create the links
   SELiquidCompartmentLink& lPulmonaryToArteries = bg.GetCompartments().CreateLiquidLink(cPulmonary, cArteries, "PulmonaryToArteries");
@@ -177,7 +185,7 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
   Graph.StateChange();
 
 
-  //Initialize substances
+  //Initialize blood gas substances
   SESubstance& O2 = bg.GetSubstances().GetO2();
   SESubstance& Hb = bg.GetSubstances().GetHb();
   SESubstance& HbO2 = bg.GetSubstances().GetHbO2();
@@ -187,6 +195,13 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
   SESubstance& HbCO2 = bg.GetSubstances().GetHbCO2();
   SESubstance& N2 = bg.GetSubstances().GetN2();
 
+  //Intialize ions for active transport test
+  SESubstance& Sodium = bg.GetSubstances().GetSodium();
+  SESubstance& Potassium = bg.GetSubstances().GetPotassium();
+  SESubstance& Chloride = bg.GetSubstances().GetChloride();
+  SESubstance& Calcium = bg.GetSubstances().GetCalcium();
+  std::vector<SESubstance*> ions = { &Sodium,&Potassium,&Chloride,&Calcium };		
+
   bg.GetSubstances().AddActiveSubstance(O2);
   bg.GetSubstances().AddActiveSubstance(Hb);
   bg.GetSubstances().AddActiveSubstance(HbO2);
@@ -195,7 +210,14 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
   bg.GetSubstances().AddActiveSubstance(HCO3);
   bg.GetSubstances().AddActiveSubstance(HbCO2);
   bg.GetSubstances().AddActiveSubstance(N2);
+  bg.GetSubstances().AddActiveSubstance(Sodium);
+  bg.GetSubstances().AddActiveSubstance(Potassium);
+  bg.GetSubstances().AddActiveSubstance(Chloride);
+  bg.GetSubstances().AddActiveSubstance(Calcium);
 
+
+
+  //Other substances
   SEScalarMassPerVolume   albuminConcentration;
   SEScalarFraction        hematocrit;
   SEScalarTemperature     bodyTemp;
@@ -243,22 +265,55 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
     bg.GetSaturationCalculator().CalculateBloodGasDistribution(cVeins);
   }
 
-  //Tissue diffusion values
+  //Tissue diffusion values for simple diffusion test
   double tissueVolume_L = 61.7;  //sum of all tissue volumes
   double tissueO2Mass_g = tissueVolume_L * cCapillaries.GetSubstanceQuantity(O2)->GetConcentration(MassPerVolumeUnit::g_Per_L);
   double tissueCO2Mass_g = tissueVolume_L * cCapillaries.GetSubstanceQuantity(CO2)->GetConcentration(MassPerVolumeUnit::g_Per_L);
+
+  //Tissue volume and Ion concentration setpoints for active diffusion test
+  tisIntra.GetVolume().SetValue(tissueVolume_L*0.7, VolumeUnit::L);  //Use ~2.5:1 ratio of intra to extracellular tissue volume
+  tisExtra.GetVolume().SetValue(tissueVolume_L*0.3, VolumeUnit::L);
+  Sodium.GetBloodConcentration().SetValue(145.0*Sodium.GetMolarMass(MassPerAmountUnit::g_Per_mmol), MassPerVolumeUnit::g_Per_L);
+  Sodium.GetTissueConcentration().SetValue(15.0*Sodium.GetMolarMass(MassPerAmountUnit::g_Per_mmol), MassPerVolumeUnit::g_Per_L);
+  Potassium.GetBloodConcentration().SetValue(4.4*Potassium.GetMolarMass(MassPerAmountUnit::g_Per_mmol), MassPerVolumeUnit::g_Per_L);
+  Potassium.GetTissueConcentration().SetValue(120*Potassium.GetMolarMass(MassPerAmountUnit::g_Per_mmol), MassPerVolumeUnit::g_Per_L);
+  Calcium.GetBloodConcentration().SetValue(1.2*Calcium.GetMolarMass(MassPerAmountUnit::g_Per_mmol), MassPerVolumeUnit::g_Per_L);
+  Calcium.GetTissueConcentration().SetValue(0.0001*Calcium.GetMolarMass(MassPerAmountUnit::g_Per_mmol), MassPerVolumeUnit::g_Per_L);
+  Chloride.GetBloodConcentration().SetValue(110*Chloride.GetMolarMass(MassPerAmountUnit::g_Per_mmol), MassPerVolumeUnit::g_Per_L);
+  Chloride.GetTissueConcentration().SetValue(20.0*Chloride.GetMolarMass(MassPerAmountUnit::g_Per_mmol), MassPerVolumeUnit::g_Per_L);
   if (usingDiffusion)
   {
-    //cTissue.GetTotalVolume().SetValue(tissueVolume_L, VolumeUnit::L);
-    cTissue.GetVolume().SetValue(tissueVolume_L, VolumeUnit::L);
-    cTissue.GetSubstanceQuantity(O2)->GetMass().SetValue(tissueO2Mass_g, MassUnit::g);
-    cTissue.GetSubstanceQuantity(Hb)->GetMass().SetValue(0, MassUnit::g);
-    cTissue.GetSubstanceQuantity(HbO2)->GetMass().SetValue(0, MassUnit::g);
-    cTissue.GetSubstanceQuantity(HbO2CO2)->GetMass().SetValue(0, MassUnit::g);
-    cTissue.GetSubstanceQuantity(CO2)->GetMass().SetValue(tissueCO2Mass_g, MassUnit::g);
-    cTissue.GetSubstanceQuantity(HCO3)->GetMass().SetValue(0, MassUnit::g);
-    cTissue.GetSubstanceQuantity(HbCO2)->GetMass().SetValue(0, MassUnit::g);
-    cTissue.Balance(BalanceLiquidBy::Mass);
+	  if (!activeDiffusion)
+	  {
+		  cTissue.GetVolume().SetValue(tissueVolume_L, VolumeUnit::L);
+		  cTissue.GetSubstanceQuantity(O2)->GetMass().SetValue(tissueO2Mass_g, MassUnit::g);
+		  cTissue.GetSubstanceQuantity(Hb)->GetMass().SetValue(0, MassUnit::g);
+		  cTissue.GetSubstanceQuantity(HbO2)->GetMass().SetValue(0, MassUnit::g);
+		  cTissue.GetSubstanceQuantity(HbO2CO2)->GetMass().SetValue(0, MassUnit::g);
+		  cTissue.GetSubstanceQuantity(CO2)->GetMass().SetValue(tissueCO2Mass_g, MassUnit::g);
+		  cTissue.GetSubstanceQuantity(HCO3)->GetMass().SetValue(0, MassUnit::g);
+		  cTissue.GetSubstanceQuantity(HbCO2)->GetMass().SetValue(0, MassUnit::g);
+		  cTissue.Balance(BalanceLiquidBy::Mass);
+	  }
+	  else
+	  {
+		  for (auto ion : ions)
+		  {
+			  //Vascular and extracellular compartments have approximately equal concentrations of respective ions
+			  cPulmonary.GetSubstanceQuantity(*ion)->GetConcentration().SetValue(ion->GetBloodConcentration(MassPerVolumeUnit::g_Per_L), MassPerVolumeUnit::g_Per_L);
+			  cArteries.GetSubstanceQuantity(*ion)->GetConcentration().SetValue(ion->GetBloodConcentration(MassPerVolumeUnit::g_Per_L), MassPerVolumeUnit::g_Per_L);
+			  cCapillaries.GetSubstanceQuantity(*ion)->GetConcentration().SetValue(ion->GetBloodConcentration(MassPerVolumeUnit::g_Per_L), MassPerVolumeUnit::g_Per_L);
+			  cVeins.GetSubstanceQuantity(*ion)->GetConcentration().SetValue(ion->GetBloodConcentration(MassPerVolumeUnit::g_Per_L), MassPerVolumeUnit::g_Per_L);
+			  tisExtra.GetSubstanceQuantity(*ion)->GetConcentration().SetValue(ion->GetBloodConcentration(MassPerVolumeUnit::g_Per_L), MassPerVolumeUnit::g_Per_L);
+			  tisIntra.GetSubstanceQuantity(*ion)->GetConcentration().SetValue(ion->GetTissueConcentration(MassPerVolumeUnit::g_Per_L), MassPerVolumeUnit::g_Per_L);
+		  }
+		  cPulmonary.Balance(BalanceLiquidBy::Concentration);
+		  cArteries.Balance(BalanceLiquidBy::Concentration);
+		  cCapillaries.Balance(BalanceLiquidBy::Concentration);
+		  cVeins.Balance(BalanceLiquidBy::Concentration);
+		  tisExtra.Balance(BalanceLiquidBy::Concentration);
+		  tisIntra.Balance(BalanceLiquidBy::Concentration);
+	  }
   }
   
 
@@ -277,36 +332,44 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
     //PreProcess - Mimic Produce, Consume, and Alveolar Transfer
 	  if (usingProductionConsumption)
 	  {
-		  if (usingDiffusion)
-		  {
-			  //Do it in the tissues and let it diffuse
-			  cPulmonary.GetSubstanceQuantity(O2)->GetMass().IncrementValue(O2Consumption_ugPerS * deltaT_s, MassUnit::ug);
-			  cPulmonary.GetSubstanceQuantity(CO2)->GetMass().IncrementValue(-CO2Production_ugPerS * deltaT_s, MassUnit::ug);
-			  cTissue.GetSubstanceQuantity(O2)->GetMass().IncrementValue(-O2Consumption_ugPerS * deltaT_s, MassUnit::ug);
-			  cTissue.GetSubstanceQuantity(CO2)->GetMass().IncrementValue(CO2Production_ugPerS * deltaT_s, MassUnit::ug);
-
-			  //See if we took too much out
-			  double pulmonaryCO2Mass_ug = cPulmonary.GetSubstanceQuantity(CO2)->GetMass(MassUnit::ug);
-			  double tissueO2Mass_ug = cCapillaries.GetSubstanceQuantity(O2)->GetMass(MassUnit::ug);
-			  if (pulmonaryCO2Mass_ug < 0.0)
+		  if (usingDiffusion) 
+		  { 
+			  if (!activeDiffusion)
 			  {
-				  ss << "Not Enough Pulmonary CO2 at time " << i*deltaT_s;
-				  cPulmonary.GetSubstanceQuantity(CO2)->GetMass().SetValue(0.0, MassUnit::ug);
-				  Info(ss.str());
-				  ss.str("");
-				  ss.clear();
-			  }
-			  if (tissueO2Mass_ug < 0.0)
-			  {
-				  ss << "Not Enough Tissue O2 at time " << i*deltaT_s;
-				  cTissue.GetSubstanceQuantity(O2)->GetMass().SetValue(0.0, MassUnit::ug);
-				  Info(ss.str());
-				  ss.str("");
-				  ss.clear();
-			  }
+				  //Do it in the tissues and let it diffuse
+				  cPulmonary.GetSubstanceQuantity(O2)->GetMass().IncrementValue(O2Consumption_ugPerS * deltaT_s, MassUnit::ug);
+				  cPulmonary.GetSubstanceQuantity(CO2)->GetMass().IncrementValue(-CO2Production_ugPerS * deltaT_s, MassUnit::ug);
+				  cTissue.GetSubstanceQuantity(O2)->GetMass().IncrementValue(-O2Consumption_ugPerS * deltaT_s, MassUnit::ug);
+				  cTissue.GetSubstanceQuantity(CO2)->GetMass().IncrementValue(CO2Production_ugPerS * deltaT_s, MassUnit::ug);
 
-			  cPulmonary.Balance(BalanceLiquidBy::Mass);
-			  cTissue.Balance(BalanceLiquidBy::Mass);
+				  //See if we took too much out
+				  double pulmonaryCO2Mass_ug = cPulmonary.GetSubstanceQuantity(CO2)->GetMass(MassUnit::ug);
+				  double tissueO2Mass_ug = cCapillaries.GetSubstanceQuantity(O2)->GetMass(MassUnit::ug);
+				  if (pulmonaryCO2Mass_ug < 0.0)
+				  {
+					  ss << "Not Enough Pulmonary CO2 at time " << i*deltaT_s;
+					  cPulmonary.GetSubstanceQuantity(CO2)->GetMass().SetValue(0.0, MassUnit::ug);
+					  Info(ss.str());
+					  ss.str("");
+					  ss.clear();
+				  }
+				  if (tissueO2Mass_ug < 0.0)
+				  {
+					  ss << "Not Enough Tissue O2 at time " << i*deltaT_s;
+					  cTissue.GetSubstanceQuantity(O2)->GetMass().SetValue(0.0, MassUnit::ug);
+					  Info(ss.str());
+					  ss.str("");
+					  ss.clear();
+				  }
+
+				  cPulmonary.Balance(BalanceLiquidBy::Mass);
+				  cTissue.Balance(BalanceLiquidBy::Mass);
+			  }
+			  else
+			  {
+				  //Stub in the event anyone wants to do a test with production consumption and active ion diffusion
+			  }
+			  
 		  }
 		  else
 		  {
@@ -357,9 +420,34 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
     //Diffuse if necessary
     if (usingDiffusion)
     {
-      tsu.MoveMassByInstantDiffusion(cCapillaries, cTissue, O2, deltaT_s);
-	    tsu.MoveMassByInstantDiffusion(cCapillaries, cTissue, CO2, deltaT_s);
+		if (!activeDiffusion)
+		{
+			tsu.MoveMassByInstantDiffusion(cCapillaries, cTissue, O2, deltaT_s);
+			tsu.MoveMassByInstantDiffusion(cCapillaries, cTissue, CO2, deltaT_s);
+			cCapillaries.Balance(BalanceLiquidBy::Mass);
+			cTissue.Balance(BalanceLiquidBy::Mass);
+
+		}
+		else
+		{
+			//Ions:  Vascular to Extracellular
+			tsu.MoveMassByInstantDiffusion(cCapillaries, tisExtra, Sodium, deltaT_s);
+			tsu.MoveMassByInstantDiffusion(cCapillaries, tisExtra, Potassium, deltaT_s);
+			tsu.MoveMassByInstantDiffusion(cCapillaries, tisExtra, Calcium, deltaT_s);
+			tsu.MoveMassByInstantDiffusion(cCapillaries, tisExtra, Chloride, deltaT_s);
+
+			//Ions:  Extracellular to Intracellular:  Note that this function no longer exists.  It was replaced by MoveIonsByActiveTransport
+			/*tsu.MoveMassByNernstPotential(tisExtra, tisIntra, Sodium, deltaT_s);
+			tsu.MoveMassByNernstPotential(tisExtra, tisIntra, Potassium, deltaT_s);
+			tsu.MoveMassByNernstPotential(tisExtra, tisIntra, Calcium, deltaT_s);
+			tsu.MoveMassByNernstPotential(tisExtra, tisIntra, Chloride, deltaT_s);*/
+
+			cCapillaries.Balance(BalanceLiquidBy::Mass);
+			tisExtra.Balance(BalanceLiquidBy::Mass);
+			tisIntra.Balance(BalanceLiquidBy::Mass);
+		}
     }
+
 
     //convert 'Next' values to current
     calc.PostProcess(*Circuit);
@@ -377,6 +465,11 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
         totalMass += cmpt->GetSubstanceQuantity(*sub)->GetMass(MassUnit::g);
         name = cmpt->GetName();
       }
+	  if (usingDiffusion && activeDiffusion)
+	  {
+		  totalMass += tisExtra.GetSubstanceQuantity(*sub)->GetMass(MassUnit::g);
+		  totalMass += tisIntra.GetSubstanceQuantity(*sub)->GetMass(MassUnit::g);
+	  }
       if(sub->GetName()=="Hemoglobin") trk.Track("Unbound" + sub->GetName() + "_TotalMass_" + "g", time, totalMass);
       else trk.Track(sub->GetName() + "_TotalMass_" + "g", time, totalMass);
     }
@@ -385,7 +478,7 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
     double Hb_Mols = TotalHbMols(Graph, Hb, HbO2, HbO2CO2, HbCO2);
     trk.Track("HbTotal_mols", time, Hb_Mols);
 
-    //Total molarity
+    //Total molarity of blood gases
     for (SELiquidCompartment* cmpt : Graph.GetCompartments())
     {
       SELiquidSubstanceQuantity* sqO2 = cmpt->GetSubstanceQuantity(O2);
@@ -398,26 +491,40 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
       trk.Track(cmpt->GetName() + "_TotalOxygenMolarConcentration_mmol_per_L", time, sqO2->GetMolarity(AmountPerVolumeUnit::mmol_Per_L) + sqHbO2->GetMolarity(AmountPerVolumeUnit::mmol_Per_L) + sqHbO2CO2->GetMolarity(AmountPerVolumeUnit::mmol_Per_L));
       trk.Track(cmpt->GetName() + "_TotalCarbonDioxideMolarConcentration_mmol_per_L", time, sqCO2->GetMolarity(AmountPerVolumeUnit::mmol_Per_L) + sqHCO3->GetMolarity(AmountPerVolumeUnit::mmol_Per_L) + sqHbCO2->GetMolarity(AmountPerVolumeUnit::mmol_Per_L) + sqHbO2CO2->GetMolarity(AmountPerVolumeUnit::mmol_Per_L));
     }
+	
 
-    //Tissue and total oxygen w/ diffusion
     if (usingDiffusion)
     {
-      cTissue.Balance(BalanceLiquidBy::Mass);
-      cCapillaries.Balance(BalanceLiquidBy::Mass);
-      SELiquidSubstanceQuantity* sqO2Tissue = cTissue.GetSubstanceQuantity(O2);
-      trk.Track("Tissue_OxygenMass_ug", time, sqO2Tissue->GetMass(MassUnit::ug));
-      trk.Track("Tissue_OxygenConcentration_ug_per_mL", time, sqO2Tissue->GetMass(MassUnit::ug)/cTissue.GetVolume(VolumeUnit::mL));
+		if (!activeDiffusion) //Simple diffusion test tracks oxygen species
+		{
+			cTissue.Balance(BalanceLiquidBy::Mass);
+			cCapillaries.Balance(BalanceLiquidBy::Mass);
+			SELiquidSubstanceQuantity* sqO2Tissue = cTissue.GetSubstanceQuantity(O2);
+			trk.Track("Tissue_OxygenMass_ug", time, sqO2Tissue->GetMass(MassUnit::ug));
+			trk.Track("Tissue_OxygenConcentration_ug_per_mL", time, sqO2Tissue->GetMass(MassUnit::ug) / cTissue.GetVolume(VolumeUnit::mL));
 
-      double totalMassO2 = 0;
+			double totalMassO2 = 0;
 
-      for (SELiquidCompartment* cmpt : Graph.GetCompartments())
-      {
-        totalMassO2 += cmpt->GetSubstanceQuantity(O2)->GetMass(MassUnit::ug);
-      }
+			for (SELiquidCompartment* cmpt : Graph.GetCompartments())
+			{
+				totalMassO2 += cmpt->GetSubstanceQuantity(O2)->GetMass(MassUnit::ug);
+			}
 
-      totalMassO2 += sqO2Tissue->GetMass(MassUnit::ug);
-      trk.Track("xTotalOxygenMass_ug", time, totalMassO2);
-
+			totalMassO2 += sqO2Tissue->GetMass(MassUnit::ug);
+			trk.Track("xTotalOxygenMass_ug", time, totalMassO2);
+		}
+		else //Active diffusion test tracks ions
+		{
+			double intraConcentration_mM;
+			double extraConcentration_mM;
+			for (auto ion : ions)
+			{
+				intraConcentration_mM = tisIntra.GetSubstanceQuantity(*ion)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+				extraConcentration_mM = tisExtra.GetSubstanceQuantity(*ion)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+				trk.Track(ion->GetName() + "_IntracellularConcentration_mmol_Per_L", time, intraConcentration_mM);
+				trk.Track(ion->GetName() + "_ExtracellularConcentration_mmol_Per_L", time, extraConcentration_mM);
+			}
+		}
     }
 
     if (i == 0)
@@ -433,25 +540,29 @@ void BioGearsEngineTest::FourCompartmentTest(bool usingAcidBase, bool usingProdu
 
 void BioGearsEngineTest::FourCompartmentTestSimple(const std::string& sOutputDirectory)
 {
-  FourCompartmentTest(false, false, false, sOutputDirectory);
+  FourCompartmentTest(false, false, false, false, sOutputDirectory);
 }
 void BioGearsEngineTest::AcidBaseFourCompartmentTest(const std::string& sOutputDirectory)
 {
-  FourCompartmentTest(true, false, false, sOutputDirectory);
+  FourCompartmentTest(true, false, false, false, sOutputDirectory);
 }
 void BioGearsEngineTest::FiveCompartmentTestWithDiffusion(const std::string& sOutputDirectory)
 {
-  FourCompartmentTest(false, false, true, sOutputDirectory);
+  FourCompartmentTest(false, false, true, false, sOutputDirectory);
 }
 void BioGearsEngineTest::AcidBaseFourCompartmentTestWithProductionConsumption(const std::string& sOutputDirectory)
 {
-  FourCompartmentTest(true, true, false, sOutputDirectory);
+  FourCompartmentTest(true, true, false, false, sOutputDirectory);
 }
 void BioGearsEngineTest::AcidBaseFiveCompartmentTestWithDiffusion(const std::string& sOutputDirectory)
 {
-  FourCompartmentTest(true, false, true, sOutputDirectory);
+  FourCompartmentTest(true, false, true, false, sOutputDirectory);
 }
 void BioGearsEngineTest::AcidBaseFiveCompartmentTestWithProductionConsumptionAndDiffusion(const std::string& sOutputDirectory)
 {
-  FourCompartmentTest(true, true, true, sOutputDirectory);
+  FourCompartmentTest(true, true, true, false, sOutputDirectory);
+}
+void BioGearsEngineTest::FiveCompartmentTestWithActiveDiffusion(const std::string& sOutputDirectory)
+{
+	FourCompartmentTest(false, false, true, true, sOutputDirectory);
 }

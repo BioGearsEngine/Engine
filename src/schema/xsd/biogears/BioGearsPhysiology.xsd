@@ -76,6 +76,8 @@ specific language governing permissions and limitations under the License.
       <xs:extension base="DrugSystemData">
         <xs:sequence> 
           <xs:element name="BolusAdministration" type="SubstanceBolusStateData" minOccurs="0" maxOccurs="unbounded"/>
+          <xs:element name="SarinRbcAcetylcholinesteraseComplex_nM" type="xs:double" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="AgedRbcAcetylcholinesterase_nM" type="xs:double" minOccurs="1" maxOccurs="1"/>
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>
@@ -94,12 +96,7 @@ specific language governing permissions and limitations under the License.
   <xs:complexType name="BioGearsEnergySystemData">
     <xs:complexContent>
       <xs:extension base="EnergySystemData">
-        <xs:sequence> 
-          <xs:element name="EnduranceEnergyStore_J" type="xs:double" minOccurs="1" maxOccurs="1"/>
-          <xs:element name="MediumPowerEnergyStore_J" type="xs:double" minOccurs="1" maxOccurs="1"/>
-          <xs:element name="PeakPowerEnergyStore_J" type="xs:double" minOccurs="1" maxOccurs="1"/>
-          <xs:element name="UsableEnergyStore_J" type="xs:double" minOccurs="1" maxOccurs="1"/>
-          
+        <xs:sequence>           
           <xs:element name="BloodpH" type="RunningAverageData" minOccurs="1" maxOccurs="1"/>
           <xs:element name="BicarbonateMolarity_mmol_Per_L" type="RunningAverageData" minOccurs="1" maxOccurs="1"/>
         </xs:sequence>
@@ -215,12 +212,11 @@ specific language governing permissions and limitations under the License.
     <xs:complexContent>
       <xs:extension base="TissueSystemData">
         <xs:sequence> 
-          <xs:element name="RestingTissueGlucose_g" type="xs:double" minOccurs="1" maxOccurs="1"/>
-          <xs:element name="RestingBloodGlucose_g_Per_L" type="xs:double" minOccurs="1" maxOccurs="1"/>
-          <xs:element name="RestingBloodLipid_g_Per_L" type="xs:double" minOccurs="1" maxOccurs="1"/>
-          <xs:element name="RestingBloodInsulin_g_Per_L" type="xs:double" minOccurs="1" maxOccurs="1"/>
           <xs:element name="RestingPatientMass_kg" type="xs:double" minOccurs="1" maxOccurs="1"/>
           <xs:element name="RestingFluidMass_kg" type="xs:double" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="O2ConsumedRunningAverage_mL_Per_s" type="RunningAverageData" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="CO2ProducedRunningAverage_mL_Per_s" type="RunningAverageData" minOccurs="1" maxOccurs="1"/>
+          <xs:element name="RespiratoryQuotientRunningAverage" type="RunningAverageData" minOccurs="1" maxOccurs="1"/>
         </xs:sequence>
       </xs:extension>
     </xs:complexContent>

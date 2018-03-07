@@ -49,7 +49,7 @@ public:
 	void PreProcess();
 	void Process();
   void PostProcess();
-  static double CalculateRelativeHormoneChange(double insulinSetPoint_pmol_Per_L, double glucagonSetPoint_pg_Per_mL, SELiquidSubstanceQuantity* currentInsulin, SELiquidSubstanceQuantity* currentGlucagon);
+  static double CalculateRelativeHormoneChange(double insulinSetPoint_pmol_Per_L, double glucagonSetPoint_pg_Per_mL, SELiquidSubstanceQuantity* currentInsulin, SELiquidSubstanceQuantity* currentGlucagon, BioGears& m_data);
 
 protected:
   //Pre-Process methods

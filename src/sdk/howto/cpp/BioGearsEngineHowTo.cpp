@@ -16,29 +16,33 @@ specific language governing permissions and limitations under the License.
 #include "scenario/requests/SEDataRequest.h"
 #include "properties/SEScalarTime.h"
 
+
 int main()
 {
   // Uncomment a method to execute fuctionality!
 
-	//HowToEngineUse();
-  //HowToCreateAPatient();
-
-	//HowToAirwayObstruction();
-	//HowToAnesthesiaMachine();
-	//HowToAsthmaAttack();
-  //HowToBrainInjury();
-	//HowToBolusDrug();
-	//HowToConsumeNutrients();
-	//HowToCOPD();
-	//HowToCPR(); 
-	//HowToEnvironmentChange();
-	//HowToExercise();
-	//HowToHemorrhage();
-	//HowToLobarPneumonia();
-  HowToMechanicalVentilation();
-	//HowToPulmonaryFunctionTest();
-  //HowToSmoke();
-	//HowToTensionPneumothorax();
+//HowToEngineUse();
+//HowToCreateAPatient();
+//HowToAirwayObstruction();
+//HowToAnesthesiaMachine();
+//HowToAsthmaAttack();
+//HowToBrainInjury();
+//HowToBolusDrug();
+//HowToConsumeNutrients();
+//HowToCOPD();
+//HowToCPR(); 
+//HowToEnvironmentChange();
+//HowToExercise();
+//HowToFasciculation();
+//HowToHemorrhage();
+//HowToInfusionDrug();
+//HowToLobarPneumonia();
+//HowToMechanicalVentilation();
+//HowToPulmonaryFunctionTest();
+//HowToSarinExposure();
+//HowToSmoke();
+//HowToTensionPneumothorax();
+HowToVasopressinShockTherapy();
 
   // This one does not really run, is a pure example
   //HowToRunScenario();

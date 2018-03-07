@@ -460,7 +460,7 @@ void Respiratory::AtSteadyState()
     COPD();    
     LobarPneumonia();
 	//These conditions stack effects
-	//If combined, it will be a fraction of the already effected alveolar surface area
+	//If combined, it will be a fraction of the already affected alveolar surface area
 	ImpairedAlveolarExchange();
   }
 }
@@ -575,7 +575,7 @@ void Respiratory::UpdatePleuralCompliance()
 /// \details
 /// For each aerosol get the SIDE coefficient to determine deposited mass in each respiratory compartment. 
 /// Adjust the resistances between compartments as a function of deposited mass to reach validated data.  
-/// Liquid and solid aerosols are handeled here. 
+/// Liquid and solid aerosols are handled here. 
 //--------------------------------------------------------------------------------------------------
 void Respiratory::ProcessAerosolSubstances()
 {
@@ -611,7 +611,7 @@ void Respiratory::ProcessAerosolSubstances()
   double rightDeadSpaceResistanceModifier=1;
   double rightAlveoliResistanceModifier=1;
 
-  // Currently, There is no way to clear out depositied particulate out of the respiratory systems.
+  // Currently, there is no way to clear deposited particulate out of the respiratory system
   // Maybe we could have it to cough or some other excretion related method... 
   
   SELiquidSubstanceQuantity* subQ;
@@ -705,7 +705,7 @@ void Respiratory::ProcessAerosolSubstances()
     rightAlveoliTotalDepositied_ug = subQ->GetMassDeposited().IncrementValue(rightAlveoliDepositied_ug, MassUnit::ug);
     rightAlveoliResistanceModifier += rightAlveoliTotalDepositied_ug*inflammationCoefficient;
     
-	  // Apply the BronchileModifier dilation effect
+	  // Apply the BronchioleModifier dilation effect
 	  // This is all just tuned to Albuterol - it'll work for other substances, and can be tuned using the other parameters (especially BronchioleModifier)
     if (subQ->GetSubstance().GetState() == CDM::enumSubstanceState::Liquid)
     {
@@ -1183,6 +1183,7 @@ void Respiratory::BronchoDilation()
 	//The bronchi are ~30% of the total pulmonary resistance, so we'll make a dilation effect of 1.0 be at the respiratory open resistance.
 	//Dilation effect values have max effect at 1 and below -1, so anything outside of that will maintain that effect.
 	double bronchoDilationEffect = m_data.GetDrugs().GetBronchodilationLevel().GetValue();
+	double resTrack = 0.0;
 	if (bronchoDilationEffect != 0.0)
 	{
 		//Note: It'll pretty much always get in here because there's epinephrine present
@@ -1198,8 +1199,9 @@ void Respiratory::BronchoDilation()
 		else //negative, therefore constriction
 		{
 			bronchoDilationEffect = MIN(-bronchoDilationEffect, 1.0);
-			dLeftBronchiResistance = GeneralMath::ResistanceFunction(10.0, dLeftBronchiResistance, m_dRespOpenResistance_cmH2O_s_Per_L, bronchoDilationEffect);
-			dRightBronchiResistance = GeneralMath::ResistanceFunction(10.0, dRightBronchiResistance, m_dRespOpenResistance_cmH2O_s_Per_L, bronchoDilationEffect);
+			dLeftBronchiResistance = GeneralMath::ResistanceFunction(10.0,  m_dRespOpenResistance_cmH2O_s_Per_L, dLeftBronchiResistance, bronchoDilationEffect);
+			dRightBronchiResistance = GeneralMath::ResistanceFunction(10.0,  m_dRespOpenResistance_cmH2O_s_Per_L, dRightBronchiResistance, bronchoDilationEffect);
+			resTrack = dRightBronchiResistance;
 		}
 		m_CarinaToLeftAnatomicDeadSpace->GetNextResistance().SetValue(dLeftBronchiResistance, FlowResistanceUnit::cmH2O_s_Per_L);
 		m_CarinaToRightAnatomicDeadSpace->GetNextResistance().SetValue(dRightBronchiResistance, FlowResistanceUnit::cmH2O_s_Per_L);

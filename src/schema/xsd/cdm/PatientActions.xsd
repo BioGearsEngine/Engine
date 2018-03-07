@@ -252,8 +252,9 @@ specific language governing permissions and limitations under the License.
 		<xs:complexContent>
 			<xs:extension base="PatientActionData">
 				<xs:sequence>
-					<xs:element name="MCIS" type="IntegerArray" minOccurs="0" maxOccurs="1"/><!--<< @brief Code decribing both location and severity of hemorrhage.  Will eventually replace compartment -->
-				</xs:sequence>                
+						<xs:element name="Severity" type="Scalar0To1Data" minOccurs="1" maxOccurs="1"/><!--<< @brief The severity of a hemorrhage on a scale of 1-5 (to match mcis code) -->
+				</xs:sequence>
+				<xs:attribute name="Compartment" type="xs:string" use="required"/><!--<<@brief The compartment in which the hemorrhage occurs, maps to specific circuit path -->               
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>

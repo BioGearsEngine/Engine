@@ -149,6 +149,7 @@ specific language governing permissions and limitations under the License.
 				<xs:sequence>					
 					<xs:element name="AcidicPhospohlipidConcentration" type="ScalarMassPerMassData" minOccurs="0"  maxOccurs="1"/>
 					<xs:element name="MatrixVolume" type="ScalarVolumeData" minOccurs="0"  maxOccurs="1"/>
+					<xs:element name="MembranePotential" type="ScalarElectricPotentialData" minOccurs="0" maxOccurs="1"/>
 					<xs:element name="NeutralLipidsVolumeFraction" type="ScalarFractionData" minOccurs="0"  maxOccurs="1"/>
 					<xs:element name="NeutralPhospholipidsVolumeFraction" type="ScalarFractionData" minOccurs="0"  maxOccurs="1"/>
 					<xs:element name="TissueToPlasmaAlbuminRatio" type="ScalarData" minOccurs="0"  maxOccurs="1"/>

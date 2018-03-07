@@ -49,7 +49,6 @@ void BioGearsEngineTest::DistributeMass(SETestSuite& testSuite)
   //           /  \      /  \
   //        L2C0  L2C1 L2C2 L2C3 <-- Only these cmpts have data
 
-  bg.GetSubstances().LoadSubstanceDirectory();
   
   SELiquidCompartment& L0C0 = bg.GetCompartments().CreateLiquidCompartment("L0C0");
   SELiquidCompartment& L1C0 = bg.GetCompartments().CreateLiquidCompartment("L1C0");
@@ -226,7 +225,6 @@ void BioGearsEngineTest::PerfusionLimitedDiffusionTest(SETestSuite& testSuite)
   Tissue& tsu = (Tissue&)bg.GetTissue();
   TimingProfile timer;
   double timestep_s = 1. / 90.;
-  bg.GetSubstances().LoadSubstanceDirectory();
   SESubstance* sub = bg.GetSubstances().GetSubstance("Ketamine");
   double bFlow_mL_Per_s = 2.0;
   double PartitionCoeff = 1.52201;
@@ -288,7 +286,6 @@ void BioGearsEngineTest::AlveolarOxygenDiffusionTest(const std::string& rptDirec
   Tissue& tsu = (Tissue&)bg.GetTissue();
 
   double timestep_s = 1.0 / 90;
-  bg.GetSubstances().LoadSubstanceDirectory();
   SESubstance* O2 = bg.GetSubstances().GetSubstance("Oxygen");
   SESubstance* N2 = bg.GetSubstances().GetSubstance("Nitrogen");
   bg.GetSubstances().AddActiveSubstance(*O2);
@@ -357,7 +354,6 @@ void BioGearsEngineTest::AlveolarCarbonDioxideDiffusionTest(const std::string& r
   std::string rptFile = rptDirectory + "\\AlveolarCarbonDioxideDiffusionTest.txt";
   
   double timestep_s = 1.0 / 90;
-  bg.GetSubstances().LoadSubstanceDirectory();
 
   SESubstance* CO2 = bg.GetSubstances().GetSubstance("CarbonDioxide");
   SESubstance* N2 = bg.GetSubstances().GetSubstance("Nitrogen");
@@ -424,7 +420,6 @@ void BioGearsEngineTest::InstantPlusSimpleDiffusionTest(const std::string& rptDi
   BioGears bg(m_Logger);
   Tissue& tsu = (Tissue&)bg.GetTissue();
   double timestep_s = 1.0 / 90;
-  bg.GetSubstances().LoadSubstanceDirectory();
   SESubstance* o2 = bg.GetSubstances().GetSubstance("Oxygen");
   bg.GetSubstances().AddActiveSubstance(*o2);
   SELiquidCompartment& cmpt1 = bg.GetCompartments().CreateLiquidCompartment("cmpt1");
@@ -490,7 +485,6 @@ void BioGearsEngineTest::InstantDiffusionTest(SETestSuite& testSuite)
   BioGears bg(testSuite.GetLogger());
   Tissue& tsu = (Tissue&)bg.GetTissue();
   double timestep_s = 1.0 / 90;
-  bg.GetSubstances().LoadSubstanceDirectory();
   SESubstance* o2 = bg.GetSubstances().GetSubstance("Oxygen");
   bg.GetSubstances().AddActiveSubstance(*o2);
   SELiquidCompartment& cmpt1 = bg.GetCompartments().CreateLiquidCompartment("cmpt1");
@@ -535,7 +529,6 @@ void BioGearsEngineTest::SimpleDiffusionTwoCompartmentTest(const std::string& rp
   BioGears bg(m_Logger);
   Tissue& tsu = (Tissue&)bg.GetTissue();
   double timestep_s = 1.0 / 90;
-  bg.GetSubstances().LoadSubstanceDirectory();
   SESubstance* o2 = bg.GetSubstances().GetSubstance("Oxygen");
   bg.GetSubstances().AddActiveSubstance(*o2);
   SETissueCompartment& tissue = bg.GetCompartments().CreateTissueCompartment("Tissue");
@@ -617,7 +610,6 @@ void BioGearsEngineTest::SimpleDiffusionFourCompartmentTest(const std::string& r
   BioGears bg(m_Logger);
   Tissue& tsu = (Tissue&)bg.GetTissue();
   double timestep_s = 1.0 / 90;
-  bg.GetSubstances().LoadSubstanceDirectory();
   SESubstance* o2 = bg.GetSubstances().GetSubstance("Oxygen");
   bg.GetSubstances().AddActiveSubstance(*o2);
   SETissueCompartment& tissue = bg.GetCompartments().CreateTissueCompartment("Tissue");
@@ -715,7 +707,6 @@ void BioGearsEngineTest::SimpleDiffusionHierarchyTest(const std::string& rptDire
   BioGears bg(m_Logger);
   Tissue& tsu = (Tissue&)bg.GetTissue();
   double timestep_s = 1.0 / 90;
-  bg.GetSubstances().LoadSubstanceDirectory();
   SESubstance* sub = bg.GetSubstances().GetSubstance("Desflurane");
   bg.GetSubstances().AddActiveSubstance(*sub);
 
@@ -844,7 +835,6 @@ void BioGearsEngineTest::FacilitatedDiffusionTest(const std::string& rptDirector
   BioGears bg(m_Logger);
   Tissue& tsu = (Tissue&)bg.GetTissue();
   double timestep_s = 1.0 / 90;
-  bg.GetSubstances().LoadSubstanceDirectory();
   SESubstance* sub = bg.GetSubstances().GetSubstance("Glucose");
   bg.GetSubstances().AddActiveSubstance(*sub);
   SETissueCompartment& tissue = bg.GetCompartments().CreateTissueCompartment("Tissue");  
@@ -886,40 +876,262 @@ void BioGearsEngineTest::FacilitatedDiffusionTest(const std::string& rptDirector
   trk1.WriteTrackToFile(rptFile.c_str());
 }
 
-void BioGearsEngineTest::ActiveTransportTest(SETestSuite& testSuite)
-{
-  TimingProfile timer;
-  BioGears bg(testSuite.GetLogger());
+void BioGearsEngineTest::ActiveIonTransportTest(const std::string& rptDirectory)
+{  
+//----Constants for each test-------------------------------------------	
+  BioGears bg(m_Logger);
   Tissue& tsu = (Tissue&)bg.GetTissue();
-  double timestep_s = 1. / 90.;
-  bg.GetSubstances().LoadSubstanceDirectory();
-  SESubstance* sub = bg.GetSubstances().GetSubstance("Desflurane");
-  bg.GetSubstances().AddActiveSubstance(*sub);
-  SETissueCompartment& tissue = bg.GetCompartments().CreateTissueCompartment("Tissue");
-  SELiquidCompartment& extracellular = bg.GetCompartments().CreateLiquidCompartment("Extracellular");
-  SELiquidCompartment& intracellular = bg.GetCompartments().CreateLiquidCompartment("Intracellular");
+  double timestep_s = 0.02;
 
-  // First test case - pump some substance from one cmpt to another to another
-  SETestCase& testCase1 = testSuite.CreateTestCase();
-  testCase1.SetName("ActivePumpTest");
-  timer.Start("Test");
+  //Note: Do not call "Load Substance Directory".  This is already called in the BioGears constructor.
+  bg.GetCompartments().StateChange();
 
-  double ecVol_mL = 20.0;
-  double icVol_mL = 50.0;
-  double vMass_g = 1.5;
-  double ecMass_g = 1.5;
-  double icMass_g = 2.0;
 
-  extracellular.GetVolume().SetValue(ecVol_mL, VolumeUnit::mL);
-  intracellular.GetVolume().SetValue(icVol_mL, VolumeUnit::mL);
-  extracellular.GetSubstanceQuantity(*sub)->GetMass().SetValue(icMass_g, MassUnit::g);
-  intracellular.GetSubstanceQuantity(*sub)->GetMass().SetValue(ecMass_g, MassUnit::g);
-  extracellular.Balance(BalanceLiquidBy::Mass);
-  intracellular.Balance(BalanceLiquidBy::Mass);
+  SESubstance* Na = &bg.GetSubstances().GetSodium();
+  SESubstance* K = &bg.GetSubstances().GetPotassium();
+  SESubstance* Cl = &bg.GetSubstances().GetChloride();
+  SESubstance* Ca = &bg.GetSubstances().GetCalcium();
 
-  testCase1.GetDuration().SetValue(timer.GetElapsedTime_s("Test"), TimeUnit::s);
+  bg.GetSubstances().AddActiveSubstance(*Na);
+  bg.GetSubstances().AddActiveSubstance(*K);
+  bg.GetSubstances().AddActiveSubstance(*Cl);
+  bg.GetSubstances().AddActiveSubstance(*Ca);
 
-  // Second test should check bounds.
+  //Make a compartment to mimic adipose that has high extra:intra volume ratio
+  SETissueCompartment& adiposeTis = bg.GetCompartments().CreateTissueCompartment("Adipose");
+  SELiquidCompartment& adiposeEC = bg.GetCompartments().CreateLiquidCompartment("AdiposeExtra");
+  SELiquidCompartment& adiposeIC = bg.GetCompartments().CreateLiquidCompartment("AdiposeIntra");
+  SELiquidCompartment& adiposeVas = bg.GetCompartments().CreateLiquidCompartment("AdiposeVascular");
+  //Make a compartment to mimic liver that has low extra:intra volume ratio
+  SETissueCompartment& liverTis = bg.GetCompartments().CreateTissueCompartment("Liver");
+  SELiquidCompartment& liverEC = bg.GetCompartments().CreateLiquidCompartment("LiverExtra");
+  SELiquidCompartment& liverIC = bg.GetCompartments().CreateLiquidCompartment("LiverIntra");
+  SELiquidCompartment& liverVas = bg.GetCompartments().CreateLiquidCompartment("LiverVascular");
+
+
+  //Substance Molar Masses
+  double NaMM = Na->GetMolarMass(MassPerAmountUnit::g_Per_mol);
+  double KMM = K->GetMolarMass(MassPerAmountUnit::g_Per_mol);
+  double ClMM = Cl->GetMolarMass(MassPerAmountUnit::g_Per_mol);
+  double CaMM = Ca->GetMolarMass(MassPerAmountUnit::g_Per_mol);
+
+
+
+  DataTrack tracker;
+
+  double adiposeECVol_L = 2.13;
+  double adiposeICVol_L = 0.27;
+  double adiposeMass_kg = 0.25;
+  double liverECVol_L = 0.3;
+  double liverICVol_L = 1.03;
+  double liverMass_kg = 1.0;
+  
+  //Set tissue volumes and masses
+  adiposeTis.GetTotalMass().SetValue(adiposeMass_kg, MassUnit::kg);
+  adiposeEC.GetVolume().SetValue(adiposeECVol_L, VolumeUnit::L);
+  adiposeIC.GetVolume().SetValue(adiposeICVol_L, VolumeUnit::L);
+  adiposeVas.GetVolume().SetValue(5.0*0.106, VolumeUnit::L);			//based on 5L blood volume and vascular fraction from BioGears.cpp
+  liverTis.GetTotalMass().SetValue(liverMass_kg, MassUnit::kg);
+  liverEC.GetVolume().SetValue(liverECVol_L, VolumeUnit::L);
+  liverIC.GetVolume().SetValue(liverICVol_L, VolumeUnit::L);			
+  liverVas.GetVolume().SetValue(5.0*0.05, VolumeUnit::L);				//based on 5L blood volume and vascular fraction from BioGears.cpp
+
+  //Set substance concentrations
+  adiposeEC.GetSubstanceQuantity(*Na)->GetMass().SetValue(0.145*adiposeECVol_L*NaMM, MassUnit::g);
+  adiposeEC.GetSubstanceQuantity(*K)->GetMass().SetValue(0.0045*adiposeECVol_L*KMM, MassUnit::g);
+  adiposeEC.GetSubstanceQuantity(*Cl)->GetMass().SetValue(0.116*adiposeECVol_L*ClMM, MassUnit::g);
+  adiposeEC.GetSubstanceQuantity(*Ca)->GetMass().SetValue(0.0012*adiposeECVol_L*CaMM, MassUnit::g);
+  adiposeIC.GetSubstanceQuantity(*Na)->GetMass().SetValue(0.015*adiposeICVol_L*NaMM, MassUnit::g);
+  adiposeIC.GetSubstanceQuantity(*K)->GetMass().SetValue(0.120*adiposeICVol_L*KMM, MassUnit::g);
+  adiposeIC.GetSubstanceQuantity(*Cl)->GetMass().SetValue(0.02*adiposeICVol_L*ClMM, MassUnit::g);
+  adiposeIC.GetSubstanceQuantity(*Ca)->GetMass().SetValue(1e-7*adiposeICVol_L*CaMM, MassUnit::g);
+  adiposeVas.GetSubstanceQuantity(*Na)->GetMass().SetValue(0.142*5.0*.106*NaMM, MassUnit::g);
+  adiposeVas.GetSubstanceQuantity(*K)->GetMass().SetValue(0.0044*5.0*.106*KMM, MassUnit::g);
+  adiposeVas.GetSubstanceQuantity(*Cl)->GetMass().SetValue(0.110*5.0*.106*ClMM, MassUnit::g);
+  adiposeVas.GetSubstanceQuantity(*Ca)->GetMass().SetValue(0.0012*5.0*.106*CaMM, MassUnit::g);
+  
+
+  liverEC.GetSubstanceQuantity(*Na)->GetMass().SetValue(0.145*liverECVol_L*NaMM, MassUnit::g);
+  liverEC.GetSubstanceQuantity(*K)->GetMass().SetValue(0.0045*liverECVol_L*KMM, MassUnit::g);
+  liverEC.GetSubstanceQuantity(*Cl)->GetMass().SetValue(0.116*liverECVol_L*ClMM, MassUnit::g);
+  liverEC.GetSubstanceQuantity(*Ca)->GetMass().SetValue(0.0012*liverECVol_L*CaMM, MassUnit::g);
+  liverIC.GetSubstanceQuantity(*Na)->GetMass().SetValue(0.015*liverICVol_L*NaMM, MassUnit::g);
+  liverIC.GetSubstanceQuantity(*K)->GetMass().SetValue(0.120*liverICVol_L*KMM, MassUnit::g);
+  liverIC.GetSubstanceQuantity(*Cl)->GetMass().SetValue(0.02*liverICVol_L*ClMM, MassUnit::g);
+  liverIC.GetSubstanceQuantity(*Ca)->GetMass().SetValue(1e-7*liverICVol_L*CaMM, MassUnit::g);
+  liverVas.GetSubstanceQuantity(*Na)->GetMass().SetValue(0.142*5.0*0.05*NaMM, MassUnit::g);
+  liverVas.GetSubstanceQuantity(*K)->GetMass().SetValue(0.0044*5.0*0.05*KMM, MassUnit::g);
+  liverVas.GetSubstanceQuantity(*Cl)->GetMass().SetValue(0.102*5.0*0.05*ClMM, MassUnit::g);
+  liverVas.GetSubstanceQuantity(*Ca)->GetMass().SetValue(0.0012*5.0*.05*CaMM, MassUnit::g);
+
+  //Balance everything out
+  adiposeEC.Balance(BalanceLiquidBy::Mass);
+  adiposeIC.Balance(BalanceLiquidBy::Mass);
+  adiposeVas.Balance(BalanceLiquidBy::Mass);
+  liverEC.Balance(BalanceLiquidBy::Mass);
+  liverIC.Balance(BalanceLiquidBy::Mass);
+  liverVas.Balance(BalanceLiquidBy::Mass);
+
+  //Initialize membrane potential
+ 
+  adiposeTis.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
+  liverTis.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
+
+  //Set up variables to track
+  double adiposePotential_mV = adiposeTis.GetMembranePotential(ElectricPotentialUnit::mV);
+  double sodiumAdiposeIC_M = adiposeIC.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double sodiumAdiposeEC_M = adiposeEC.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double sodiumAdiposeVas_M = adiposeVas.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double potassiumAdiposeIC_M = adiposeIC.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double potassiumAdiposeEC_M = adiposeEC.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double potassiumAdiposeVas_M = adiposeVas.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double chlorideAdiposeIC_M = adiposeIC.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double chlorideAdiposeEC_M = adiposeEC.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double chlorideAdiposeVas_M = adiposeVas.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double calciumAdiposeIC_M = adiposeIC.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double calciumAdiposeEC_M = adiposeEC.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double calciumAdiposeVas_M = adiposeVas.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+
+  double liverPotential_mV = liverTis.GetMembranePotential(ElectricPotentialUnit::mV);
+  double sodiumLiverIC_M = liverIC.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double sodiumLiverEC_M = liverEC.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double sodiumLiverVas_M = liverVas.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double potassiumLiverIC_M = liverIC.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double potassiumLiverEC_M = liverEC.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double potassiumLiverVas_M = liverVas.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double chlorideLiverIC_M = liverIC.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double chlorideLiverEC_M = liverEC.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double chlorideLiverVas_M = liverVas.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double calciumLiverIC_M = liverIC.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double calciumLiverEC_M = liverEC.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+  double calciumLiverVas_M = liverVas.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+
+  //Initialize tracking
+  std::string rptFile = rptDirectory + "\\ActiveIonTransportTest.txt";
+  double time = 0.0;
+  //tracker.Track("Adipose_Na_EC", time, sodiumAdiposeEC_M);
+  //tracker.Track("Adipose_Na_IC", time, sodiumAdiposeIC_M);
+  //tracker.Track("Adipose_Na_Vas", time, sodiumAdiposeVas_M);
+  //tracker.Track("Adipose_K_EC", time, potassiumAdiposeEC_M);
+  //tracker.Track("Adipose_K_IC", time, potassiumAdiposeIC_M);
+  //tracker.Track("Adipose_K_Vas", time, potassiumAdiposeVas_M);
+  //tracker.Track("Adipose_Cl_EC", time, chlorideAdiposeEC_M);
+  //tracker.Track("Adipose_Cl_IC", time, chlorideAdiposeIC_M);
+  //tracker.Track("Adipose_Cl_Vas", time, chlorideAdiposeVas_M);
+  //tracker.Track("Adipose_Ca_EC", time, calciumAdiposeEC_M);
+  //tracker.Track("Adipose_Ca_IC", time, calciumAdiposeIC_M);
+  //tracker.Track("Adipose_Ca_Vas", time, calciumAdiposeVas_M);
+  //tracker.Track("Adipose_Potential", time, adiposePotential_mV);
+
+
+  tracker.Track("Liver_Na_EC", time, sodiumLiverEC_M);
+  tracker.Track("Liver_Na_IC", time, sodiumLiverIC_M);
+  tracker.Track("Liver_Na_Vas", time, sodiumLiverVas_M);
+  tracker.Track("Liver_K_EC", time, potassiumLiverEC_M);
+  tracker.Track("Liver_K_IC", time, potassiumLiverIC_M);
+  tracker.Track("Liver_K_Vas", time, potassiumLiverVas_M);
+  tracker.Track("Liver_Cl_EC", time, chlorideLiverEC_M);
+  tracker.Track("Liver_Cl_IC", time, chlorideLiverIC_M);
+  tracker.Track("Liver_Cl_Vas", time, chlorideLiverVas_M);
+  tracker.Track("Liver_Ca_EC", time, calciumLiverEC_M);
+  tracker.Track("Liver_Ca_IC", time, calciumLiverIC_M);
+  tracker.Track("Liver_Ca_Vas", time, calciumLiverVas_M);
+  tracker.Track("Liver_Potential", time, liverPotential_mV);
+
+
+  //------------Test 1:  Maintain Steady State------------------------
+   
+
+  //------------Test 2:  Sodium-----------------------
+  //Change vascular to 80 and 200
+  
+  //-----------Test 3:  Potassium------------------------------------
+  //Change vascular to 1.5 and 10
+
+  //-----------Test 4:  Chloride------------------------------------
+  //Change vascular to 130 and 80
+
+
+  for (int i = 0; i < 90000; i++)
+  {
+	  time += timestep_s;
+	  //if (i <=30000)
+	  //{
+		 //// adiposeVas.GetSubstanceQuantity(*Na)->GetMolarity().SetValue(95, AmountPerVolumeUnit::mmol_Per_L);
+		 //// adiposeVas.Balance(BalanceLiquidBy::Molarity);
+		 //// adiposeEC.GetSubstanceQuantity(*Na)->GetMolarity().SetValue(95, AmountPerVolumeUnit::mmol_Per_L);
+		 //// adiposeEC.Balance(BalanceLiquidBy::Molarity);
+		 // liverVas.GetSubstanceQuantity(*Na)->GetMolarity().SetValue(200, AmountPerVolumeUnit::mmol_Per_L);
+		 // liverVas.Balance(BalanceLiquidBy::Molarity);
+		 // //liverEC.GetSubstanceQuantity(*Na)->GetMolarity().SetValue(200, AmountPerVolumeUnit::mmol_Per_L);
+		 // //liverEC.Balance(BalanceLiquidBy::Molarity);
+	  //}
+
+	  //tsu.MoveIonsByActiveTransport(adiposeTis, adiposeVas, adiposeEC, adiposeIC, timestep_s);
+	  tsu.MoveIonsByActiveTransport(liverTis, liverVas, liverEC, liverIC, timestep_s);
+
+	  //adiposePotential_mV = adiposeTis.GetMembranePotential(ElectricPotentialUnit::mV);
+	  //sodiumAdiposeIC_M = adiposeIC.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //sodiumAdiposeEC_M = adiposeEC.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //sodiumAdiposeVas_M = adiposeVas.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //potassiumAdiposeIC_M = adiposeIC.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //potassiumAdiposeEC_M = adiposeEC.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //potassiumAdiposeVas_M = adiposeVas.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //chlorideAdiposeIC_M = adiposeIC.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //chlorideAdiposeEC_M = adiposeEC.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //chlorideAdiposeVas_M = adiposeVas.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //calciumAdiposeIC_M = adiposeIC.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //calciumAdiposeEC_M = adiposeEC.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  //calciumAdiposeVas_M = adiposeVas.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+
+
+	  liverPotential_mV = liverTis.GetMembranePotential(ElectricPotentialUnit::mV);
+	  sodiumLiverIC_M = liverIC.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  sodiumLiverEC_M = liverEC.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  sodiumLiverVas_M = liverVas.GetSubstanceQuantity(*Na)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  potassiumLiverIC_M = liverIC.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  potassiumLiverEC_M = liverEC.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  potassiumLiverVas_M = liverVas.GetSubstanceQuantity(*K)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  chlorideLiverIC_M = liverIC.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  chlorideLiverEC_M = liverEC.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  chlorideLiverVas_M = liverVas.GetSubstanceQuantity(*Cl)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  calciumLiverIC_M = liverIC.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  calciumLiverEC_M = liverEC.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+	  calciumLiverVas_M = liverVas.GetSubstanceQuantity(*Ca)->GetMolarity(AmountPerVolumeUnit::mmol_Per_L);
+
+
+	  //tracker.Track("Adipose_Na_EC", time, sodiumAdiposeEC_M);
+	  //tracker.Track("Adipose_Na_IC", time, sodiumAdiposeIC_M);
+	  //tracker.Track("Adipose_Na_Vas", time, sodiumAdiposeVas_M);
+	  //tracker.Track("Adipose_K_EC", time, potassiumAdiposeEC_M);
+	  //tracker.Track("Adipose_K_IC", time, potassiumAdiposeIC_M);
+	  //tracker.Track("Adipose_K_Vas", time, potassiumAdiposeVas_M);
+	  //tracker.Track("Adipose_Cl_EC", time, chlorideAdiposeEC_M);
+	  //tracker.Track("Adipose_Cl_IC", time, chlorideAdiposeIC_M);
+	  //tracker.Track("Adipose_Cl_Vas", time, chlorideAdiposeVas_M);
+	  //tracker.Track("Adipose_Ca_EC", time, calciumAdiposeEC_M);
+	  //tracker.Track("Adipose_Ca_IC", time, calciumAdiposeIC_M);
+	  //tracker.Track("Adipose_Ca_Vas", time, calciumAdiposeVas_M);
+	  //tracker.Track("Adipose_Potential", time, adiposePotential_mV);
+
+	  tracker.Track("Liver_Na_EC", time, sodiumLiverEC_M);
+	  tracker.Track("Liver_Na_IC", time, sodiumLiverIC_M);
+	  tracker.Track("Liver_Na_Vas", time, sodiumLiverVas_M);
+	  tracker.Track("Liver_K_EC", time, potassiumLiverEC_M);
+	  tracker.Track("Liver_K_IC", time, potassiumLiverIC_M);
+	  tracker.Track("Liver_K_Vas", time, potassiumLiverVas_M);
+	  tracker.Track("Liver_Cl_EC", time, chlorideLiverEC_M);
+	  tracker.Track("Liver_Cl_IC", time, chlorideLiverIC_M);
+	  tracker.Track("Liver_Cl_Vas", time, chlorideLiverVas_M);
+	  tracker.Track("Liver_Ca_EC", time, calciumLiverEC_M);
+	  tracker.Track("Liver_Ca_IC", time, calciumLiverIC_M);
+	  tracker.Track("Liver_Ca_Vas", time, calciumLiverVas_M);
+	  tracker.Track("Liver_Potential", time, liverPotential_mV);
+
+  }
+
+  tracker.WriteTrackToFile(rptFile.c_str());
+
 }
 
 void BioGearsEngineTest::GenericClearanceTest(SETestSuite& testSuite)

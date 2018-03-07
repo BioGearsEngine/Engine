@@ -37,8 +37,6 @@ specific language governing permissions and limitations under the License.
 #include "properties/SEScalarVolumePerTimePressure.h"
 #include "properties/SEScalarMassPerAmount.h"
 #include "patient/SEPatient.h"
-#include "patient/SEMeal.h"
-#include "patient/conditions/SEConsumeMeal.h" 
 #include "scenario/SECondition.h"
 #include "patient/conditions/SEChronicRenalStenosis.h"
 
@@ -443,11 +441,13 @@ void Renal::AtSteadyState()
 {
 	if (m_data.GetState() == EngineState::AtInitialStableState)
 	{
+    /*
 		if (m_data.GetConditions().HasConsumeMeal())
 		{
 			double elapsedTime_s = m_data.GetConditions().GetConsumeMeal()->GetMeal().GetElapsedTime(TimeUnit::s);
 			ConsumeMeal(elapsedTime_s);
 		}
+    */
 	}
 
 	if (m_data.GetState() == EngineState::AtSecondaryStableState)
@@ -926,37 +926,37 @@ void Renal::CalculateSecretion()
 			//LEFT
 			ureterPotassium = m_leftUreterPotassium;
 			peritubularPotassium = m_leftPeritubularPotassium;
-      peritubularVolume_dL = m_leftPeritubular->GetVolume().GetValue(VolumeUnit::dL);
+			peritubularVolume_dL = m_leftPeritubular->GetVolume().GetValue(VolumeUnit::dL);
 		}
 		else
 		{
 			//RIGHT
 			ureterPotassium = m_rightUreterPotassium;
 			peritubularPotassium = m_rightPeritubularPotassium;
-      peritubularVolume_dL = m_rightPeritubular->GetVolume().GetValue(VolumeUnit::dL);
+			peritubularVolume_dL = m_rightPeritubular->GetVolume().GetValue(VolumeUnit::dL);
 		}
-	}
 
-	//grab current concentration and volume, 
-	potassiumConcentration_g_Per_dL = peritubularPotassium->GetConcentration().GetValue(MassPerVolumeUnit::g_Per_dL);
+		//grab current concentration and volume, 
+		potassiumConcentration_g_Per_dL = peritubularPotassium->GetConcentration().GetValue(MassPerVolumeUnit::g_Per_dL);
 
-	//only do if current levels of potassium are too high:
-	if (potassiumConcentration_g_Per_dL > m_baselinePotassiumConcentration_g_Per_dL)
-	{		
-		//calculate mass to move in mg: 
-		massPotassiumToMove_mg = (potassiumConcentration_g_Per_dL - m_baselinePotassiumConcentration_g_Per_dL)*peritubularVolume_dL;
+		//only do if current levels of potassium are too high:
+		if (potassiumConcentration_g_Per_dL > m_baselinePotassiumConcentration_g_Per_dL)
+		{
+			//calculate mass to move in mg: 
+			massPotassiumToMove_mg = (potassiumConcentration_g_Per_dL - m_baselinePotassiumConcentration_g_Per_dL)*peritubularVolume_dL;
 
-		//Increment & decrement
-    peritubularPotassium->GetMass().IncrementValue(-massPotassiumToMove_mg, MassUnit::mg);
-    ureterPotassium->GetMass().IncrementValue(massPotassiumToMove_mg, MassUnit::mg);
+			//Increment & decrement
+			peritubularPotassium->GetMass().IncrementValue(-massPotassiumToMove_mg, MassUnit::mg);
+			ureterPotassium->GetMass().IncrementValue(massPotassiumToMove_mg, MassUnit::mg);
 
-		// if its super small negative mass set to zero:
-		if (peritubularPotassium->GetMass().IsNegative())
-      peritubularPotassium->GetMass().SetValue(0.0, MassUnit::mg);
+			// if its super small negative mass set to zero:
+			if (peritubularPotassium->GetMass().IsNegative())
+				peritubularPotassium->GetMass().SetValue(0.0, MassUnit::mg);
 
-		//Calculate new concentrations
-    ureterPotassium->Balance(BalanceLiquidBy::Mass);
-    peritubularPotassium->Balance(BalanceLiquidBy::Mass);
+			//Calculate new concentrations
+			ureterPotassium->Balance(BalanceLiquidBy::Mass);
+			peritubularPotassium->Balance(BalanceLiquidBy::Mass);
+		}
 	}
 }
 

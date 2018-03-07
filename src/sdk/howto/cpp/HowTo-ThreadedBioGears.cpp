@@ -27,6 +27,7 @@ specific language governing permissions and limitations under the License.
 #include "properties/SEScalarTime.h"
 #include "properties/SEScalarVolume.h"
 #include "properties/SEScalarVolumePerTime.h"
+#include "properties/SEScalar0To1.h"
 #include <iostream>
 
 void HowToDynamicHemorrhage()
@@ -37,11 +38,12 @@ void HowToDynamicHemorrhage()
   // When it comes back, the engine will be running, waiting for your input
 
   int action;
+  double severity;
   double rate;
-  std::vector<unsigned int> userMCIS;
+  std::string location;
   bool active = true;
-  int codeCount;
-  int codeIn;
+  std::string out;
+
   do
   {
     bgThread.GetLogger()->Info("Enter Integer for Action to Perform : [1]Status, [2]Hemorrhage, [3]IVFluids, [4]Quit");
@@ -52,16 +54,16 @@ void HowToDynamicHemorrhage()
       bgThread.Status();
       break;
     case 2:
-		codeCount = 0;
-		//See HowTo-Hemorrhage for description of MCIS code
-		bgThread.GetLogger()->Info("Provide 5-digit MCIS code (separate digits by spaces) followed by ENTER: ");
-		do {
-			std::cin >> codeIn;
-			userMCIS.push_back(codeIn);
-			codeCount++;
-		} while (codeCount <= 4);		//MCIS code must be five digits long, so don't go past fourth index
-	  bgThread.GetLogger()->Info(std::stringstream() << userMCIS[0] << userMCIS[1] << userMCIS[2] << userMCIS[3] << userMCIS[4]);	  
-	  bgThread.SetHemorrhage(userMCIS);
+		bgThread.GetLogger()->Info("Type a location, then hit ENTER: ");
+		std::cin >> location;
+		bgThread.GetLogger()->Info("Type a severity (0-1 scale, 0 stops hemorrhage), then hit ENTER: ");
+		std::cin >> severity;
+		if (severity <= ZERO_APPROX)
+			out = "Stop hemorrhage in " + location;
+		else
+			out = "Hemorrhage in " + location + " with severity = " + std::to_string(severity);
+		bgThread.GetLogger()->Info(out);
+	  bgThread.SetHemorrhage(location,severity);
       break;
     case 3:
       bgThread.GetLogger()->Info("Enter IV Fluids Rate in mL/min : ");
@@ -104,10 +106,11 @@ BioGearsThread::~BioGearsThread()
   SAFE_DELETE(m_hemorrhage);
 }
 
-void BioGearsThread::SetHemorrhage(const std::vector<unsigned int>& mcisIn)
+void BioGearsThread::SetHemorrhage(std::string& location, double& severity)
 {
-  m_hemorrhage->SetMCIS(mcisIn);//the rate of hemorrhage
-  m_hemorrhage->ProcessMCIS();
+  m_hemorrhage->SetCompartment(location);
+  m_hemorrhage->GetSeverity().SetValue(severity);
+  m_hemorrhage->SetBleedPath();
   m_mutex.lock();
   m_bg->ProcessAction(*m_hemorrhage);
   m_mutex.unlock();

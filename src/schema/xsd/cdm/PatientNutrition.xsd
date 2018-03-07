@@ -34,16 +34,4 @@ specific language governing permissions and limitations under the License.
     </xs:complexType>
     <xs:element name="Nutrition" type="NutritionData"/>
     
-    <!-- @brief Specify an amount of time to digest the specified nutrition information. -->
-    <xs:complexType name="MealData">
-        <xs:complexContent>
-            <xs:extension base="NutritionData">
-                <xs:sequence>
-                    <xs:element name="ElapsedTime" type="ScalarTimeData" minOccurs="1" maxOccurs="1"/>                    
-                </xs:sequence>
-            </xs:extension>
-        </xs:complexContent>
-    </xs:complexType>
-    <xs:element name="Meal" type="MealData"/>
-    
 </xs:schema>

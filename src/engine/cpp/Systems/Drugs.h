@@ -64,12 +64,16 @@ protected:
 	void CalculateSubstanceClearance();
 	void CalculatePlasmaSubstanceConcentration();
 	void CalculateDrugEffects();
+	void SarinKinetics();
 
   // Serializable member variables (Set in Initialize and in schema)
   std::map<const SESubstance*, SESubstanceBolusState*> m_BolusAdministrations;
+  double m_SarinRbcAcetylcholinesteraseComplex_nM;
+  double m_AgedRbcAcetylcholinesterase_nM;
 
   // Stateless member variable (Set in SetUp())
 	double m_dt_s;
+	double m_RbcAcetylcholinesteraseFractionInhibited;
   SELiquidCompartment*  m_aortaVascular;
 	SELiquidCompartment*  m_venaCavaVascular;
   SELiquidCompartment*  m_muscleIntracellular;
@@ -77,4 +81,6 @@ protected:
 	SETissueCompartment*  m_liverTissue;
   SEFluidCircuitPath*   m_IVToVenaCava;
   SETissueCompartment*  m_fatTissue;
+  SESubstance*		m_Sarin;
+  SESubstance*		m_Pralidoxime;
 };

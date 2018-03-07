@@ -333,15 +333,15 @@ bool SESubstanceManager::LoadSubstanceDirectory()
 					sub = new SESubstance(GetLogger());
 					sub->Load(*subData);
 					AddSubstance(*sub);
-          m_OriginalSubstanceData[sub] = subData;
+					m_OriginalSubstanceData[sub] = subData;
 					continue;
 				}
 				compoundData = dynamic_cast<CDM::SubstanceCompoundData*>(obj);
 				if (compoundData != nullptr)
 				{// Save this off and process it till later, once all substances are read
-          compound = new SESubstanceCompound(GetLogger());
-          m_OriginalCompoundData[compound] = compoundData;
-          AddCompound(*compound);
+					compound = new SESubstanceCompound(GetLogger());
+					m_OriginalCompoundData[compound] = compoundData;
+					AddCompound(*compound);
 					continue;
 				}
 				Error("Unknown Type");

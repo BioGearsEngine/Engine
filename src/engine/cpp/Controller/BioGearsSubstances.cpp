@@ -480,15 +480,19 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   concentration.SetValue(50.0, MassPerVolumeUnit::mg_Per_dL);
   SetSubstanceConcentration(*m_aminoAcids, vascular, concentration);
   // Tissue
-  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L)/m_aminoAcids->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L)/ m_aminoAcids->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
   SetSubstanceMolarity(*m_aminoAcids, tissue, molarity1, molarity1);
 
 	// BICARBONATE IS SET IN GASES SECTION //
 
 	// CALCIUM //
-	//concentration.SetValue(48.1, MassPerVolumeUnit::mg_Per_L);
-  concentration.SetValue(88.1, MassPerVolumeUnit::mg_Per_L);
+  concentration.SetValue(48.1, MassPerVolumeUnit::mg_Per_L);
   SetSubstanceConcentration(*m_calcium, vascular, concentration);
+
+  // Tissue
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_calcium->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  molarity2.SetValue(0.0001, AmountPerVolumeUnit::mmol_Per_L);
+  SetSubstanceMolarity(*m_calcium, tissue, molarity1, molarity2);
   // Set Urine
   concentration.SetValue(98.1, MassPerVolumeUnit::mg_Per_L);
   subQ = leftBowmansCapsules->GetSubstanceQuantity(*m_calcium);
@@ -511,12 +515,8 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   subQ->Balance(BalanceLiquidBy::Concentration);
   subQ = bladder->GetSubstanceQuantity(*m_calcium);
   subQ->GetConcentration().Set(concentration);
-  // Tissue
-  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_aminoAcids->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
-  //molarity1.SetValue(1.2, AmountPerVolumeUnit::mmol_Per_L);
-  //molarity2.SetValue(1.2, AmountPerVolumeUnit::mmol_Per_L);
-  //molarity2.SetValue(0.0001, AmountPerVolumeUnit::mmol_Per_L);
-  SetSubstanceMolarity(*m_calcium, tissue, molarity1, molarity1);
+  subQ->Balance(BalanceLiquidBy::Concentration);
+
 
 	// CHLORIDE //
 	concentration.SetValue(0.362, MassPerVolumeUnit::g_Per_dL);
@@ -524,8 +524,7 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   SetSubstanceConcentration(*m_chloride, urine, concentration);
   // Tissue
   molarity1.SetValue(116, AmountPerVolumeUnit::mmol_Per_L);
-  molarity2.SetValue(116, AmountPerVolumeUnit::mmol_Per_L);
-  //molarity2.SetValue(20, AmountPerVolumeUnit::mmol_Per_L);
+  molarity2.SetValue(20, AmountPerVolumeUnit::mmol_Per_L);
   SetSubstanceMolarity(*m_chloride, tissue, molarity1, molarity2);
 
 	// CREATININE //
@@ -598,7 +597,7 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   SetSubstanceMolarity(*m_glucose, tissue, molarity1, molarity1);
 
 	// INSULIN //
-	concentration.SetValue(0.85, MassPerVolumeUnit::ug_Per_L);  //118.1 pmol/L is desired (.6859 ug/L), but it dips during stabilization, so start higher
+	concentration.SetValue(0.85, MassPerVolumeUnit::ug_Per_L);  //118.1 pmol/L is desired (.6859 ug/L), was .85 because of stabilization dip, but it seems okay now
 	SetSubstanceConcentration(*m_insulin, vascular, concentration);
   // None in Urine
   leftBowmansCapsules->GetSubstanceQuantity(*m_insulin)->SetToZero();
@@ -661,18 +660,6 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
 	SetSubstanceConcentration(*m_potassium, vascular, concentration);
   // Set Urine
   concentration.SetValue(4.5, MassPerVolumeUnit::g_Per_L);
-  subQ = leftBowmansCapsules->GetSubstanceQuantity(*m_potassium);
-  subQ->GetConcentration().Set(concentration);
-  subQ->Balance(BalanceLiquidBy::Concentration);
-  subQ = rightBowmansCapsules->GetSubstanceQuantity(*m_potassium);
-  subQ->GetConcentration().Set(concentration);
-  subQ->Balance(BalanceLiquidBy::Concentration);
-  subQ = leftTubules->GetSubstanceQuantity(*m_potassium);
-  subQ->GetConcentration().Set(concentration);
-  subQ->Balance(BalanceLiquidBy::Concentration);
-  subQ = rightTubules->GetSubstanceQuantity(*m_potassium);
-  subQ->GetConcentration().Set(concentration);
-  subQ->Balance(BalanceLiquidBy::Concentration);
   subQ = leftUreter->GetSubstanceQuantity(*m_potassium);
   subQ->GetConcentration().Set(concentration);
   subQ->Balance(BalanceLiquidBy::Concentration);
@@ -683,27 +670,14 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   subQ->GetConcentration().Set(concentration);
   // Tissue
   molarity1.SetValue(4.5, AmountPerVolumeUnit::mmol_Per_L);
-  //molarity2.SetValue(120, AmountPerVolumeUnit::mmol_Per_L);
-  molarity2.SetValue(4.5, AmountPerVolumeUnit::mmol_Per_L);
+  molarity2.SetValue(120, AmountPerVolumeUnit::mmol_Per_L);
   SetSubstanceMolarity(*m_potassium, tissue, molarity1, molarity2);
 	
 	// SODIUM //
 	concentration.SetValue(0.323, MassPerVolumeUnit::g_Per_dL);
 	SetSubstanceConcentration(*m_sodium, vascular, concentration);
   // Set Urine
-  subQ = leftBowmansCapsules->GetSubstanceQuantity(*m_sodium);
-  subQ->GetConcentration().Set(concentration);
-  subQ->Balance(BalanceLiquidBy::Concentration);
-  subQ = rightBowmansCapsules->GetSubstanceQuantity(*m_sodium);
-  subQ->GetConcentration().Set(concentration);
-  subQ->Balance(BalanceLiquidBy::Concentration);
   concentration.SetValue(0.375, MassPerVolumeUnit::g_Per_dL);
-  subQ = leftTubules->GetSubstanceQuantity(*m_sodium);
-  subQ->GetConcentration().Set(concentration);
-  subQ->Balance(BalanceLiquidBy::Concentration);
-  subQ = rightTubules->GetSubstanceQuantity(*m_sodium);
-  subQ->GetConcentration().Set(concentration);
-  subQ->Balance(BalanceLiquidBy::Concentration);
   subQ = leftUreter->GetSubstanceQuantity(*m_sodium);
   subQ->GetConcentration().Set(concentration);
   subQ->Balance(BalanceLiquidBy::Concentration);
@@ -714,8 +688,7 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   subQ->GetConcentration().Set(concentration);
   // Tissue
   molarity1.SetValue(145, AmountPerVolumeUnit::mmol_Per_L);
-  molarity2.SetValue(145, AmountPerVolumeUnit::mmol_Per_L);
-  //molarity2.SetValue(15, AmountPerVolumeUnit::mmol_Per_L);
+  molarity2.SetValue(15, AmountPerVolumeUnit::mmol_Per_L);
   SetSubstanceMolarity(*m_sodium, tissue, molarity1, molarity2);
 
 	// TRIACYLGLYCEROL //
@@ -770,6 +743,129 @@ void BioGearsSubstances::InitializeLiquidCompartmentNonGases()
   // Tissue
   molarity1.SetValue(4.8, AmountPerVolumeUnit::mmol_Per_L);
   SetSubstanceMolarity(*m_urea, tissue, molarity1);
+}
+
+//--------------------------------------------------------------------------------------------------
+/// \brief
+/// Sets the status of blood concentrations to appropriate starved values
+///
+/// \details
+/// The blood concentrations of glucose and ketones are set to match literature values. Insulin and
+/// glucagon are not set because they react to set glucose quickly. Other metabolites are not set,
+/// but they could be in the future if appropriate validation data is found.
+//--------------------------------------------------------------------------------------------------
+void BioGearsSubstances::SetLiquidCompartmentNonGasesForStarvation(double time_h)
+{
+  //This function copies InitializeLiquidCompartmentNonGases() in form and is called
+  //from Tissue::SetStarvationState() to configure blood and tissue concentrations during
+  //the Starvation condition (urine compartments are not currently considered)
+
+  const std::vector<SELiquidCompartment*>& vascular = m_data.GetCompartments().GetVascularLeafCompartments();
+  const std::vector<SETissueCompartment*>& tissue = m_data.GetCompartments().GetTissueLeafCompartments();
+
+  // Initialize Substances throughout the body
+  SEScalarMassPerVolume   concentration;
+  SEScalarAmountPerVolume molarity1;
+  SEScalarAmountPerVolume molarity2;
+
+  SETissueCompartment* brain = m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Brain);
+
+  // AMINOACIDS //
+  //Probably sholdn't be messed with; see elia1984mineral that says total protein stays ~constant
+  /*
+  concentration.SetValue(50.0, MassPerVolumeUnit::mg_Per_dL);
+  SetSubstanceConcentration(*m_aminoAcids, vascular, concentration);
+  // Tissue
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_aminoAcids->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  SetSubstanceMolarity(*m_aminoAcids, tissue, molarity1, molarity1);
+  */
+
+  // GLUCAGON //
+  //Not modified since it will react to glucose quickly
+  /*
+  concentration.SetValue(0.079, MassPerVolumeUnit::ug_Per_L);  //We want 70 pg/mL, but it dips in stabilization, so set it higher
+  SetSubstanceConcentration(*m_glucagon, vascular, concentration);
+  // Tissue
+  molarity1.SetValue(0.0, AmountPerVolumeUnit::mmol_Per_L);
+  molarity2.SetValue(0.0, AmountPerVolumeUnit::mmol_Per_L);
+  SetSubstanceMolarity(*m_glucagon, tissue, molarity1, molarity2);
+  */
+
+  // GLUCOSE //
+  // \cite garber1974hepatic and \cite owen1971human show glucose concentrations from 0-3 days of fasting and then at 24 days
+  // https://www.wolframalpha.com/input/?i=y%3D84.3105+-+.39147x+-+.00000434x%5E2+from+0+%3C+x+%3C+80
+  // It's very nearly linear up to 3 days, where it stays hovering around 61 mg/dL
+  double conc = 0;
+  if (time_h < 72)
+    conc = 84.3105 - .39147*time_h - .00000434*time_h*time_h;
+  else
+    conc = 61.25;
+  concentration.SetValue(conc, MassPerVolumeUnit::mg_Per_dL);
+  SetSubstanceConcentration(*m_glucose, vascular, concentration);
+
+  // Tissue
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  SetSubstanceMolarity(*m_glucose, tissue, molarity1, molarity1);
+
+  // INSULIN //
+  //Not modified since it reacts to glucose quickly
+  /*
+  concentration.SetValue(0.85, MassPerVolumeUnit::ug_Per_L);  //118.1 pmol/L is desired (.6859 ug/L), but it dips during stabilization, so start higher
+  SetSubstanceConcentration(*m_insulin, vascular, concentration);
+
+  // Tissue
+  molarity1.SetValue(0.0, AmountPerVolumeUnit::mmol_Per_L);
+  molarity2.SetValue(0.0, AmountPerVolumeUnit::mmol_Per_L);
+  SetSubstanceMolarity(*m_insulin, tissue, molarity1, molarity2);
+  */
+
+  // KETONES //
+  // \cite garber1974hepatic shows ketone concentrations from 0-3 days, mentioning that the peak is around 3 days
+  // https://www.wolframalpha.com/input/?i=y%3D2.705%2B.0276875x%2B.00398698x%5E2+from+0%3Cx%3C80
+  // We'll hold constant after 3 days, though according to Garber, it might decrease a bit after that
+  conc = 0;
+  if (time_h < 72)
+    conc = 2.705 + .0276875*time_h + .00398698*time_h*time_h;
+  else
+    conc = 25.52;
+  concentration.SetValue(conc, MassPerVolumeUnit::mg_Per_dL);
+  SetSubstanceConcentration(*m_ketones, vascular, concentration);
+
+  // Tissue
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_ketones->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  SetSubstanceMolarity(*m_ketones, tissue, molarity1, molarity1);
+
+  // LACTATE //
+  //Modified to match engine state in order to provide adequate substrate for gluconeogenesis
+ 
+  concentration.SetValue(32.5, MassPerVolumeUnit::mg_Per_dL);
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_lactate->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  SetSubstanceConcentration(*m_lactate, vascular, concentration);
+
+  // Tissue
+  SetSubstanceMolarity(*m_lactate, tissue, molarity1, molarity1);
+  
+
+  // TRIACYLGLYCEROL //
+  //Not modified. \cite zauner2000resting shows it not changing much from basal levels, but since we don't model fatty acids, we'll see it rise over time.
+  /*
+  concentration.SetValue(75.0, MassPerVolumeUnit::mg_Per_dL);
+  SetSubstanceConcentration(*m_triacylglycerol, vascular, concentration);
+
+  // Tissue
+  molarity1.SetValue(concentration.GetValue(MassPerVolumeUnit::g_Per_L) / m_triacylglycerol->GetMolarMass(MassPerAmountUnit::g_Per_mol), AmountPerVolumeUnit::mol_Per_L);
+  SetSubstanceMolarity(*m_triacylglycerol, tissue, molarity1, molarity1);
+  // TAG can't cross blood-brain barrier, so no TAG there
+  molarity1.SetValue(0, AmountPerVolumeUnit::mmol_Per_L);
+  m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::BrainExtracellular)->GetSubstanceQuantity(*m_triacylglycerol)->GetMolarity().Set(molarity1);
+  m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::BrainExtracellular)->GetSubstanceQuantity(*m_triacylglycerol)->Balance(BalanceLiquidBy::Molarity);
+  m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::BrainIntracellular)->GetSubstanceQuantity(*m_triacylglycerol)->GetMolarity().Set(molarity1);
+  m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::BrainIntracellular)->GetSubstanceQuantity(*m_triacylglycerol)->Balance(BalanceLiquidBy::Molarity);
+  */
+
+  // IONS //
+  //Not modified, but \cite elia1984mineral has good data for Na, K, Ca, and Cl (they don't change much during 4 day starvation)
+
 }
 
 bool BioGearsSubstances::LoadSubstanceDirectory()

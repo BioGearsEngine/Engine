@@ -31,12 +31,16 @@ void HowToCOPD();
 void HowToCPR();
 void HowToEnvironmentChange();
 void HowToExercise();
+void HowToFasciculation();
 void HowToHemorrhage();
+void HowToInfusionDrug();
 void HowToLobarPneumonia();
 void HowToMechanicalVentilation();
 void HowToPulmonaryFunctionTest();
+void HowToSarinExposure();
 void HowToSmoke();
 void HowToTensionPneumothorax();
+void HowToVasopressinShockTherapy();
 
 void HowToConcurrentEngines();
 void HowToRunScenario();

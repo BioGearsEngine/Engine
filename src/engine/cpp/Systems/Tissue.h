@@ -52,7 +52,7 @@ public:
 	void Process();
 	void PostProcess();
 
-  //Used to add Hepatic O2/CO2 changes to Tissue outputs (there's probably a better way to transfer this data)
+  // Used to add Hepatic O2/CO2 changes to Tissue outputs (there's probably a better way to transfer this data)
   static double m_hepaticO2Consumed_mol;
   static double m_hepaticCO2Produced_mol;
 
@@ -62,20 +62,24 @@ protected:
   void ProteinStorageAndRelease();
   void FatStorageAndRelease();
 
-    /*Tissue System*/
-  void CalculateMetabolicConsumptionAndProduction(double time);
-
-  /*Process Methods*/
+  // Process Methods
   void CalculateDiffusion();
   void CalculatePulmonaryCapillarySubstanceTransfer();
   void CalculateVitals();
   void CheckGlycogenLevels();
   void ManageSubstancesAndSaturation();
   
+  // Postprocess Methods
 
-  /*Postprocess Methods*/	
 
-  /*Diffusion Utilities*/
+  //conditions
+  void Dehydrate();
+
+  // Tissue System
+  void CalculateMetabolicConsumptionAndProduction(double time);
+  void SetStarvationState();
+
+  // Diffusion Utilities
   void DistributeMassbyVolumeWeighted(SELiquidCompartment& cmpt, const SESubstance& sub, double mass, const MassUnit& unit);
   void DistributeMassbyMassWeighted(SELiquidCompartment& cmpt, const SESubstance& sub, double mass, const MassUnit& unit);
 
@@ -86,18 +90,24 @@ protected:
   double MoveMassBySimpleDiffusion(SELiquidCompartment& source, SELiquidCompartment& target, const SESubstance& sub, double permeabilityCofficient_mL_Per_s, double timestep_s);  
   double MoveMassByFacilitatedDiffusion(SELiquidCompartment& source, SELiquidCompartment& target, const SESubstance& sub, double combinedCoefficient_g_Per_s, double timestep_s);
   double MoveMassByActiveTransport(SELiquidCompartment& source, SELiquidCompartment& target, const SESubstance& sub, double pumpRate_g_Per_s, double timestep_s);
+  void MoveIonsByActiveTransport(SETissueCompartment& tissue, SELiquidCompartment& vascular, SELiquidCompartment& extra, SELiquidCompartment& intra, double timestep_s);
 
+  double SodiumPotassiumPump(double intracellularSodium, double extracellularPotassium, double potential_V);
+  double SodiumPotassiumChlorideCotransport(double intraNa_M, double extraNa_M, double intraK_M, double extraK_M, double intraCl_M, double extraCl_M);
+  double CalciumPump(double intraCa_M);
+  double CalculateNernstPotential(SELiquidCompartment& extra, SELiquidCompartment& intra, SESubstance* ion);
+  
   // Serializable member variables (Set in Initialize and in schema)
-  double m_RestingTissueGlucose_g;
-  double m_RestingBloodGlucose_g_Per_L;
-  double m_RestingBloodLipid_g_Per_L;
-  double m_RestingBloodInsulin_g_Per_L;
   double m_RestingPatientMass_kg;
   double m_RestingFluidMass_kg;
+  RunningAverage m_O2ConsumedRunningAverage_mL_Per_s;
+  RunningAverage m_CO2ProducedRunningAverage_mL_Per_s;
+  RunningAverage m_RespiratoryQuotientRunningAverage;
 
   // Stateless member variable (Set in SetUp())
 	double m_Dt_s;
   double m_maxProteinStorage_g;
+  double m_lastFatigueTime;
 
   std::stringstream           m_ss;
 	SESubstance*                m_Albumin;
@@ -112,7 +122,9 @@ protected:
   SESubstance*                m_Ketones;
   SESubstance*                m_Creatinine;
   SESubstance*                m_Sodium;
+  SESubstance*				  m_Potassium;
   SESubstance*                m_Calcium;
+  SESubstance*				  m_Chloride;
   SESubstance*                m_Insulin;
   SESubstance*                m_Urea;
 

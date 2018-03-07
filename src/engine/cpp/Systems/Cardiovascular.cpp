@@ -795,7 +795,7 @@ void Cardiovascular::CalculateVitalSigns()
       double hypovolemicShock = 0.5*m_patient->GetBloodVolumeBaseline(VolumeUnit::mL);
       if (GetBloodVolume().GetValue(VolumeUnit::mL) <= hypovolemicShock)
       {
-        m_ss << "50% of the patients blood volume has been lost. The patient is now in an irreversible state.";
+        m_ss << "50% of the patient's blood volume has been lost. The patient is now in an irreversible state.";
         Warning(m_ss);
         /// \irreversible Over half the patients blood volume has been lost.
         m_patient->SetEvent(CDM::enumPatientEvent::IrreversibleState, true, m_data.GetSimulationTime());
@@ -1029,7 +1029,7 @@ void Cardiovascular::Hemorrhage()
   double resistanceFunMax = 1000.0;
 
   //Need to read in severity from MCIS code
-  int MCIS1_severity = 0;
+  double severity = 0;
  //Values for tracking physiological metrics
   double resistance = 0.0;
   double TotalLossRate_mL_Per_s=0.0;
@@ -1044,11 +1044,11 @@ void Cardiovascular::Hemorrhage()
   for (auto hem : hems)
   {
 	  h = hem.second;
-	  MCIS1_severity = h->GetMCIS()[0];
+	  severity = h->GetSeverity().GetValue();
 	  targetPath = m_CirculatoryCircuit->GetPath(h->GetBleedName());
 	  
 	  //We need to adjust the resistance functions for main aorta and vena cava because they have very high/low pressures relative to other compartments
-	  if (h->GetCompartment() == "VenaCava")
+	  if (h->GetCompartment() == "Vena Cava")
 	  {
 		  resistanceFunMin = 0.5;
 		  resistanceFunMax = 50.0;
@@ -1062,8 +1062,8 @@ void Cardiovascular::Hemorrhage()
 	  
 	  //The values for this function were chosen empirically to produce following severity->resistance map with flow rates that seem reasonable
 	  //with data in @cite lawnick2013combat and @cite guitierrez2004clinical.  Values can be adjusted as needed to incorporate more data
-	  //Severity->Resistance:  1->383, 2->122, 3->39, 4->12.5, 5->4 (not for aorta or vena cava)
-	  resistance = GeneralMath::ResistanceFunction(10.0, resistanceFunMin, resistanceFunMax, MCIS1_severity / 5.0);
+	  //Severity->Resistance:  0.2->383, 0.4->122, 0.6->39, 0.8->12.5, 1.0->4 (not for aorta or vena cava)
+	  resistance = GeneralMath::ResistanceFunction(10.0, resistanceFunMin, resistanceFunMax, severity);
 
 	  targetPath->GetNextResistance().SetValue(resistance, FlowResistanceUnit::mmHg_s_Per_mL);
 
@@ -1072,11 +1072,13 @@ void Cardiovascular::Hemorrhage()
 	  bleedoutTime = (bloodVolume_mL - (0.5*baselineBloodVolume_mL)) / TotalLossRate_mL_Per_s*(1.0 / 60.0);
 	  
   }
-
+  /*
+  Stub to try to calculate a probability of survival based on the bleeding rate and approximate time to bleed out.
   if (bleedoutTime!=0)
 	probabilitySurvival = 100.0-100.0*(0.9127*exp(-0.008*bleedoutTime));	//relationship from Table 5 in champion2003profile
-  
+  */
 
+ 
   double bloodDensity_kg_Per_mL = m_data.GetBloodChemistry().GetBloodDensity(MassPerVolumeUnit::kg_Per_mL);
   double massLost_kg = TotalLossRate_mL_Per_s*bloodDensity_kg_Per_mL*m_dT_s;
   double patientMass_kg = m_patient->GetWeight(MassUnit::kg);

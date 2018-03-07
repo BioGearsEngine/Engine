@@ -1,0 +1,37 @@
+<project name="BioGearsGUI" default="all" basedir="../../">
+
+    <property file="${basedir}/build.properties"/>
+
+	<target name="all" depends="clean, compile, jar"/>
+		
+	<target name="clean">
+		<delete dir="${biogears.gui}/build"/>
+		<delete file="${biogears.bin}/BioGearsGUI.jar"/>
+	</target>
+
+	<target name="compile" depends="clean">
+		<mkdir dir="${biogears.gui}/build/java"/>
+		<javac debug="true" srcdir="${biogears.gui}/java" destdir="${biogears.gui}/build/java" classpath="${biogears.cots.cp}"/>		
+	</target>
+	
+	<target name="jar">
+		<delete file="${biogears.bin}/BioGearsGUI.jar"/>
+		
+		<!-- Fancy task that takes the pain out creating properly formatted manifest value -->
+        <manifestclasspath property="mf.classpath" jarfile="${biogears.bin}/BioGearsGUI.jar">
+        <classpath>
+            <fileset dir="${biogears.bin}" includes="*.jar"/>
+        </classpath><!--end tag-->
+		</manifestclasspath>
+	
+	    <!-- Create the Jar-->
+		<jar destfile="${biogears.bin}/BioGearsGUI.jar" excludes="**/Sun_micr.rsa **/Sun_micr.sf">
+			<fileset dir="${biogears.gui}/build/java"/>
+			<manifest>
+				<attribute name="Main-Class" value="mil.tatrc.physiology.biogears.gui.BioGearsGUI"/>
+				<attribute name="Class-Path" value="${mf.classpath}"/> 
+			</manifest>
+		</jar>
+	</target>
+
+</project>	

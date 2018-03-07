@@ -19,9 +19,7 @@ specific language governing permissions and limitations under the License.
 #include "bind/RunningAverageData.hxx"
 
 #include "patient/SEPatient.h"
-#include "patient/SEMeal.h"
 #include "patient/SENutrition.h"
-#include "patient/conditions/SEConsumeMeal.h"
 #include "circuit/thermal/SEThermalCircuit.h"
 #include "circuit/fluid/SEFluidCircuit.h"
 #include "compartment/fluid/SELiquidCompartment.h"
@@ -52,6 +50,7 @@ specific language governing permissions and limitations under the License.
 #include "properties/SEScalarAmountPerTime.h"
 #include "properties/SEScalarTime.h"
 #include "properties/SEScalarVolumePerTimeMass.h"
+#include "properties/SEScalarMassPerAmount.h"
 
 Energy::Energy(BioGears& bg) : SEEnergySystem(bg.GetLogger()), m_data(bg), m_circuitCalculator(GetLogger())
 {
@@ -69,6 +68,9 @@ void Energy::Clear()
   m_Patient = nullptr;
   m_PatientActions = nullptr;
   m_AortaHCO3 = nullptr;
+  m_SkinSodium = nullptr;
+  m_SkinChloride = nullptr;
+  m_SkinPotassium = nullptr;
   m_coreNode = nullptr;
   m_skinNode = nullptr;
   m_temperatureGroundToCorePath = nullptr;
@@ -96,32 +98,23 @@ void Energy::Initialize()
   GetSkinTemperature().SetValue(33.0, TemperatureUnit::C);  
   /// \cite phypers2006lactate
   GetLactateProductionRate().SetValue(1.3, AmountPerTimeUnit::mol_Per_day);
-  /// \cite garber1974ketone
-  GetKetoneProductionRate().SetValue(300.0, AmountPerTimeUnit::umol_Per_min);
   /// \cite guyton2006medical
   GetExerciseMeanArterialPressureDelta().SetValue(0.0, PressureUnit::mmHg);
   GetTotalWorkRateLevel().SetValue(0.0);
   GetFatigueLevel().SetValue(0.0);
+  GetChlorideLostToSweat().SetValue(0.0, MassUnit::mg);
+  GetPotassiumLostToSweat().SetValue(0.0, MassUnit::mg);
+  GetSodiumLostToSweat().SetValue(0.0, MassUnit::mg);
 
   //Running average quantities used to trigger events
   m_BloodpH.Sample(7.4); //Initialize
   m_BicarbonateMolarity_mmol_Per_L.Sample(24.0); //Initialize
-
-  // Energy buckets for fatigue
-  m_UsableEnergyStore_J = 2600.0;
-  m_PeakPowerEnergyStore_J = 4200.0;
-  m_MediumPowerEnergyStore_J = 35000.0;
-  m_EnduranceEnergyStore_J = 400000.0;
 }
 
 bool Energy::Load(const CDM::BioGearsEnergySystemData& in)
 {
   if (!SEEnergySystem::Load(in))
     return false;
-  m_UsableEnergyStore_J = in.UsableEnergyStore_J();
-  m_PeakPowerEnergyStore_J = in.PeakPowerEnergyStore_J();
-  m_MediumPowerEnergyStore_J = in.MediumPowerEnergyStore_J();
-  m_EnduranceEnergyStore_J = in.EnduranceEnergyStore_J();
 
   m_BloodpH.Load(in.BloodpH());
   m_BicarbonateMolarity_mmol_Per_L.Load(in.BicarbonateMolarity_mmol_Per_L());
@@ -137,10 +130,6 @@ CDM::BioGearsEnergySystemData* Energy::Unload() const
 void Energy::Unload(CDM::BioGearsEnergySystemData& data) const
 {
   SEEnergySystem::Unload(data);
-  data.UsableEnergyStore_J(m_UsableEnergyStore_J);
-  data.PeakPowerEnergyStore_J(m_PeakPowerEnergyStore_J);
-  data.MediumPowerEnergyStore_J(m_MediumPowerEnergyStore_J);
-  data.EnduranceEnergyStore_J(m_EnduranceEnergyStore_J);
 
   data.BloodpH(std::unique_ptr<CDM::RunningAverageData>(m_BloodpH.Unload()));
   data.BicarbonateMolarity_mmol_Per_L(std::unique_ptr<CDM::RunningAverageData>(m_BicarbonateMolarity_mmol_Per_L.Unload()));
@@ -163,7 +152,9 @@ void Energy::SetUp()
 	m_Patient = &m_data.GetPatient();
 
   m_AortaHCO3 = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Aorta)->GetSubstanceQuantity(m_data.GetSubstances().GetHCO3());
-
+  m_SkinSodium = m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::SkinExtracellular)->GetSubstanceQuantity(m_data.GetSubstances().GetSodium());
+  m_SkinChloride = m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::SkinExtracellular)->GetSubstanceQuantity(m_data.GetSubstances().GetChloride());
+  m_SkinPotassium = m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::SkinExtracellular)->GetSubstanceQuantity(m_data.GetSubstances().GetPotassium());
 	//Circuit elements
 	//Circuits
   m_TemperatureCircuit = &m_data.GetCircuits().GetTemperatureCircuit();
@@ -216,61 +207,11 @@ void Energy::SetUp()
 //	m_Patient->GetWeight().IncrementValue(-patientMassLost_kg, MassUnit::kg);
 //}
 
-//--------------------------------------------------------------------------------------------------
-/// \brief
-/// Applies an imposed starvation time to the current nutrient stores
-///
-/// \details
-/// Starvation uses a coarse time-step approach with an assumed time-step of one day. This coarse time-step
-/// is used to to manually decrement all of the nutrient stores which represents the loss due to metabolic consumption.
-/// For time durations greater than one day, there is a decrease in the basal metabolic rate due to mass loss from increased
-/// starvation times.
-//--------------------------------------------------------------------------------------------------
-// Starvation currently disabled
-//void Energy::Starvation(double time)
-//{
-//	if (time < 1.0) //Less than one day without food. Decrement according to consumption/production methodology
-//	{
-//		//CalculateNutrientConsumptionAndProduction(Convert(time, TimeUnit::day, TimeUnit::s)); //TODO:: Add in clearances if they are needed
-//		//BalanceSubstances();
-//	}
-//	else
-//	{
-//		unsigned int numTimeSteps = (int)time;
-//		double deltaT_days = 1.0;
-//		for (unsigned int iStep = 0; iStep < numTimeSteps; iStep++)
-//		{
-//			CalculateNutrientConsumptionAndProduction(Convert(deltaT_days, TimeUnit::day, TimeUnit::s));
-//			CalculateBasalMetabolicRate();
-//			GetTotalMetabolicRate().SetValue(m_PatientBMR_kcal_Per_day, PowerUnit::kcal_Per_day); //Metabolic rate decrease due to reduction in body mass
-//			//BalanceSubstances();
-//		}
-//	}
-//}
-
-
 void Energy::AtSteadyState()
 {
 	if (m_data.GetState() == EngineState::AtInitialStableState)
 	{
-		//TODO: Get consume meal files
-    // Consume meal condition currently disabled
-		if (m_data.GetConditions().HasConsumeMeal())
-		{
-      Warning("Consume Meal Condition is currently disabled.");
-		//	double elapsedTime = m_data.GetConditions().GetConsumeMeal()->GetMeal().GetElapsedTime(TimeUnit::day);
-		//	Dehydration(elapsedTime);
-		//	m_AdjustCO2 = false;// Don't mess with CO2 (in the blood) during this Starvation call
-		//	Starvation(elapsedTime);
-		//	m_AdjustCO2 = true;
-		//	//Systemic clearance of calcium occurs over the elapsed time period
-		//	double patientWeight_kg = m_Patient->GetWeight(MassUnit::kg);
-		//	double renalVolumeCleared = m_calcium->GetClearance().GetRenalClearance(VolumePerTimeMassUnit::mL_Per_s_kg)*patientWeight_kg*elapsedTime;
-		//	double systemicVolumeCleared = m_calcium->GetClearance().GetSystemicClearance(VolumePerTimeMassUnit::mL_Per_s_kg)*patientWeight_kg*elapsedTime - renalVolumeCleared;
-		//	SEScalarVolume* integratedVolume = new SEScalarVolume();
-		//	integratedVolume->SetValue(systemicVolumeCleared, VolumeUnit::mL);
-		//	m_data.GetCircuits().BalanceBloodMassByClearedVolume(*m_calcium, *integratedVolume);
-		}
+
 	}
 }
 
@@ -401,9 +342,9 @@ void Energy::CalculateVitalSigns()
     m_Patient->SetEvent(CDM::enumPatientEvent::Hypothermia, false, m_data.GetSimulationTime());
 	}
 	//Hyperthermia check
-	if (coreTemperature_degC > 38.8) /// \cite mallet2001hypothermia
+	if (coreTemperature_degC > 38.8) // Note: Hyperthermia threshold varies; we'll use 38.8
 	{
-		/// \event Patient: Core temperature has exceeded 38.3 degrees Celsius. Patient is hyperthermic.
+		/// \event Patient: Core temperature has exceeded 38.8 degrees Celsius. Patient is hyperthermic.
     m_Patient->SetEvent(CDM::enumPatientEvent::Hyperthermia, true, m_data.GetSimulationTime());
 	}
 	else if (m_Patient->IsEventActive(CDM::enumPatientEvent::Hyperthermia) && coreTemperature_degC < 38.0)
@@ -496,13 +437,13 @@ void Energy::CalculateMetabolicHeatGeneration()
 	}
 	else if (coreTemperature_degC >= 34.0 && coreTemperature_degC < 36.8) //Patient is increasing heat generation via shivering. This caps out at the summit metabolism
 	{
-		//Add an event for shivering
+		//Todo: Add an event for shivering
 		double basalMetabolicRate_W = m_Patient->GetBasalMetabolicRate(PowerUnit::W);
 		totalMetabolicRateNew_W = basalMetabolicRate_W + (summitMetabolism_W - basalMetabolicRate_W)*(coreTemperatureLow_degC - coreTemperature_degC) / coreTemperatureLowDelta_degC;
 		totalMetabolicRateNew_W = MIN(totalMetabolicRateNew_W, summitMetabolism_W); //Bounded at the summit metabolism so further heat generation doesn't continue for continue drops below 34 C.
 		GetTotalMetabolicRate().SetValue(totalMetabolicRateNew_W, PowerUnit::W);
 	}
-	else if (coreTemperature_degC >= 36.8 && coreTemperature_degC < 42.5 && !m_PatientActions->HasExercise()) //Basic Metabolic rate
+	else if (coreTemperature_degC >= 36.8 && coreTemperature_degC < 40 && !m_PatientActions->HasExercise()) //Basic Metabolic rate
 	{
 		double TotalMetabolicRateSetPoint_kcal_Per_day = basalMetabolicRate_kcal_Per_day;
 		double MetabolicRateGain = 0.0001;	//Used to ramp the metabolic rate from its current value to the basal value if the patient meets the basal criteria
@@ -533,27 +474,60 @@ void Energy::CalculateSweatRate()
 	double coreTemperatureHigh_degC = config.GetCoreTemperatureHigh(TemperatureUnit::C);
 	double sweatHeatTranferCoefficient_W_Per_K = config.GetSweatHeatTransfer(HeatConductanceUnit::W_Per_K);
 	double vaporizationEnergy_J_Per_kg = config.GetVaporizationEnergy(EnergyPerMassUnit::J_Per_kg);
+	double sweatSodiumConcentration_mM = 51.0;			/// \cite shirreffs1997whole
+	double sweatPotassiumConcentration_mM = 6.0;		/// \cite shirreffs1997whole
+	double sweatChlorideConcentration_mM = 48.0;		/// \cite shirreffs1997whole
+  static double totalSweatLost_mL = 0;
+
+  /// \todo Convert to sweat density once specific gravity calculation is in
+  SEScalarMassPerVolume sweatDensity;
+  GeneralMath::CalculateWaterDensity(m_skinNode->GetTemperature(), sweatDensity);
+  double dehydrationFraction = m_data.GetTissue().GetDehydrationFraction().GetValue();
+
+  //m_data.GetDataTrack().Probe("DehydrationPercentage", dehydrationFraction*100);
 
 	//Calculate sweat rate (in kg/s) from core temperature feedback.
 	//The sweat rate heat transfer is determined from a control equation that attempts to keep the core temperature in line
 	/// \cite herman2008physics
-	double sweatRate_kg_Per_s = (0.25*sweatHeatTranferCoefficient_W_Per_K / vaporizationEnergy_J_Per_kg)*(coreTemperature_degC - coreTemperatureHigh_degC);
-	sweatRate_kg_Per_s = MAX(sweatRate_kg_Per_s, 0.0);
+  //Sweat rate decreases as dehydration becomes more severe, with max reduction seen at 10% dehydration
+  double dehydrationScalingFactor = GeneralMath::LinearInterpolator(0, .1, 1, 0, dehydrationFraction);
+  BLIM(dehydrationScalingFactor, 0, 1);
 
+  //m_data.GetDataTrack().Probe("DehydrationScalingFactor", dehydrationScalingFactor);
 
-	//Account for mass lost by substracting from the current patient mass
+	double sweatRate_kg_Per_s = dehydrationScalingFactor*(0.25*sweatHeatTranferCoefficient_W_Per_K / vaporizationEnergy_J_Per_kg)*(coreTemperature_degC - coreTemperatureHigh_degC);
+  double maxSweatRate_kg_Per_s = 12.5 * m_Patient->GetSkinSurfaceArea().GetValue(AreaUnit::m2) / 60 / 1000; //10 - 15 g/min/m2
+  BLIM(sweatRate_kg_Per_s, 0.0, maxSweatRate_kg_Per_s);
+
+  //m_data.GetDataTrack().Probe("SweatRate_g_Per_s", sweatRate_kg_Per_s*1000);
+
+	//Account for mass lost by subtracting from the current patient mass
 	double massLost_kg = sweatRate_kg_Per_s*m_dT_s;
 	m_Patient->GetWeight().IncrementValue(-massLost_kg, MassUnit::kg);
-
 	GetSweatRate().SetValue(sweatRate_kg_Per_s, MassPerTimeUnit::kg_Per_s);
 
-	double sweatDensity_kg_Per_m3 = config.GetWaterDensity(MassPerVolumeUnit::kg_Per_m3); /// \todo Convert to sweat density once specific gravity calculation is in
+	//Calculate mass of ions lost in sweat (sodium, potassium, and chloride):  Converts kg sweat lost -> L sweat lost -> mmol ion lost -> mg ion lost
+	double sodiumLost_mg = massLost_kg / sweatDensity.GetValue(MassPerVolumeUnit::kg_Per_L) * sweatSodiumConcentration_mM * m_data.GetSubstances().GetSodium().GetMolarMass(MassPerAmountUnit::mg_Per_mmol);
+	double potassiumLost_mg = massLost_kg / sweatDensity.GetValue(MassPerVolumeUnit::kg_Per_L) * sweatPotassiumConcentration_mM * m_data.GetSubstances().GetPotassium().GetMolarMass(MassPerAmountUnit::mg_Per_mmol);
+	double chlorideLost_mg = massLost_kg / sweatDensity.GetValue(MassPerVolumeUnit::kg_Per_L) * sweatChlorideConcentration_mM * m_data.GetSubstances().GetChloride().GetMolarMass(MassPerAmountUnit::mg_Per_mmol);
+
+	//Decrement amount of each ion in the skin extracellular compartment, track the cumulative amount removed for output, and balance (i.e. update concentration) remaining levels
+	m_SkinSodium->GetMass().IncrementValue(-sodiumLost_mg, MassUnit::mg);
+	GetSodiumLostToSweat().IncrementValue(sodiumLost_mg, MassUnit::mg);
+	m_SkinPotassium->GetMass().IncrementValue(-potassiumLost_mg, MassUnit::mg);
+	GetPotassiumLostToSweat().IncrementValue(potassiumLost_mg, MassUnit::mg);
+	m_SkinChloride->GetMass().IncrementValue(-chlorideLost_mg, MassUnit::mg);
+	GetChlorideLostToSweat().IncrementValue(chlorideLost_mg, MassUnit::mg);
+	m_SkinSodium->Balance(BalanceLiquidBy::Mass);
+	m_SkinPotassium->Balance(BalanceLiquidBy::Mass);
+	m_SkinChloride->Balance(BalanceLiquidBy::Mass);
 
 	//Set the flow source on the extravascular circuit to begin removing the fluid that is excreted
-  double sweatRate_mL_Per_s = sweatRate_kg_Per_s / sweatDensity_kg_Per_m3 * 1.e6;
-  //m_data.GetDataTrack().Probe("sweatRate_mL_Per_s", sweatRate_mL_Per_s);
-  //m_data.GetDataTrack().Probe("sweatRate_mg_Per_min", sweatRate_kg_Per_s*60.*1000.*1000.);
-  m_skinExtravascularToSweatingGroundPath->GetNextFlowSource().SetValue(sweatRate_mL_Per_s, VolumePerTimeUnit::mL_Per_s);
+	double sweatRate_mL_Per_s = sweatRate_kg_Per_s / sweatDensity.GetValue(MassPerVolumeUnit::kg_Per_mL);
+	m_skinExtravascularToSweatingGroundPath->GetNextFlowSource().SetValue(sweatRate_mL_Per_s, VolumePerTimeUnit::mL_Per_s);
+  totalSweatLost_mL += sweatRate_mL_Per_s * m_dT_s;
+
+  //m_data.GetDataTrack().Probe("CumulativeSweatLost_mL", totalSweatLost_mL);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -570,7 +544,7 @@ void Energy::UpdateHeatResistance()
 	double bloodDensity_kg_Per_m3 = m_data.GetBloodChemistry().GetBloodDensity().GetValue(MassPerVolumeUnit::kg_Per_m3);
 	double bloodSpecificHeat_J_Per_K_kg = m_data.GetBloodChemistry().GetBloodSpecificHeat().GetValue(HeatCapacitancePerMassUnit::J_Per_K_kg);
 
-	double alphaScale = 0.5; //Scaling factor for convective heat transfer from core to skin
+	double alphaScale = .5; //Scaling factor for convective heat transfer from core to skin (35 seems to be near the upper limit before non-stabilization)
 
 	//The heat transfer resistance from the core to the skin is inversely proportional to the skin blood flow.
 	//When skin blood flow increases, then heat transfer resistance decreases leading to more heat transfer from core to skin. 
@@ -578,6 +552,7 @@ void Energy::UpdateHeatResistance()
 	double coreToSkinResistance_K_Per_W = 1.0 / (alphaScale*bloodDensity_kg_Per_m3*bloodSpecificHeat_J_Per_K_kg*skinBloodFlow_m3_Per_s);
 	
 	coreToSkinResistance_K_Per_W = BLIM(coreToSkinResistance_K_Per_W, 0.0001, 20.0);
+  //m_data.GetDataTrack().Probe("CoreToSkinResistance", coreToSkinResistance_K_Per_W);
 	m_coreToSkinPath->GetNextResistance().SetValue(coreToSkinResistance_K_Per_W, HeatResistanceUnit::K_Per_W);
 }
 

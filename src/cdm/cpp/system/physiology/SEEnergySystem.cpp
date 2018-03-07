@@ -35,13 +35,15 @@ specific language governing permissions and limitations under the License.
 SEEnergySystem::SEEnergySystem(Logger* logger) : SESystem(logger)
 {
   m_AchievedExerciseLevel = nullptr;
+  m_ChlorideLostToSweat = nullptr;
 	m_CoreTemperature = nullptr;
   m_CreatinineProductionRate = nullptr;
   m_ExerciseMeanArterialPressureDelta = nullptr;
 	m_FatigueLevel = nullptr;
-  m_KetoneProductionRate = nullptr;
   m_LactateProductionRate = nullptr;
+  m_PotassiumLostToSweat = nullptr;
 	m_SkinTemperature=nullptr;
+	m_SodiumLostToSweat = nullptr;
 	m_SweatRate = nullptr;
   m_TotalMetabolicRate = nullptr;
   m_TotalWorkRateLevel = nullptr;
@@ -58,13 +60,15 @@ void SEEnergySystem::Clear()
 	SESystem::Clear();
 
   SAFE_DELETE(m_AchievedExerciseLevel);
+  SAFE_DELETE(m_ChlorideLostToSweat);
 	SAFE_DELETE(m_CoreTemperature);
   SAFE_DELETE(m_CreatinineProductionRate);
   SAFE_DELETE(m_ExerciseMeanArterialPressureDelta);
   SAFE_DELETE(m_FatigueLevel);
-  SAFE_DELETE(m_KetoneProductionRate);
 	SAFE_DELETE(m_LactateProductionRate);
+	SAFE_DELETE(m_PotassiumLostToSweat);
 	SAFE_DELETE(m_SkinTemperature);
+	SAFE_DELETE(m_SodiumLostToSweat);
 	SAFE_DELETE(m_SweatRate);
 	SAFE_DELETE(m_TotalMetabolicRate);
   SAFE_DELETE(m_TotalWorkRateLevel);
@@ -74,6 +78,8 @@ const SEScalar* SEEnergySystem::GetScalar(const std::string& name)
 {
   if (name.compare("AchievedExerciseLevel") == 0)
     return &GetAchievedExerciseLevel();
+  if (name.compare("ChlorideLostToSweat") == 0)
+	  return &GetChlorideLostToSweat();
 	if (name.compare("CoreTemperature") == 0)
 		return &GetCoreTemperature();
 	if (name.compare("CreatinineProductionRate") == 0)
@@ -82,12 +88,14 @@ const SEScalar* SEEnergySystem::GetScalar(const std::string& name)
     return &GetExerciseMeanArterialPressureDelta();
   if (name.compare("FatigueLevel") == 0)
 		return &GetFatigueLevel();
-	if (name.compare("KetoneProductionRate") == 0)
-		return &GetKetoneProductionRate();
   if (name.compare("LactateProductionRate") == 0)
     return &GetLactateProductionRate();
+  if (name.compare("PotassiumLostToSweat") == 0)
+	  return &GetPotassiumLostToSweat();
   if (name.compare("SkinTemperature") == 0)
 		return &GetSkinTemperature();
+  if (name.compare("SodiumLostToSweat") == 0)
+	  return &GetSodiumLostToSweat();
 	if (name.compare("SweatRate") == 0)
 		return &GetSweatRate();
 	if (name.compare("TotalMetabolicRate") == 0)
@@ -103,6 +111,8 @@ bool SEEnergySystem::Load(const CDM::EnergySystemData& in)
 
   if (in.AchievedExerciseLevel().present())
     GetAchievedExerciseLevel().Load(in.AchievedExerciseLevel().get());
+  if (in.ChlorideLostToSweat().present())
+	  GetChlorideLostToSweat().Load(in.ChlorideLostToSweat().get());
   if (in.CoreTemperature().present())
 		GetCoreTemperature().Load(in.CoreTemperature().get());
 	if (in.CreatinineProductionRate().present())
@@ -111,12 +121,14 @@ bool SEEnergySystem::Load(const CDM::EnergySystemData& in)
     GetExerciseMeanArterialPressureDelta().Load(in.ExerciseMeanArterialPressureDelta().get());
   if (in.FatigueLevel().present())
 		GetFatigueLevel().Load(in.FatigueLevel().get());
-	if (in.KetoneProductionRate().present())
-		GetKetoneProductionRate().Load(in.KetoneProductionRate().get());
   if (in.LactateProductionRate().present())
     GetLactateProductionRate().Load(in.LactateProductionRate().get());
+  if (in.PotassiumLostToSweat().present())
+	  GetPotassiumLostToSweat().Load(in.PotassiumLostToSweat().get());
   if (in.SkinTemperature().present())
 		GetSkinTemperature().Load(in.SkinTemperature().get());
+  if (in.SodiumLostToSweat().present())
+	  GetSodiumLostToSweat().Load(in.SodiumLostToSweat().get());
 	if (in.SweatRate().present())
 		GetSweatRate().Load(in.SweatRate().get());
 	if (in.TotalMetabolicRate().present())
@@ -140,6 +152,8 @@ void SEEnergySystem::Unload(CDM::EnergySystemData& data) const
 
   if (m_AchievedExerciseLevel != nullptr)
     data.AchievedExerciseLevel(std::unique_ptr<CDM::ScalarFractionData>(m_AchievedExerciseLevel->Unload()));
+  if (m_ChlorideLostToSweat != nullptr)
+	  data.ChlorideLostToSweat(std::unique_ptr<CDM::ScalarMassData>(m_ChlorideLostToSweat->Unload()));
   if (m_CoreTemperature != nullptr)
     data.CoreTemperature(std::unique_ptr<CDM::ScalarTemperatureData>(m_CoreTemperature->Unload()));
 	if (m_CreatinineProductionRate != nullptr)
@@ -148,13 +162,15 @@ void SEEnergySystem::Unload(CDM::EnergySystemData& data) const
    data.ExerciseMeanArterialPressureDelta(std::unique_ptr<CDM::ScalarPressureData>(m_ExerciseMeanArterialPressureDelta->Unload()));
   if (m_FatigueLevel != nullptr)
     data.FatigueLevel(std::unique_ptr<CDM::ScalarFractionData>(m_FatigueLevel->Unload()));
-  if (m_KetoneProductionRate != nullptr)
-    data.KetoneProductionRate(std::unique_ptr<CDM::ScalarAmountPerTimeData>(m_KetoneProductionRate->Unload()));
   if (m_LactateProductionRate != nullptr)
     data.LactateProductionRate(std::unique_ptr<CDM::ScalarAmountPerTimeData>(m_LactateProductionRate->Unload()));
+  if (m_PotassiumLostToSweat != nullptr)
+	  data.PotassiumLostToSweat(std::unique_ptr<CDM::ScalarMassData>(m_PotassiumLostToSweat->Unload()));
   if (m_SkinTemperature != nullptr)
     data.SkinTemperature(std::unique_ptr<CDM::ScalarTemperatureData>(m_SkinTemperature->Unload()));
-	if (m_SweatRate != nullptr)
+  if (m_SodiumLostToSweat != nullptr)
+	  data.SodiumLostToSweat(std::unique_ptr<CDM::ScalarMassData>(m_SodiumLostToSweat->Unload()));
+  if (m_SweatRate != nullptr)
     data.SweatRate(std::unique_ptr<CDM::ScalarMassPerTimeData>(m_SweatRate->Unload()));
 	if (m_TotalMetabolicRate != nullptr)
     data.TotalMetabolicRate(std::unique_ptr<CDM::ScalarPowerData>(m_TotalMetabolicRate->Unload()));
@@ -177,6 +193,23 @@ double SEEnergySystem::GetAchievedExerciseLevel() const
   if (m_AchievedExerciseLevel == nullptr)
     return SEScalar::dNaN();
   return m_AchievedExerciseLevel->GetValue();
+}
+
+bool SEEnergySystem::HasChlorideLostToSweat() const
+{
+	return m_ChlorideLostToSweat == nullptr ? false : m_ChlorideLostToSweat->IsValid();
+}
+SEScalarMass& SEEnergySystem::GetChlorideLostToSweat()
+{
+	if (m_ChlorideLostToSweat == nullptr)
+		m_ChlorideLostToSweat = new SEScalarMass();
+	return *m_ChlorideLostToSweat;
+}
+double SEEnergySystem::GetChlorideLostToSweat(const MassUnit& unit) const
+{
+	if (m_ChlorideLostToSweat == nullptr)
+		return SEScalar::dNaN();
+	return m_ChlorideLostToSweat->GetValue(unit);
 }
 
 bool SEEnergySystem::HasCoreTemperature() const
@@ -247,23 +280,6 @@ double SEEnergySystem::GetFatigueLevel() const
 	return m_FatigueLevel->GetValue();
 }
 
-bool SEEnergySystem::HasKetoneProductionRate() const
-{
-	return m_KetoneProductionRate == nullptr ? false : m_KetoneProductionRate->IsValid();
-}
-SEScalarAmountPerTime& SEEnergySystem::GetKetoneProductionRate()
-{
-	if (m_KetoneProductionRate == nullptr)
-		m_KetoneProductionRate = new SEScalarAmountPerTime();
-	return *m_KetoneProductionRate;
-}
-double SEEnergySystem::GetKetoneProductionRate(const AmountPerTimeUnit& unit) const
-{
-	if (m_KetoneProductionRate == nullptr)
-		return SEScalar::dNaN();
-	return m_KetoneProductionRate->GetValue(unit);
-}
-
 bool SEEnergySystem::HasLactateProductionRate() const
 {
   return m_LactateProductionRate == nullptr ? false : m_LactateProductionRate->IsValid();
@@ -281,6 +297,24 @@ double SEEnergySystem::GetLactateProductionRate(const AmountPerTimeUnit& unit) c
   return m_LactateProductionRate->GetValue(unit);
 }
 
+bool SEEnergySystem::HasPotassiumLostToSweat() const
+{
+	return m_PotassiumLostToSweat == nullptr ? false : m_PotassiumLostToSweat->IsValid();
+}
+SEScalarMass& SEEnergySystem::GetPotassiumLostToSweat()
+{
+	if (m_PotassiumLostToSweat == nullptr)
+		m_PotassiumLostToSweat = new SEScalarMass();
+	return *m_PotassiumLostToSweat;
+}
+double SEEnergySystem::GetPotassiumLostToSweat(const MassUnit& unit) const
+{
+	if (m_PotassiumLostToSweat == nullptr)
+		return SEScalar::dNaN();
+	return m_PotassiumLostToSweat->GetValue(unit);
+}
+
+
 bool SEEnergySystem::HasSkinTemperature() const
 {
 	return m_SkinTemperature == nullptr ? false : m_SkinTemperature->IsValid();
@@ -296,6 +330,23 @@ double SEEnergySystem::GetSkinTemperature(const TemperatureUnit& unit) const
 	if (m_SkinTemperature == nullptr)
 		return SEScalar::dNaN();
 	return m_SkinTemperature->GetValue(unit);
+}
+
+bool SEEnergySystem::HasSodiumLostToSweat() const
+{
+	return m_SodiumLostToSweat == nullptr ? false : m_SodiumLostToSweat->IsValid();
+}
+SEScalarMass& SEEnergySystem::GetSodiumLostToSweat()
+{
+	if (m_SodiumLostToSweat == nullptr)
+		m_SodiumLostToSweat = new SEScalarMass();
+	return *m_SodiumLostToSweat;
+}
+double SEEnergySystem::GetSodiumLostToSweat(const MassUnit& unit) const
+{
+	if (m_SodiumLostToSweat == nullptr)
+		return SEScalar::dNaN();
+	return m_SodiumLostToSweat->GetValue(unit);
 }
 
 bool SEEnergySystem::HasSweatRate() const

@@ -37,6 +37,7 @@ specific language governing permissions and limitations under the License.
 #include "system/physiology/SERenalSystem.h"
 #include "system/physiology/SERespiratorySystem.h"
 #include "system/physiology/SETissueSystem.h"
+#include "system/physiology/SEHepaticSystem.h"
 #include "system/equipment/Anesthesia/SEAnesthesiaMachine.h"
 #include "system/equipment/ElectroCardioGram/SEElectroCardioGram.h"
 #include "system/equipment/Inhaler/SEInhaler.h"
@@ -102,6 +103,9 @@ PhysiologyEngineTrack::PhysiologyEngineTrack(PhysiologyEngine& engine) : Loggabl
   SENervousSystem* nervous = (SENervousSystem*)engine.GetNervousSystem();
   if (nervous != nullptr)
     m_PhysiologySystems.push_back(nervous);
+  SEHepaticSystem* hepatic = (SEHepaticSystem*)engine.GetHepaticSystem();
+  if (hepatic != nullptr)
+    m_PhysiologySystems.push_back(hepatic);
 
   m_Environment = (SEEnvironment*)engine.GetEnvironment();
 
@@ -155,7 +159,7 @@ void PhysiologyEngineTrack::SetupRequests()
 {
   bool isOpen = m_ResultsStream.is_open();
   if (!isOpen || m_ForceConnection)
-  {// Process/Hook up all requests with their associated scalers
+  {// Process/Hook up all requests with their associated scalars
     for (SEDataRequest* dr : m_DataRequestMgr.GetDataRequests())
     {
       if (!TrackRequest(*dr))
@@ -190,7 +194,7 @@ void PhysiologyEngineTrack::PullData()
     if (ds == nullptr)
     {
       Error("You cannot modify CSV Results file data requests in the middle of a run.");
-      Error("Ignorning data request " + dr->GetName());
+      Error("Ignoring data request " + dr->GetName());
       continue;
     }
     if (!ds->HasScalar())

@@ -29,6 +29,7 @@ public class SEPatient
 	protected SEScalarMassPerVolume     bodyDensity;
 	protected SEScalarFraction		      bodyFatFraction;
 	protected SEScalarMass              leanBodyMass;
+	protected SEScalarMass              muscleMass;
 
 	protected SEScalarArea              alveoliSurfaceArea;
 	protected SEScalarFraction          rightLungRatio;
@@ -76,6 +77,8 @@ public class SEPatient
 			this.bodyFatFraction.invalidate();
 		if(leanBodyMass != null)
 			this.leanBodyMass.invalidate();
+		if(muscleMass != null)
+			this.muscleMass.invalidate();
 		
 		if(alveoliSurfaceArea != null)
 			alveoliSurfaceArea.invalidate();
@@ -143,6 +146,8 @@ public class SEPatient
 			this.getBodyFatFraction().load(data.getBodyFatFraction());
 		if(data.getLeanBodyMass()!=null)
 			this.getLeanBodyMass().load(data.getLeanBodyMass());
+		if(data.getMuscleMass()!=null)
+			this.getMuscleMass().load(data.getMuscleMass());
 		
 		if(data.getAlveoliSurfaceArea() != null)
 			getAlveoliSurfaceArea().load(data.getAlveoliSurfaceArea());    
@@ -215,6 +220,8 @@ public class SEPatient
 			to.setBodyFatFraction(this.bodyFatFraction.unload());
 		if(hasLeanBodyMass())
 			to.setLeanBodyMass(this.leanBodyMass.unload());
+		if(hasMuscleMass())
+			to.setMuscleMass(this.muscleMass.unload());
 		
 		if(hasAlveoliSurfaceArea())
 			to.setAlveoliSurfaceArea(alveoliSurfaceArea.unload());    
@@ -422,6 +429,14 @@ public class SEPatient
 		return this.leanBodyMass;
 	}
 	public boolean                hasLeanBodyMass() {return this.leanBodyMass==null?false:this.leanBodyMass.isValid();}
+	
+	public SEScalarMass getMuscleMass()
+	{
+		if(this.muscleMass==null)
+			this.muscleMass=new SEScalarMass();
+		return this.muscleMass;
+	}
+	public boolean                hasMuscleMass() {return this.muscleMass==null?false:this.muscleMass.isValid();}
 	
 	public SEScalarPressure getMeanArterialPressureBaseline() 
 	{ 

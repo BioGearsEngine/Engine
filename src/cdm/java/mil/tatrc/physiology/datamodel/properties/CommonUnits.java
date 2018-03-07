@@ -248,6 +248,51 @@ public class CommonUnits
       return UnitConverter.isOfQuantityType("cm^2", unit);
     }
   }
+    
+  /**
+   * Enumeration of commonly used units for this type
+   * Units are not limited to this enum.
+   * Any method that accepts this enum will have another method
+   * that takes any valid standard unit abbreviation string 
+   * in place of method that take this enum.
+   * Unit Abbreviation Standards: http://www.bipm.org/en/si/
+   */
+  public enum ElectricResistanceUnit 
+  {
+  	Ohm("ohm");
+    private String unit;
+    private ElectricResistanceUnit(String unit)
+    {
+      this.unit=unit;
+    }
+    public String toString(){return this.unit;}
+    public static boolean contains(String unit)
+    {
+      for(ElectricResistanceUnit v : ElectricResistanceUnit.values())
+      {
+        if(v.toString().equals(unit))
+          return true;
+      }
+      return false;
+    }
+    /**
+     * Test if unit string provided is a
+     * valid unit abbreviation for this quantity
+     * Does not need to be an enumerated value.
+     * Can be any string of standard unit 
+     * abbreviations that represent this quantity
+     * Unit Abbreviation Standards: http://www.bipm.org/en/si/
+     */
+    public static boolean validUnit(String unit)
+    {
+      if(unit == null || unit.isEmpty())
+        return false;
+      if(ElectricResistanceUnit.contains(unit))
+        return true;
+      return UnitConverter.isOfQuantityType("ohm", unit);
+    }
+  }
+  
   
   /**
    * Enumeration of commonly used units for this type

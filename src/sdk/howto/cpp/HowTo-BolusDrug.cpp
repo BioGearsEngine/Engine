@@ -15,10 +15,12 @@ specific language governing permissions and limitations under the License.
 // Include the various types you will be using in your code
 #include "utils/SEEventHandler.h"
 #include "patient/actions/SESubstanceBolus.h"
+#include "patient/actions/SESubstanceInfusion.h"
 #include "system/physiology/SEBloodChemistrySystem.h"
 #include "system/physiology/SECardiovascularSystem.h"
 #include "system/physiology/SEEnergySystem.h"
 #include "system/physiology/SERespiratorySystem.h"
+#include "system/physiology/SEDrugSystem.h"
 #include "substance/SESubstanceManager.h"
 #include "patient/SEPatient.h"
 #include "properties/SEScalarFraction.h"
@@ -28,9 +30,10 @@ specific language governing permissions and limitations under the License.
 #include "properties/SEScalarTemperature.h"
 #include "properties/SEScalarTime.h"
 #include "properties/SEScalarVolume.h"
+#include "properties/SEScalarMass.h"
 #include "properties/SEScalarVolumePerTime.h"
+#include "properties/SEScalarOsmolality.h"
 #include "engine/PhysiologyEngineTrack.h"
-#include "compartment/SECompartmentManager.h"
 
 //--------------------------------------------------------------------------------------------------
 /// \brief

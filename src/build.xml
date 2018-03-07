@@ -314,10 +314,13 @@
 		<ant antfile="build.xml" dir="${biogears.cdm}" target="jar" /> 
 		<ant antfile="build.xml" dir="${biogears.engine}" target="compile" /> 
 		<ant antfile="build.xml" dir="${biogears.engine}" target="jar" /> 
+		<ant antfile="build.xml" dir="${biogears.gui}" target="compile" /> 
+		<ant antfile="build.xml" dir="${biogears.gui}" target="jar" /> 
 		<!-- Create a jar with all dependencies -->
 		<delete file="../bin/BioGears.jar"/>
 	    <!-- Create the Jar-->
 		<jar destfile="../bin/BioGears.jar" excludes="**/Sun_micr.rsa **/Sun_micr.sf">
+			<zipfileset src="${biogears.bin}/BioGearsGUI.jar" includes="**/*.java **/*.class"/>		
 			<zipfileset src="${biogears.bin}/BioGearsEngine.jar" includes="**/*.java **/*.class"/>	
 			<zipfileset src="${biogears.bin}/CommonDataModel.jar" includes="**/*.java **/*.class"/>
 			<zipfileset src="${biogears.bin}/DataModelBindings.jar" includes="**/*.java **/*.class"/>
@@ -626,6 +629,16 @@
 	<target name="buildSDK-windows" depends="copyToSDK-windows" if="deployWindows">
 		<!-- Make sure howto files compile -->
 		<ant antfile="build.xml" dir="${biogears.SDK}" target="all" /> 
+		<!-- Zip it! -->
+		<delete file="${biogears.deploy}/${biogears.version}-sdk-windows.zip"/>
+		<zip destfile="${biogears.deploy}/${biogears.version}-sdk-windows.zip">
+      <zipfileset dir="${biogears.home}" prefix="${biogears.version}">
+        <include name="LICENSE"/>
+        <include name="NOTICE"/>
+      </zipfileset>
+			<zipfileset dir="${biogears.SDK}" excludes="howto/build/**, /cmake/msvs*/**" prefix="${biogears.version}"/>
+			<zipfileset dir="${biogears.doxy}" includes="html/**, Mainpage.html, ReadMe.txt" prefix="${biogears.version}/docs/"/>
+		</zip>
 	</target>
 	<target name="copyToSDK-windows" if="deployWindows">
 		<!-- Clean out the sdk folder of any previous deployment -->
@@ -959,7 +972,7 @@
         </java>
     </target>   
 
-	<!-- Example for pulling from the build machine : ant rebaseDebug -DrebaseFrom="\\sed-biogears\JenkinsBuild\History\MSVC-x86\374 - b5541f5b6212d8288f1ff35da996110f871292c9\Scenarios" -->
+	<!-- Example for pulling from the build machine : ant rebaseDebug -DrebaseFrom="\\sed-biogears\JenkinsBuild\History\MSVC-x86\387 - aa894de288d5147620c4e0d275fe64d8bd0f1d5f\Scenarios" -->
     <target name="rebaseDebug">
         <java classname="mil.tatrc.physiology.utilities.testing.Rebase" dir="${biogears.bin}" fork="true" failonerror="false">
             <arg value="${rebaseFrom}" unless:blank="${rebaseFrom}"/><!-- From -->

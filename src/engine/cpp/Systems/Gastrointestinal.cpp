@@ -15,9 +15,7 @@ specific language governing permissions and limitations under the License.
 #include "system/physiology/SEBloodChemistrySystem.h"
 #include "system/physiology/SECardiovascularSystem.h"
 #include "substance/SESubstance.h"
-#include "patient/SEMeal.h"
 #include "patient/SENutrition.h"
-#include "patient/conditions/SEConsumeMeal.h"
 #include "patient/actions/SEConsumeNutrients.h"
 #include "circuit/fluid/SEFluidCircuit.h"
 #include "properties/SEScalar.h"
@@ -86,10 +84,8 @@ void Gastrointestinal::Initialize()
     // We are going to initialize the body with 2 meals so we process the default meal twice
     // 1 meal about 5hrs ago, and one meal at the start of the scenario	
     CDM_COPY((m_data.GetConfiguration().GetDefaultStomachContents()), (&GetStomachContents()));
-    m_data.GetPatient().GetWeight().IncrementValue(2 * m_StomachContents->GetWeight(MassUnit::g), MassUnit::g);
-    // Now digest the contents
-   // DigestStomachNutrients(5 * 60 * 60);//hrs to seconds (note decrement is off, so the stomach will stay full)		
-                                        // TODO Should I be getting the weight here? After we digest?
+    m_data.GetPatient().GetWeight().IncrementValue( m_StomachContents->GetWeight(MassUnit::g), MassUnit::g);
+    
   }
   // Cache off the initial Gut masses so we can reset back to them after stabilization
   m_InitialSubstanceMasses_ug[m_SmallIntestineChymeAminoAcids] = m_SmallIntestineChymeAminoAcids->GetMass(MassUnit::ug);
@@ -146,6 +142,7 @@ void Gastrointestinal::SetUp()
   m_SmallIntestineVascularSodium = m_vSmallIntestine->GetSubstanceQuantity(m_data.GetSubstances().GetSodium());
   m_smallIntestineVascularGlucose = m_vSmallIntestine->GetSubstanceQuantity(m_data.GetSubstances().GetGlucose());
   m_smallIntestineVascularAminoAcids = m_vSmallIntestine->GetSubstanceQuantity(m_data.GetSubstances().GetAminoAcids());
+  m_SmallIntestineVascularCalcium = m_vSmallIntestine->GetSubstanceQuantity(m_data.GetSubstances().GetCalcium());
   m_LymphTriacylglycerol = m_Lymph->GetSubstanceQuantity(m_data.GetSubstances().GetTriacylglycerol());
   m_smallintestineVAscularTriacylglycerol = m_vSmallIntestine->GetSubstanceQuantity(m_data.GetSubstances().GetTriacylglycerol());
 }
@@ -162,7 +159,9 @@ void Gastrointestinal::SetUp()
 void Gastrointestinal::AtSteadyState()
 {
 	if (m_data.GetState() == EngineState::AtInitialStableState)
-	{// Apply our conditions		
+	{
+    /*
+    // Apply our conditions		
 		if (m_data.GetConditions().HasConsumeMeal())
 		{
 			SEMeal& meal = m_data.GetConditions().GetConsumeMeal()->GetMeal();
@@ -248,6 +247,7 @@ void Gastrointestinal::AtSteadyState()
       m_InitialSubstanceMasses_ug[m_SmallIntestineChymeSodium]     = m_SmallIntestineChymeSodium->GetMass(MassUnit::ug);
       m_InitialSubstanceMasses_ug[m_SmallIntestineChymeUrea]       = m_SmallIntestineChymeUrea->GetMass(MassUnit::ug);
 		}
+    */
 	}
 	if (m_data.GetState() == EngineState::AtSecondaryStableState)
 	{
@@ -325,126 +325,6 @@ void Gastrointestinal::GastricSecretion(double duration_s)
 	//There is a compliance, so the volume will be modified accordingly
 	m_GutT1ToGroundPath->GetNextFlowSource().SetValue(m_secretionRate_mL_Per_s, VolumePerTimeUnit::mL_Per_s);
   m_StomachContents->GetWater().IncrementValue(m_secretionRate_mL_Per_s * duration_s, VolumeUnit::mL);
-}
-
-//--------------------------------------------------------------------------------------------------
-/// \brief
-/// Digest substances based on our time step and transfer them to the Gut
-///
-/// \details
-/// Each substance can provide a digestion rate, if none is provided a default will be used
-/// A portion of each substance is removed from the stomach based on time step and digestion rate
-/// The substance is then incremented into the Gut. Each substance can have its own movement logic
-/// Water is also transfered to the Gut based on a constant rate
-//--------------------------------------------------------------------------------------------------
-void Gastrointestinal::DigestStomachNutrients(double duration_s)
-{
-	if (duration_s <= 0)
-		return; // Nothing to do then
-	if (!m_StomachContents->HasWater())
-		Fatal("There is no water in the Stomach??");// This is not good... what is going on?	
-
-	double digestedAmount;// either in g or mL
-
-	if (m_StomachContents->HasSodium())
-	{// Sodium rate is a function of the concentration of sodium in the stomach, so do this before we do water
-		double totalNa_g = m_StomachContents->GetSodium(MassUnit::g);
-		double digestedNa_g = (totalNa_g / m_StomachContents->GetWater(VolumeUnit::mL))
-			* m_WaterDigestionRate.GetValue(VolumePerTimeUnit::mL_Per_s) * duration_s;
-		if (totalNa_g <= digestedNa_g)
-		{
-			digestedNa_g = totalNa_g;
-			if (m_DecrementNutrients)
-			{
-				m_StomachContents->GetSodium().Invalidate();
-				Info("Stomach is out of Sodium");
-			}
-		}
-		else
-		{
-			if (m_DecrementNutrients)
-				m_StomachContents->GetSodium().IncrementValue(-digestedNa_g, MassUnit::g);
-		}
-#ifdef logDigest
-		m_ss << "Digested " << digestedNa_g << "(g) of Sodium";
-		Info(m_ss);
-#endif
-		m_SmallIntestineChymeSodium->GetMass().IncrementValue(digestedNa_g, MassUnit::g);
-		// Wait till the water volume is correct on the chyme before we balance
-	}
-
-	digestedAmount = DigestNutrient(m_StomachContents->GetWater(), m_WaterDigestionRate, false, duration_s);
-	if (digestedAmount > 0)
-	{
-#ifdef logDigest
-		m_ss << "Digested " << digestedAmount << "(mL) of Water";
-		Info(m_ss);
-#endif
-		m_SmallIntestineChyme->GetVolume().IncrementValue(digestedAmount, VolumeUnit::mL);
-	}
-	// Balance Sodium, now that we have proper volume on the gut
-	m_SmallIntestineChymeSodium->Balance(BalanceLiquidBy::Mass);
-
-	m_ConsumeRate = true;// We are digesting nutrient rates provided by our consume action, if we run out of a substance, we invalidate this rate
-	if (m_StomachContents->HasCarbohydrate())
-	{
-		digestedAmount = DigestNutrient(m_StomachContents->GetCarbohydrate(), m_StomachContents->GetCarbohydrateDigestionRate(), true, duration_s);
-		digestedAmount *= m_data.GetConfiguration().GetCarbohydrateAbsorptionFraction(); // Take off percent that usually passes through the body
-		if (digestedAmount != 0)
-		{
-#ifdef logDigest
-			m_ss << "Digested " << digestedAmount << "(g) of Carbs";
-			Info(m_ss);
-#endif
-			m_SmallIntestineChymeGlucose->GetMass().IncrementValue(digestedAmount, MassUnit::g);
-			m_SmallIntestineChymeGlucose->Balance(BalanceLiquidBy::Mass);
-		}
-	}
-	if (m_StomachContents->HasFat())
-	{
-		digestedAmount = DigestNutrient(m_StomachContents->GetFat(), m_StomachContents->GetFatDigestionRate(), true, duration_s);
-		digestedAmount *= m_data.GetConfiguration().GetFatAbsorptionFraction(); // Take off percent that usually passes through the body
-		if (digestedAmount != 0)
-		{
-#ifdef logDigest
-			m_ss << "Digested " << digestedAmount << "(g) of Fat";
-			Info(m_ss);
-#endif
-			m_SmallIntestineChymeTriacylglycerol->GetMass().IncrementValue(digestedAmount, MassUnit::g);
-      m_SmallIntestineChymeTriacylglycerol->Balance(BalanceLiquidBy::Mass);
-		}
-	}
-	if (m_StomachContents->HasProtein())  //If this functionality is being kept with the GI overhaul, use AminoAcids
-	{
-		digestedAmount = DigestNutrient(m_StomachContents->GetProtein(), m_StomachContents->GetProteinDigestionRate(), true, duration_s);		
-		digestedAmount *= m_data.GetConfiguration().GetProteinToUreaFraction(); // How much gets turned into Urea
-		if (digestedAmount != 0)
-		{			
-#ifdef logDigest
-			m_ss << "Digested " << digestedAmount << "(g) of Urea";
-			Info(m_ss);
-#endif
-      double tuningFactor = 1.0; /// \todo Remove tuning factor and adjust protein to urea fraction following investigation
-			m_SmallIntestineChymeUrea->GetMass().IncrementValue(digestedAmount * tuningFactor, MassUnit::g);
-			m_SmallIntestineChymeUrea->Balance(BalanceLiquidBy::Mass);
-		}
-	}
-	m_ConsumeRate = false; // Other rates are specified by configuration and should never be invalidated
-
-	if (m_StomachContents->HasCalcium())
-	{
-		digestedAmount = DigestNutrient(m_StomachContents->GetCalcium(), m_CalciumDigestionRate, true, duration_s);
-		digestedAmount *= m_data.GetConfiguration().GetCalciumAbsorptionFraction(); // Take off percent that usually passes through the body
-		if (digestedAmount != 0)
-		{
-#ifdef logDigest
-			m_ss << "Digested " << digestedAmount << "(g) of Calcium";
-			Info(m_ss);
-#endif
-			m_SmallIntestineChymeCalcium->GetMass().IncrementValue(digestedAmount, MassUnit::g);
-			m_SmallIntestineChymeCalcium->Balance(BalanceLiquidBy::Mass);
-		}
-	}
 }
 
 // --------------------------------------------------------------------------------------------------
@@ -677,7 +557,7 @@ void Gastrointestinal::AbsorbNutrients()
   double sodiumAbsorption_g_Per_h = 0.0;
   double sodiumAbsorbed_g = 0.0;
 
-  double smallIntestineVolume_mL;
+  double smallIntestineVolume_mL = m_SmallIntestineChyme->GetVolume(VolumeUnit::mL);
 
   //parameters for nutrient absorption: 
   double glucoseAbsorbed_g = 0.0;
@@ -742,31 +622,59 @@ void Gastrointestinal::AbsorbNutrients()
     }
   }
 
-  double absorptionRate_mL_Per_min = 3.3; // Average water absorption rate Peronnet
+  //compute absorption rate as a function of volume in intestine
+  double absorptionRate_mL_Per_min = 0.0; //3.3; // Average water absorption rate Peronnet
+  absorptionRate_mL_Per_min = GeneralMath::LogisticFunction(13, 500, 0.007, smallIntestineVolume_mL);
   double absorbedVolume_mL = absorptionRate_mL_Per_min / 60.0 * m_dT_s;
   
   //move fluid
   if (m_data.GetState() == EngineState::Active)
   {// Don't Remove volume while stabilizing
-    smallIntestineVolume_mL = m_vSmallIntestine->GetVolume().GetValue(VolumeUnit::mL);
-    if (m_SmallIntestineChyme->GetVolume(VolumeUnit::mL) > absorbedVolume_mL)
+    if (smallIntestineVolume_mL > absorbedVolume_mL)
     {
       m_GItoCVPath->GetNextFlowSource().SetValue(absorptionRate_mL_Per_min, VolumePerTimeUnit::mL_Per_min);
       m_GItoCVPath->GetSourceNode().GetNextVolume().IncrementValue(-absorbedVolume_mL, VolumeUnit::mL);
-     
-      // Calculate new concentrations for everything based on new volume
-      for (SELiquidSubstanceQuantity* subQ : m_SmallIntestineChyme->GetSubstanceQuantities())
-      {
-        if (subQ->HasMass())
-          subQ->Balance(BalanceLiquidBy::Mass);
-      }
-      for (SELiquidSubstanceQuantity* subQ : m_vSmallIntestine->GetSubstanceQuantities())
-      {
-        if (subQ->HasMass())
-          subQ->Balance(BalanceLiquidBy::Mass);
-      }
     }
   }
+
+  //only move sodium independently if it wasn't moved through the co-transporter
+  if (sodiumAbsorbed_g < ZERO_APPROX)
+  {
+    double ionMassMoved_mg = m_SmallIntestineChymeSodium->GetConcentration().GetValue(MassPerVolumeUnit::mg_Per_mL)*absorbedVolume_mL;
+
+    //substance connect ions to flow rate when nutrients aren't present, needs to have volume present
+    if (m_SmallIntestineChymeSodium->GetMass().GetValue(MassUnit::mg) > ionMassMoved_mg && m_SmallIntestineChyme->GetVolume(VolumeUnit::mL) > absorbedVolume_mL)
+    {
+      m_SmallIntestineChymeSodium->GetMass().IncrementValue(-ionMassMoved_mg, MassUnit::mg);
+      m_SmallIntestineVascularSodium->GetMass().IncrementValue(ionMassMoved_mg, MassUnit::mg);
+      m_SmallIntestineChymeSodium->Balance(BalanceLiquidBy::Mass);
+      m_SmallIntestineVascularSodium->Balance(BalanceLiquidBy::Mass);
+    }
+  }
+
+  double ionCalciumMassMoved_mg = m_SmallIntestineChymeCalcium->GetConcentration().GetValue(MassPerVolumeUnit::mg_Per_mL)*absorbedVolume_mL;
+  //Move calcium regardless
+  if (m_SmallIntestineChymeCalcium->GetMass().GetValue(MassUnit::mg) > ionCalciumMassMoved_mg)
+  {
+    m_SmallIntestineChymeCalcium->GetMass().IncrementValue(-ionCalciumMassMoved_mg, MassUnit::mg);
+    m_SmallIntestineVascularCalcium->GetMass().IncrementValue(ionCalciumMassMoved_mg, MassUnit::mg);
+    m_SmallIntestineChymeCalcium->Balance(BalanceLiquidBy::Mass);
+    m_SmallIntestineVascularCalcium->Balance(BalanceLiquidBy::Mass);
+  }
+
+
+  // Calculate new concentrations for everything based on new volume
+  for (SELiquidSubstanceQuantity* subQ : m_SmallIntestineChyme->GetSubstanceQuantities())
+  {
+    if (subQ->HasMass())
+      subQ->Balance(BalanceLiquidBy::Mass);
+  }
+  for (SELiquidSubstanceQuantity* subQ : m_vSmallIntestine->GetSubstanceQuantities())
+  {
+    if (subQ->HasMass())
+      subQ->Balance(BalanceLiquidBy::Mass);
+  }
+
   GetChymeAbsorptionRate().SetValue(absorbedVolume_mL/m_dT_s, VolumePerTimeUnit::mL_Per_s);
 }
 

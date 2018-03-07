@@ -57,7 +57,6 @@ protected:
 	void   GastricSecretion(double duration_s);
 	void   DefaultNutritionRates(SENutrition& n);
   void   AbsorbNutrients();
-	void   DigestStomachNutrients(double duration_s);
   double DigestNutrient(SEUnitScalar& totalAmt, SEUnitScalar& rate, bool mass, double duration_s);
   void DigestNutrient();
 	void   AbsorbMeal(double duration_s);
@@ -80,6 +79,7 @@ protected:
   SELiquidSubstanceQuantity*   m_SmallIntestineVascularSodium;
   SELiquidSubstanceQuantity*   m_smallIntestineVascularGlucose;
   SELiquidSubstanceQuantity*   m_smallIntestineVascularAminoAcids;
+  SELiquidSubstanceQuantity*   m_SmallIntestineVascularCalcium;
   SELiquidSubstanceQuantity*   m_LymphTriacylglycerol;
   SELiquidSubstanceQuantity*   m_smallintestineVAscularTriacylglycerol;
 

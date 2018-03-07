@@ -19,18 +19,31 @@ import mil.tatrc.physiology.datamodel.system.SESystem;
 
 public class SEHepaticSystem extends SEPhysiologySystem implements SESystem
 {
+	protected SEScalarAmountPerTime ketoneProductionRate;
+	protected SEScalarMassPerTime hepaticGluconeogenesisRate;
+	
 	public SEHepaticSystem()
 	{
+		ketoneProductionRate = null;
+		hepaticGluconeogenesisRate = null;
 		
 	}
 
 	public void reset()
 	{		
-		
+		if (ketoneProductionRate != null)
+      ketoneProductionRate.invalidate();
+		if (hepaticGluconeogenesisRate != null)
+			hepaticGluconeogenesisRate.invalidate();
 	}
 
 	public boolean load(HepaticSystemData in)
 	{				
+		
+		if (in.getKetoneProductionRate() != null)
+      getKetoneProductionRate().load(in.getKetoneProductionRate());
+		if (in.getHepaticGluconeogenesisRate() != null)
+      getHepaticGluconeogenesisRate().load(in.getHepaticGluconeogenesisRate());
 		return true;
 	}
 
@@ -43,8 +56,33 @@ public class SEHepaticSystem extends SEPhysiologySystem implements SESystem
 
 	protected void unload(HepaticSystemData data)
 	{		
-		
+		if (hasKetoneProductionRate())
+      data.setKetoneProductionRate(ketoneProductionRate.unload());
+		if (hasHepaticGluconeogenesisRate())
+      data.setHepaticGluconeogenesisRate(hepaticGluconeogenesisRate.unload());
 	}
+	
+	public boolean hasKetoneProductionRate()
+  {
+    return ketoneProductionRate == null ? false : ketoneProductionRate.isValid();
+  }
+  public SEScalarAmountPerTime getKetoneProductionRate()
+  {
+    if (ketoneProductionRate == null)
+      ketoneProductionRate = new SEScalarAmountPerTime();
+    return ketoneProductionRate;
+  }
+  
+  public boolean hasHepaticGluconeogenesisRate()
+  {
+    return hepaticGluconeogenesisRate == null ? false : hepaticGluconeogenesisRate.isValid();
+  }
+  public SEScalarMassPerTime getHepaticGluconeogenesisRate()
+  {
+    if (hepaticGluconeogenesisRate == null)
+    	hepaticGluconeogenesisRate = new SEScalarMassPerTime();
+    return hepaticGluconeogenesisRate;
+  }
 
 	
 }

@@ -80,22 +80,42 @@ specific language governing permissions and limitations under the License.
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
-	
-	<!-- @brief Consume nutrients into the body along with a time elapsed since this meal. -->
-	<xs:complexType name="ConsumeMealData">
-		<xs:complexContent>
-			<xs:extension base="PatientConditionData">
-				<xs:sequence minOccurs="1" maxOccurs="1">
-					<xs:choice minOccurs="0"  maxOccurs="1">
-						<xs:element name="MealFile" type="xs:string"/><!--<< @brief A file to use for a meal. -->
-						<xs:element name="Meal" type="MealData"/><!--<< @brief Specific meal data to use.-->
-					</xs:choice>
-				</xs:sequence>
-			</xs:extension>
-		</xs:complexContent>
-	</xs:complexType>
+
+	<!-- @brief Dehydration is the state of being without water for a given time period. -->
+  <xs:complexType name="DehydrationData">
+    <xs:complexContent>
+      <xs:extension base="PatientConditionData">
+        <xs:sequence>
+          <xs:element name="DehydrationFraction" type="Scalar0To1Data" minOccurs="1" maxOccurs="1"/><!--<< @brief Fraction representing the percentage body weight change due to hypo-osmotic fluid depletion. -->
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>   
+  
+  <!-- @brief Type 1 Diabetes mellitus causes a reduction in insulin produced by the pancreatic beta cells. -->
+  <xs:complexType name="DiabetesType1Data">
+    <xs:complexContent>
+      <xs:extension base="PatientConditionData">
+        <xs:sequence>
+          <xs:element name="InsulinProductionSeverity" type="Scalar0To1Data" minOccurs="1" maxOccurs="1"/><!--<< @brief Fraction representing severity of reduction in insulin production. -->
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>   
+  
+  <!-- @brief Type 2 Diabetes mellitus causes insulin resistance. -->
+  <xs:complexType name="DiabetesType2Data">
+    <xs:complexContent>
+      <xs:extension base="PatientConditionData">
+        <xs:sequence>
+          <xs:element name="InsulinProductionSeverity" type="Scalar0To1Data" minOccurs="1" maxOccurs="1"/><!--<< @brief Fraction representing severity of insulin production reduction. -->
+          <xs:element name="InsulinResistanceSeverity" type="Scalar0To1Data" minOccurs="1" maxOccurs="1"/><!--<< @brief Fraction representing severity of insulin resistance. -->
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>   
 		
-	<!-- @brief Generic way to specify the effectivness of alveolar exchange. -->
+	<!-- @brief Generic way to specify the effectiveness of alveolar exchange. -->
 	<xs:complexType name="ImpairedAlveolarExchangeData">
 		<xs:complexContent>
 			<xs:extension base="PatientConditionData">    
@@ -119,6 +139,17 @@ specific language governing permissions and limitations under the License.
 			</xs:extension>
 		</xs:complexContent>
 	</xs:complexType>
+	
+	<!-- @brief Starvation is the state of being without nutrients (anything but water) for a given time period. -->
+  <xs:complexType name="StarvationData">
+    <xs:complexContent>
+      <xs:extension base="PatientConditionData">
+        <xs:sequence>
+          <xs:element name="TimeSinceMeal" type="ScalarTimeData" minOccurs="1" maxOccurs="1"/><!--<< @brief The time since the last consumption of nutrients. -->
+        </xs:sequence>
+      </xs:extension>
+    </xs:complexContent>
+  </xs:complexType>   
 	
 
 </xs:schema>

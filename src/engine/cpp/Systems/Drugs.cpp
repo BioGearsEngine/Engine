@@ -26,6 +26,7 @@ specific language governing permissions and limitations under the License.
 #include "substance/SESubstanceConcentration.h"
 #include "bind/SubstanceConcentrationData.hxx"
 #include "properties/SEScalarPressure.h"
+#include "properties/SEScalarAmountPerVolume.h"
 #include "properties/SEScalarMassPerVolume.h"
 #include "properties/SEScalarVolumePerTime.h"
 #include "properties/SEScalarFraction.h"
@@ -64,6 +65,8 @@ void Drugs::Clear()
   m_liverVascular    = nullptr;
   m_liverTissue      = nullptr;
   m_IVToVenaCava     = nullptr;
+  m_Sarin = nullptr;
+  m_Pralidoxime = nullptr;
   DELETE_MAP_SECOND(m_BolusAdministrations);
   
  
@@ -89,14 +92,11 @@ void Drugs::Initialize()
   GetTidalVolumeChange().SetValue(0.0, VolumeUnit::mL);
   GetTubularPermeabilityChange().SetValue(0);
   GetCentralNervousResponse().SetValue(0.0);
+  m_data.GetBloodChemistry().GetRedBloodCellAcetylcholinesterase().SetValue(8.0*1e-9, AmountPerVolumeUnit::mol_Per_L); //Need to initialize here since Drugs processed before BloodChemistry
 
-  //Loop over substances and initialize effect site concentration to 0 for substances with PD effects (i.e. drugs)
-  for (SESubstance* sub : m_data.GetSubstances().GetSubstances())
-  {
-	  if (sub->HasPD())
-		  sub->GetEffectSiteConcentration().SetValue(0.0, MassPerVolumeUnit::ug_Per_mL);
-
-  }
+  
+  m_SarinRbcAcetylcholinesteraseComplex_nM = 0.0;
+  m_AgedRbcAcetylcholinesterase_nM = 0.0;
 
 }
 
@@ -105,6 +105,9 @@ bool Drugs::Load(const CDM::BioGearsDrugSystemData& in)
   if (!SEDrugSystem::Load(in))
     return false;
   
+  m_SarinRbcAcetylcholinesteraseComplex_nM = in.SarinRbcAcetylcholinesteraseComplex_nM();
+  m_AgedRbcAcetylcholinesterase_nM = in.AgedRbcAcetylcholinesterase_nM();
+
   BioGearsSystem::LoadState();
 
   for (const CDM::SubstanceBolusStateData& bData : in.BolusAdministration())
@@ -135,6 +138,8 @@ CDM::BioGearsDrugSystemData* Drugs::Unload() const
 void Drugs::Unload(CDM::BioGearsDrugSystemData& data) const
 {
   SEDrugSystem::Unload(data);
+  data.SarinRbcAcetylcholinesteraseComplex_nM(m_SarinRbcAcetylcholinesteraseComplex_nM);
+  data.AgedRbcAcetylcholinesterase_nM(m_AgedRbcAcetylcholinesterase_nM);
 
   for (auto itr : m_BolusAdministrations)
   {
@@ -154,6 +159,7 @@ void Drugs::Unload(CDM::BioGearsDrugSystemData& data) const
 void Drugs::SetUp()
 {
   m_dt_s = m_data.GetTimeStep().GetValue(TimeUnit::s);
+  m_RbcAcetylcholinesteraseFractionInhibited = 0.0;
   m_muscleIntracellular = m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::MuscleIntracellular);
   m_aortaVascular = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Aorta);
 	m_venaCavaVascular = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::VenaCava);
@@ -161,6 +167,9 @@ void Drugs::SetUp()
 	m_liverVascular = m_data.GetCompartments().GetLiquidCompartment(BGE::VascularCompartment::Liver);
 	m_liverTissue = m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Liver);
   m_IVToVenaCava = m_data.GetCircuits().GetCardiovascularCircuit().GetPath(BGE::CardiovascularPath::IVToVenaCava);
+  //Need to set up pointers for Sarin and Pralidoxime to handle nerve agent events since they use a different method to calculate effects
+  m_Sarin = m_data.GetSubstances().GetSubstance("Sarin");
+  m_Pralidoxime = m_data.GetSubstances().GetSubstance("Pralidoxime");
 	DELETE_MAP_SECOND(m_BolusAdministrations);
 	
 
@@ -306,16 +315,23 @@ void Drugs::AdministerSubstanceBolus()
 //--------------------------------------------------------------------------------------------------
 void Drugs::AdministerSubstanceInfusion()
 {
+	//Note:  Currently, user removes state by setting the infusion rate of the drug in question to 0.0
 	const std::map<const SESubstance*, SESubstanceInfusion*>& infusions = m_data.GetActions().GetPatientActions().GetSubstanceInfusions();
 	if (infusions.empty())
 		return;
 
 	SESubstanceInfusion*            infusion;
 	SESubstance*                    sub;
-  SELiquidSubstanceQuantity*      subQ;
-	double concentration_ug_Per_mL;
-	double rate_mL_Per_s;
-	double massIncrement_ug = 0;
+	SELiquidSubstanceQuantity*      subQ;
+	double patientMass_kg = m_data.GetPatient().GetWeight(MassUnit::kg);
+  SEScalarTemperature& ambientTemp = m_data.GetEnvironment().GetConditions().GetAmbientTemperature();
+  SEScalarMassPerVolume densityFluid;
+  GeneralMath::CalculateWaterDensity(ambientTemp, densityFluid);
+	
+	double concentration_ug_Per_mL = 0.0;
+	double rate_mL_Per_s = 0.0;
+	double totalRate_mL_Per_s = 0.0;
+	double massIncrement_ug = 0.0;
 
 	for (auto i : infusions)
 	{
@@ -323,23 +339,34 @@ void Drugs::AdministerSubstanceInfusion()
 		infusion = i.second;
 		concentration_ug_Per_mL = infusion->GetConcentration().GetValue(MassPerVolumeUnit::ug_Per_mL);
 		rate_mL_Per_s = infusion->GetRate().GetValue(VolumePerTimeUnit::mL_Per_s);
-		massIncrement_ug = rate_mL_Per_s*concentration_ug_Per_mL*m_dt_s;
-    subQ = m_venaCavaVascular->GetSubstanceQuantity(*sub);
-    subQ->GetMass().IncrementValue(massIncrement_ug, MassUnit::ug);
-    /// \todo Enforce limits and remove the fatal error
-		/// \error Fatal: Titration administration cannot be negative
-		if (massIncrement_ug<0)
+		if (rate_mL_Per_s < 0)
 		{
-			std::stringstream AdministeredTitrationDoseError;
-			AdministeredTitrationDoseError << "Cannot specify a dose of less than 0. Current dose is: " << massIncrement_ug << " ug";
-			Fatal(AdministeredTitrationDoseError);
-			return;
+			std::stringstream InfusionRateError;
+			InfusionRateError << "Cannot specify a rate less than 0, setting to a default of 1 mL/min";
+			Info(InfusionRateError);
+			rate_mL_Per_s = 1.0 / 60.0;
+			infusion->GetRate().SetValue(rate_mL_Per_s, VolumePerTimeUnit::mL_Per_s);
+		}
+		
+		if (concentration_ug_Per_mL < 0)
+		{
+			std::stringstream InfusionConcentrationError;
+			InfusionConcentrationError << "Cannot specify a concentration less than 0, setting to a default of 100 ug/mL";
+			Info(InfusionConcentrationError);
+			concentration_ug_Per_mL = 100.0;
+			infusion->GetConcentration().SetValue(concentration_ug_Per_mL, MassPerVolumeUnit::ug_Per_mL);
 		}
 
-		/// \todo Need to add fluid amount to fluid system
 
-		/// \todo Support state, and how would a user remove this action?
+		massIncrement_ug = rate_mL_Per_s*concentration_ug_Per_mL*m_dt_s;
+		subQ = m_venaCavaVascular->GetSubstanceQuantity(*sub);
+		subQ->GetMass().IncrementValue(massIncrement_ug, MassUnit::ug);
+		totalRate_mL_Per_s += rate_mL_Per_s;
+		patientMass_kg += rate_mL_Per_s*m_dt_s*densityFluid.GetValue(MassPerVolumeUnit::kg_Per_mL);
 	}
+	m_data.GetPatient().GetWeight().SetValue(patientMass_kg, MassUnit::kg);
+	m_IVToVenaCava->GetNextFlowSource().SetValue(totalRate_mL_Per_s, VolumePerTimeUnit::mL_Per_s);
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -364,8 +391,21 @@ void Drugs::AdministerSubstanceCompoundInfusion()
 	double rate_mL_Per_s = 0;
 	double totalRate_mL_Per_s = 0;
 	double massIncrement_ug=0;
+	double volumeRemaining_mL = 0.0;
+	double volumeToAdminister_mL = 0.0;
 	double patientMass_kg = m_data.GetPatient().GetWeight(MassUnit::kg);
 	double densityFluid_kg_Per_mL = 0.0;
+
+	//The maximum rate of IV fluid administration is not well defined.  Guidelines in cases of hypovolemic shock suggest that 
+	//resuscitation should begin with 4.0 mL/kg bolus administered over 10-15 minutes.  Boluses of 1-2 L are referenced in extreme
+	//cases, but the time over which they are administered is not firm.  If we take a worse case bolus of 1.5 L delivered over
+	//15 minutes, we get a max suggested rate of 100 mL/min.  This causes O2 partial pressure in BioGears to drop somewhat, but
+	//does not change O2 saturation.  Physically, it is possible to exceed this rate up to the flow limitations imposed by the IV tubing 
+	//(suggested to be 1000 mL/3.5 min ~= 285 mL/min from http://emedsa.org.au/EDHandbook/resuscitation/IVCannula.htm
+	//Thus we will allow a rate up to 285 mL/min but will issue a warning if provided rate exceeds recommended level (this is done
+	//in the SESubstanceCompoundInfusion file).  In case of septic shock, the recommended fluid administration changes and will need to be revisited.
+	///\@cite malbrain2014fluid, @cite wise2017strategies 
+	///\ToDo:  We should consider a variable maxRate when septic shock is introduced to BioGears.		///\@cite malbrain2014fluid, @cite wise2017strategies 
 
 	std::vector<const SESubstanceCompound*> emptyBags;
 
@@ -376,43 +416,40 @@ void Drugs::AdministerSubstanceCompoundInfusion()
 
 		rate_mL_Per_s = infusion->GetRate().GetValue(VolumePerTimeUnit::mL_Per_s);
 		totalRate_mL_Per_s += rate_mL_Per_s;
-    /// \todo Enforce limits and remove the fatal error
-		/// \error Fatal: rate cannot exceed 285 mL/min
-		if (rate_mL_Per_s>285) // from http://emedsa.org.au/EDHandbook/resuscitation/IVCannula.htm... 1000mL/3.5 min ~= 285 mL/min
-		{	
-			m_ss<<"Cannot specify an Infusion rate greater than 285 mL/min. Current administration rate is: "<< infusion->GetRate();
-			Fatal(m_ss);
-			return;
-		}		
-
-		infusion->GetBagVolume().IncrementValue(-rate_mL_Per_s*m_dt_s, VolumeUnit::mL);
-		double total_mL = infusion->GetBagVolume().GetValue(VolumeUnit::mL);
-		if (total_mL <= 0)
-		{ /// \todo correct the mass based on what we have left in the bag
+		volumeRemaining_mL = infusion->GetBagVolume().GetValue(VolumeUnit::mL);
+		volumeToAdminister_mL = rate_mL_Per_s*m_dt_s;
+		if (volumeRemaining_mL < volumeToAdminister_mL)
+		{
+			volumeToAdminister_mL = volumeRemaining_mL;
 			emptyBags.push_back(compound);
-			continue;
 		}
+		infusion->GetBagVolume().IncrementValue(-volumeToAdminister_mL, VolumeUnit::mL);
 			
 		for (const SESubstanceConcentration* component : compound->GetComponents())
 		{			
 			subQ = m_venaCavaVascular->GetSubstanceQuantity(component->GetSubstance());
-			double massIncrement_ug = rate_mL_Per_s*component->GetConcentration(MassPerVolumeUnit::ug_Per_mL)*m_dt_s;
-      subQ->GetMass().IncrementValue(massIncrement_ug, MassUnit::ug);
-      subQ->Balance(BalanceLiquidBy::Mass);
+			double massIncrement_ug = volumeToAdminister_mL*component->GetConcentration(MassPerVolumeUnit::ug_Per_mL);
+			subQ->GetMass().IncrementValue(massIncrement_ug, MassUnit::ug);
+		    subQ->Balance(BalanceLiquidBy::Mass);
 		}		
 
-		if (compound->GetName().compare("Saline") == 0)
-			densityFluid_kg_Per_mL = m_data.GetConfiguration().GetWaterDensity(MassPerVolumeUnit::kg_Per_mL);
+    if ((compound->GetName().compare("Saline") == 0) || (compound->GetName().compare("RingersLactate") == 0)) //Note: Saline and ringers lactate have different densities than pure water
+    {
+      SEScalarTemperature& ambientTemp = m_data.GetEnvironment().GetConditions().GetAmbientTemperature();
+      SEScalarMassPerVolume densityFluid;
+      GeneralMath::CalculateWaterDensity(ambientTemp, densityFluid);
+      densityFluid_kg_Per_mL = densityFluid.GetValue(MassPerVolumeUnit::kg_Per_mL);
+    }
 		else if (compound->GetName().compare("Blood") == 0)
 			densityFluid_kg_Per_mL = m_data.GetBloodChemistry().GetBloodDensity(MassPerVolumeUnit::kg_Per_mL);
-		patientMass_kg -= rate_mL_Per_s*densityFluid_kg_Per_mL*m_dt_s;
+		patientMass_kg += volumeToAdminister_mL*densityFluid_kg_Per_mL;
 	}
 
 	for (const SESubstanceCompound* c : emptyBags)
 		m_data.GetActions().GetPatientActions().RemoveSubstanceCompoundInfusion(*c);
 
 	m_data.GetPatient().GetWeight().SetValue(patientMass_kg, MassUnit::kg);
-  m_IVToVenaCava->GetNextFlowSource().SetValue(totalRate_mL_Per_s, VolumePerTimeUnit::mL_Per_s);
+	m_IVToVenaCava->GetNextFlowSource().SetValue(totalRate_mL_Per_s, VolumePerTimeUnit::mL_Per_s);
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -462,7 +499,7 @@ void Drugs::CalculatePartitionCoefficients()
         continue;        
       if(!sub->GetPK().HasPhysicochemicals())
 				continue;
-			
+
 			SESubstancePhysicochemicals& pk = sub->GetPK().GetPhysicochemicals();
 			CDM::enumSubstanceIonicState::value IonicState = pk.GetIonicState();
 			double AcidDissociationConstant = pk.GetAcidDissociationConstant().GetValue();
@@ -562,42 +599,62 @@ void Drugs::CalculateDrugEffects()
 	double neuromuscularBlockLevel = 0;
 	double sedationLevel = 0;
 	double bronchodilationLevel = 0;
-	double plasmaConcentration_ug_Per_mL = 0;
 	double concentrationEffects_unitless = 0;
 	double deltaTubularPermeability = 0.0;
 	double pupilSizeResponseLevel = 0;
 	double pupilReactivityResponseLevel = 0;
 	double shapeParameter = 1.;
+	double ec50_ug_Per_mL = 0.0;
 	SEPatient& patient = m_data.GetPatient();
 	double HRBaseline_per_min = patient.GetHeartRateBaseline(FrequencyUnit::Per_min);
 	double effectSiteConcentration_ug_Per_mL = 0.0;
 	double centralNervousResponseLevel = 0.0;
-	
 
-	//Loop over substances
+	//Testing naloxone reversal
+	SESubstance* m_Naloxone = m_data.GetSubstances().GetSubstance("Naloxone");
+	double inhibitorConcentration_ug_Per_mL = 0.0;
+	double inhibitorConstant_ug_Per_mL = 1.0;	//Can't initialize to 0 lest we divide by 0.  Won't matter what it is when there is no inhibitor because this will get mulitplied by 0 anyway
+
+
+												//Loop over substances
 	for (SESubstance* sub : m_data.GetCompartments().GetLiquidCompartmentSubstances())
 	{
 		if (!sub->HasPD())
 			continue;
 
 		SESubstancePharmacodynamics& pd = sub->GetPD();
-		///\TODO Replace all plasma concentrations with effect site concentrations (if any left over)
-		plasmaConcentration_ug_Per_mL = sub->GetPlasmaConcentration(MassPerVolumeUnit::ug_Per_mL);
 		shapeParameter = pd.GetEMaxShapeParameter().GetValue();
+		ec50_ug_Per_mL = pd.GetEC50().GetValue(MassPerVolumeUnit::ug_Per_mL);
 
 		//Get effect site concentration and use it to calculate unitless drug effects.
-		//Currently, effect site concentration is same as plasma concentration for all drugs except morphine
+		//Currently, effect site concentration is same as plasma concentration for all drugs except morphine and sarin
 		effectSiteConcentration_ug_Per_mL = sub->GetEffectSiteConcentration(MassPerVolumeUnit::ug_Per_mL);
-		if (shapeParameter == 1) // Avoiding using pow if we don't have to. I don't know if this is good practice or not, but seems legit.
-		{
-			concentrationEffects_unitless = effectSiteConcentration_ug_Per_mL / (pd.GetEC50().GetValue(MassPerVolumeUnit::ug_Per_mL) + effectSiteConcentration_ug_Per_mL);
 
+		if (sub->GetClassification() == CDM::enumSubstanceClass::Opioid)
+		{
+			if (m_data.GetSubstances().IsActive(*m_Naloxone))
+			{
+				inhibitorConstant_ug_Per_mL = m_Naloxone->GetPD().GetEC50().GetValue(MassPerVolumeUnit::ug_Per_mL);
+				inhibitorConcentration_ug_Per_mL = m_Naloxone->GetEffectSiteConcentration(MassPerVolumeUnit::ug_Per_mL);
+			}
+			concentrationEffects_unitless = pow(effectSiteConcentration_ug_Per_mL, shapeParameter) / (pow(ec50_ug_Per_mL, shapeParameter)*pow(1 + inhibitorConcentration_ug_Per_mL / inhibitorConstant_ug_Per_mL, shapeParameter) + pow(effectSiteConcentration_ug_Per_mL, shapeParameter));
+		}
+		else if (sub->GetName() == "Sarin")
+		{
+			concentrationEffects_unitless = m_RbcAcetylcholinesteraseFractionInhibited;
 		}
 		else
 		{
-			concentrationEffects_unitless = pow(effectSiteConcentration_ug_Per_mL, shapeParameter) / (pow(pd.GetEC50().GetValue(MassPerVolumeUnit::ug_Per_mL), shapeParameter) + pow(effectSiteConcentration_ug_Per_mL, shapeParameter));
+			if (shapeParameter == 1) // Avoiding using pow if we don't have to. I don't know if this is good practice or not, but seems legit.
+			{
+				concentrationEffects_unitless = effectSiteConcentration_ug_Per_mL / (ec50_ug_Per_mL + effectSiteConcentration_ug_Per_mL);
+
+			}
+			else
+			{
+				concentrationEffects_unitless = pow(effectSiteConcentration_ug_Per_mL, shapeParameter) / (pow(ec50_ug_Per_mL, shapeParameter) + pow(effectSiteConcentration_ug_Per_mL, shapeParameter));
+			}
 		}
-	  
     /// \todo The drug effect is being applied to the baseline, so if the baseline changes the delta heart rate changes.
     // This would be a problem for something like a continuous infusion of a drug or an environmental drug
     // where we need to establish a new homeostatic point. Once the patient stabilizes with the drug effect included, a new baseline is
@@ -631,9 +688,9 @@ void Drugs::CalculateDrugEffects()
 		neuromuscularBlockLevel += pd.GetNeuromuscularBlock().GetValue() * concentrationEffects_unitless;
 
 		bronchodilationLevel += pd.GetBronchodilation().GetValue() * concentrationEffects_unitless;
+		pupilSizeResponseLevel += pd.GetPupillaryResponse().GetSizeModifier().GetValue() * concentrationEffects_unitless;
+		pupilReactivityResponseLevel += pd.GetPupillaryResponse().GetReactivityModifier().GetValue() * concentrationEffects_unitless;
 
-    pupilSizeResponseLevel += pd.GetPupillaryResponse().GetSizeModifier().GetValue() * concentrationEffects_unitless;
-    pupilReactivityResponseLevel += pd.GetPupillaryResponse().GetReactivityModifier().GetValue() * concentrationEffects_unitless;
 	}
 
 	//Translate Diastolic and Systolic Pressure to pulse pressure and mean pressure
@@ -653,8 +710,19 @@ void Drugs::CalculateDrugEffects()
 	GetTubularPermeabilityChange().SetValue(deltaTubularPermeability);
 	GetCentralNervousResponse().SetValue(centralNervousResponseLevel);
   
+	//Pupil effects
 
-  // Bound the pupil modifiers
+	//We need to handle Sarin pupil effects (if Sarin is active) separately because technically they stem from contact and not systemic levels, meaning that they
+	//do not depend on the Sarin plasma concentration in the same way as other PD effects.  We still perform the calculation here because 
+	//we cannot "contact" the eye, but scale them differently.  Sarin pupil effects are large and fast, so it's reasonable to
+	//overwrite other drug pupil effects (and we probably aren't modeling opioid addicts inhaling Sarin)
+	if (m_data.GetSubstances().IsActive(*m_data.GetSubstances().GetSubstance("Sarin")))
+	{
+		pupilSizeResponseLevel = GeneralMath::LogisticFunction(-1, 0.0475, 250, m_data.GetSubstances().GetSubstance("Sarin")->GetPlasmaConcentration(MassPerVolumeUnit::ug_Per_L));
+		pupilReactivityResponseLevel = pupilSizeResponseLevel;
+	}
+	
+	//Bound pupil modifiers
   BLIM(pupilSizeResponseLevel, -1, 1);
   BLIM(pupilReactivityResponseLevel, -1, 1);
   GetPupillaryResponse().GetSizeModifier().SetValue(pupilSizeResponseLevel);
@@ -690,6 +758,12 @@ void Drugs::CalculatePlasmaSubstanceConcentration()
 		{
 			SESubstancePharmacodynamics& pd = sub->GetPD();
 			rate_Per_s = pd.GetEffectSiteRateConstant(FrequencyUnit::Per_s);
+			if (!sub->HasEffectSiteConcentration())
+			{
+				effectConcentration = 0.0;
+				sub->GetEffectSiteConcentration().SetValue(effectConcentration, MassPerVolumeUnit::ug_Per_mL);
+			}
+
 			effectConcentration = sub->GetEffectSiteConcentration(MassPerVolumeUnit::ug_Per_mL);
 
 			//If a substance has rate constant set to 0, no effect concentration is needed.  Just use plasma concentration as before
@@ -706,6 +780,9 @@ void Drugs::CalculatePlasmaSubstanceConcentration()
 			//Store effect site concentration for use in CalculateDrugEffects function
 			sub->GetEffectSiteConcentration().SetValue(effectConcentration, MassPerVolumeUnit::ug_Per_mL);
 		}
+		
+		if((sub->GetName()=="Sarin")&&(m_data.GetSubstances().IsActive(*m_Sarin)))
+			SarinKinetics();
 	}
 }
 
@@ -762,5 +839,73 @@ void Drugs::CalculateSubstanceClearance()
 		//Hepatic Excretion
     m_data.GetSubstances().CalculateGenericExcretion(LiverVascularFlow_mL_Per_s, *m_liverTissue, *sub, clearance.GetFractionExcretedInFeces().GetValue(), m_dt_s);
 	}
+}
 
+//--------------------------------------------------------------------------------------------------
+/// \brief
+/// Calculates the inhibition of erythrocyte bound acetylcholinesterase by the nerve agent Sarin using reaction kinetics
+///
+/// \details
+/// Unlike other drugs in BioGears, the PD effects of Sarin are not based directly on agent plasma concentration.  Instead, we model
+/// Sarin binding to red blood cell acetylcholinesterase (Rbc-Ache) and link the inhibition of this enzyme to Sarin pharmacodynamics.
+/// This calculation utilizies a kinetic model that incorporates irreversible aging of Rbc-Ache and the salvaging effect of Pralidoxime.
+/// As such, this strategy represents a more mechanistic, receptor-target approach to pharmacodynamics
+//--------------------------------------------------------------------------------------------------
+void Drugs::SarinKinetics()
+{
+	//Get Sarin and Pralidoxime (if active) concentrations and convert units to nM (units that all the rate equations are in)
+	double SarinConcentration_g_Per_L = m_Sarin->GetPlasmaConcentration(MassPerVolumeUnit::g_Per_L);
+	double SarinMolarMass_g_Per_umol = m_Sarin->GetMolarMass(MassPerAmountUnit::g_Per_umol);
+	double SarinConcentration_nM = SarinConcentration_g_Per_L / SarinMolarMass_g_Per_umol * 1000;
+	double PralidoximeConcentration_nM = 0.0;
+	double PralidoximeMolarMass_g_Per_umol = m_Pralidoxime->GetMolarMass(MassPerAmountUnit::g_Per_umol);
+	double PralidoximeConcentration_g_Per_L = 0.0;
+	if ((m_data.GetSubstances().IsActive(*m_Pralidoxime))&&(m_Pralidoxime->HasPlasmaConcentration())) //Substance can get flagged active w/ null plasma concentration so need to check both for stabilization step
+	{
+		PralidoximeConcentration_g_Per_L = m_Pralidoxime->GetPlasmaConcentration(MassPerVolumeUnit::g_Per_L);
+		PralidoximeConcentration_nM = PralidoximeConcentration_g_Per_L / PralidoximeMolarMass_g_Per_umol * 1000;
+	}
+
+	//Get RBC-AChE concentration and create copies of all concentrations so that they are not overwritten in the rate equations
+	double RbcAcetylcholinesterase_nM = m_data.GetBloodChemistry().GetRedBloodCellAcetylcholinesterase(AmountPerVolumeUnit::mol_Per_L) * 1e9;
+	double RbcAche_nM = RbcAcetylcholinesterase_nM;
+	double SarinRbcAche_nM = m_SarinRbcAcetylcholinesteraseComplex_nM;
+	double AgedSarin_nM = m_AgedRbcAcetylcholinesterase_nM;
+	double BaselineRbcAcetylcholinesterase_nM = 8.0;
+
+	//Rate constants
+	double RateRbcAcheInhibition_per_nM_s = 4.50e-4;		/// \cite gupta2009handbook \cite rodriguez2015model
+	double RateRbcAcheAging_per_s = 4.83e-5;				/// \cite gupta2009handbook \cite rodriguez2015model
+	double RateRbcAcheSynthesis_nM_per_s = 9.33e-7;			/// \cite grob1958effects
+	double RateRbcAcheDegredation_per_s = 1.17e-7;			/// \cite rodriguez2015model
+	double RatePralidoximeReversal_per_s = 4.22e-3;			/// \cite rodriguez2015model
+	double PralidoximeDissociationConstant_nM = 27630.0;	/// \cite rodriguez2015model
+
+	//Michaelis-Menten expression for rate of pralidoxime interaction with bound sarin/rbc-ache complex
+	double PralidoximeReversal = RatePralidoximeReversal_per_s*m_SarinRbcAcetylcholinesteraseComplex_nM*PralidoximeConcentration_nM / 
+		(PralidoximeDissociationConstant_nM + PralidoximeConcentration_nM);	///\cite rodriguez2015model
+
+
+	//Kinetic model equations adapted from
+	///\cite rodriguez2015model and \cite gupta2009handbook
+	RbcAche_nM += m_dt_s*(-RateRbcAcheInhibition_per_nM_s*SarinConcentration_nM*RbcAcetylcholinesterase_nM
+		- RateRbcAcheDegredation_per_s*RbcAcetylcholinesterase_nM
+		+ RateRbcAcheSynthesis_nM_per_s
+		+ PralidoximeReversal);
+	SarinRbcAche_nM += m_dt_s*(RateRbcAcheInhibition_per_nM_s*SarinConcentration_nM*RbcAcetylcholinesterase_nM
+		- RateRbcAcheAging_per_s*m_SarinRbcAcetylcholinesteraseComplex_nM
+		- PralidoximeReversal);
+	AgedSarin_nM += m_dt_s*(RateRbcAcheAging_per_s*m_SarinRbcAcetylcholinesteraseComplex_nM);
+	SarinConcentration_nM += m_dt_s*(-RateRbcAcheInhibition_per_nM_s*SarinConcentration_nM*RbcAcetylcholinesterase_nM);
+	PralidoximeConcentration_nM = -PralidoximeReversal;
+	m_RbcAcetylcholinesteraseFractionInhibited = 1-RbcAche_nM / BaselineRbcAcetylcholinesterase_nM;
+
+	//Update values for next time step
+	m_Sarin->GetPlasmaConcentration().SetValue(SarinConcentration_nM / 1000.0 * SarinMolarMass_g_Per_umol, MassPerVolumeUnit::g_Per_L);
+	m_data.GetBloodChemistry().GetRedBloodCellAcetylcholinesterase().SetValue(RbcAche_nM * 1e-9, AmountPerVolumeUnit::mol_Per_L);
+	m_SarinRbcAcetylcholinesteraseComplex_nM = SarinRbcAche_nM;
+	m_AgedRbcAcetylcholinesterase_nM = AgedSarin_nM;
+
+	if (m_data.GetSubstances().IsActive(*m_Pralidoxime))
+		m_Pralidoxime->GetPlasmaConcentration().SetValue(PralidoximeConcentration_nM / 1000 * PralidoximeMolarMass_g_Per_umol, MassPerVolumeUnit::g_Per_L);
 }

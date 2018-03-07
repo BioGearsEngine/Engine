@@ -411,7 +411,7 @@ void BioGearsConfiguration::Initialize()
 	GetMolarMassOfDryAir().SetValue(0.028964, MassPerAmountUnit::kg_Per_mol);
 	GetMolarMassOfWaterVapor().SetValue(0.018016, MassPerAmountUnit::kg_Per_mol);
   GetInitialEnvironmentalConditions().LoadFile("./environments/Standard.xml");
-	GetWaterDensity().SetValue(1000, MassPerVolumeUnit::kg_Per_m3);
+	GetWaterDensity().SetValue(1000, MassPerVolumeUnit::kg_Per_m3); //Because water density changes with temperature, and this refers to room temperature water, you should use GeneralMath::CalculateWaterDensity() instead
 
 	// Gastrointestinal
 	GetCalciumAbsorptionFraction().SetValue(0.25);// Net fractional calcium absorption is 24.9 ± 12.4% (Hunt and Johnson 2007)
@@ -628,8 +628,6 @@ bool BioGearsConfiguration::Load(const CDM::BioGearsConfigurationData& in)
 		const CDM::EnergyConfigurationData& config = in.EnergyConfiguration().get();
 		if (config.BodySpecificHeat().present())
 			GetBodySpecificHeat().Load(config.BodySpecificHeat().get());
-		if (config.CarbonDioxideProductionFromOxygenConsumptionConstant().present())
-			GetCarbondDioxideProductionFromOxygenConsumptionConstant().Load(config.CarbonDioxideProductionFromOxygenConsumptionConstant().get());
 		if (config.CoreTemperatureLow().present())
 			GetCoreTemperatureLow().Load(config.CoreTemperatureLow().get());
 		if (config.CoreTemperatureHigh().present())
@@ -924,8 +922,6 @@ void BioGearsConfiguration::Unload(CDM::BioGearsConfigurationData& data) const
   CDM::EnergyConfigurationData* energy(new CDM::EnergyConfigurationData());
 	if (HasBodySpecificHeat())
 		energy->BodySpecificHeat(std::unique_ptr<CDM::ScalarHeatCapacitancePerMassData>(m_BodySpecificHeat->Unload()));
-	if (HasCarbondDioxideProductionFromOxygenConsumptionConstant())
-		energy->CarbonDioxideProductionFromOxygenConsumptionConstant(std::unique_ptr<CDM::ScalarData>(m_CarbondDioxideProductionFromOxygenConsumptionConstant->Unload()));
 	if (HasCoreTemperatureLow())
 		energy->CoreTemperatureLow(std::unique_ptr<CDM::ScalarTemperatureData>(m_CoreTemperatureLow->Unload()));
 	if (HasCoreTemperatureHigh())

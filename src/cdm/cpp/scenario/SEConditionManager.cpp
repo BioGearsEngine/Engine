@@ -25,8 +25,14 @@ specific language governing permissions and limitations under the License.
 #include "bind/ChronicRenalStenosisData.hxx"
 #include "patient/conditions/SEChronicVentricularSystolicDysfunction.h"
 #include "bind/ChronicVentricularSystolicDysfunctionData.hxx"
-#include "patient/conditions/SEConsumeMeal.h"
-#include "bind/ConsumeMealData.hxx"
+#include "patient/conditions/SEDehydration.h"
+#include "bind/DehydrationData.hxx"
+#include "patient/conditions/SEDiabetesType1.h"
+#include "bind/DiabetesType1Data.hxx"
+#include "patient/conditions/SEDiabetesType2.h"
+#include "bind/DiabetesType2Data.hxx"
+#include "patient/conditions/SEStarvation.h"
+#include "bind/StarvationData.hxx"
 #include "patient/conditions/SELobarPneumonia.h"
 #include "bind/LobarPneumoniaData.hxx"
 #include "patient/conditions/SEChronicPericardialEffusion.h"
@@ -47,7 +53,9 @@ SEConditionManager::SEConditionManager(SESubstanceManager& substances) : Loggabl
 	m_HeartFailure = nullptr;
 	m_RenalStenosis = nullptr;
 	m_Dehydration = nullptr;
-	m_ConsumeMeal = nullptr;
+  m_DiabetesType1 = nullptr;
+  m_DiabetesType2 = nullptr;
+	m_Starvation = nullptr;
 	m_LobarPneumonia = nullptr;
 	m_PericardialEffusion = nullptr;
   m_ImpairedAlveolarExchange = nullptr;
@@ -66,7 +74,9 @@ void SEConditionManager::Clear()
 	m_HeartFailure = nullptr;
 	m_RenalStenosis = nullptr;
 	m_Dehydration = nullptr;
-	m_ConsumeMeal = nullptr;
+  m_DiabetesType1 = nullptr;
+  m_DiabetesType2 = nullptr;
+  m_Starvation = nullptr;
 	m_LobarPneumonia = nullptr;
 	m_PericardialEffusion = nullptr;
   m_ImpairedAlveolarExchange = nullptr;
@@ -92,8 +102,8 @@ bool SEConditionManager::ProcessCondition(const SECondition& condition)
 
 bool SEConditionManager::ProcessCondition(const CDM::ConditionData& condition)
 {
-  const CDM::ChronicAnemiaData* a = dynamic_cast<const CDM::ChronicAnemiaData*>(&condition);
-	if (a != nullptr)
+  const CDM::ChronicAnemiaData* anemiaData = dynamic_cast<const CDM::ChronicAnemiaData*>(&condition);
+	if (anemiaData != nullptr)
 	{
 		if (HasChronicAnemia())
 		{
@@ -101,13 +111,13 @@ bool SEConditionManager::ProcessCondition(const CDM::ConditionData& condition)
 			return false;
 		}
     m_Anemia = new SEChronicAnemia();
-    m_Anemia->Load(*a);
+    m_Anemia->Load(*anemiaData);
 		m_Conditions.push_back(m_Anemia);
 		return true;
 	}	
  
-  const CDM::ChronicObstructivePulmonaryDiseaseData* copd = dynamic_cast<const CDM::ChronicObstructivePulmonaryDiseaseData*>(&condition);
-	if (copd != nullptr)
+  const CDM::ChronicObstructivePulmonaryDiseaseData* copdData = dynamic_cast<const CDM::ChronicObstructivePulmonaryDiseaseData*>(&condition);
+	if (copdData != nullptr)
 	{
 		if (HasChronicObstructivePulmonaryDisease())
 		{
@@ -115,24 +125,24 @@ bool SEConditionManager::ProcessCondition(const CDM::ConditionData& condition)
 			return false;
 		}
 		m_COPD = new SEChronicObstructivePulmonaryDisease();
-    m_COPD->Load(*copd);
+    m_COPD->Load(*copdData);
 		m_Conditions.push_back(m_COPD);
 		return true;
 	}
 	
-  const CDM::ChronicHeartFailureData* h = dynamic_cast<const CDM::ChronicHeartFailureData*>(&condition);
-	if (h != nullptr)
+  const CDM::ChronicHeartFailureData* heartFailureData = dynamic_cast<const CDM::ChronicHeartFailureData*>(&condition);
+	if (heartFailureData != nullptr)
 	{
 		if (HasChronicHeartFailure())
 		{
 			Error("Cannot have multiple Heart Failure conditions");
 			return false;
 		}
-    const CDM::ChronicVentricularSystolicDysfunctionData* vsd = dynamic_cast<const CDM::ChronicVentricularSystolicDysfunctionData*>(&condition);
-		if (vsd != nullptr)
+    const CDM::ChronicVentricularSystolicDysfunctionData* vsdData = dynamic_cast<const CDM::ChronicVentricularSystolicDysfunctionData*>(&condition);
+		if (vsdData != nullptr)
 		{
 			m_HeartFailure = new SEChronicVentricularSystolicDysfunction();
-      m_HeartFailure->Load(*vsd);
+      m_HeartFailure->Load(*vsdData);
 			m_Conditions.push_back(m_HeartFailure);
 			return true;
 		}
@@ -140,8 +150,8 @@ bool SEConditionManager::ProcessCondition(const CDM::ConditionData& condition)
 		return false;
 	}	
 
-  const CDM::ChronicPericardialEffusionData* pe = dynamic_cast<const CDM::ChronicPericardialEffusionData*>(&condition);
-  if (pe != nullptr)
+  const CDM::ChronicPericardialEffusionData* peData = dynamic_cast<const CDM::ChronicPericardialEffusionData*>(&condition);
+  if (peData != nullptr)
   {
     if (HasChronicPericardialEffusion())
     {
@@ -149,13 +159,13 @@ bool SEConditionManager::ProcessCondition(const CDM::ConditionData& condition)
       return false;
     }
     m_PericardialEffusion = new SEChronicPericardialEffusion();
-    m_PericardialEffusion->Load(*pe);
+    m_PericardialEffusion->Load(*peData);
     m_Conditions.push_back(m_PericardialEffusion);
     return true;
   }
 
-  const CDM::ChronicRenalStenosisData* r = dynamic_cast<const CDM::ChronicRenalStenosisData*>(&condition);
-	if (r != nullptr)
+  const CDM::ChronicRenalStenosisData* renalStenosisData = dynamic_cast<const CDM::ChronicRenalStenosisData*>(&condition);
+	if (renalStenosisData != nullptr)
 	{
 		if (HasChronicRenalStenosis())
 		{
@@ -163,27 +173,69 @@ bool SEConditionManager::ProcessCondition(const CDM::ConditionData& condition)
 			return false;
 		}
 		m_RenalStenosis = new SEChronicRenalStenosis();
-    m_RenalStenosis->Load(*r);
+    m_RenalStenosis->Load(*renalStenosisData);
 		m_Conditions.push_back(m_RenalStenosis);
 		return true;
 	}
 
-  const CDM::ConsumeMealData* g = dynamic_cast<const CDM::ConsumeMealData*>(&condition);
-	if (g != nullptr)
+  const CDM::DehydrationData* dehydrationData = dynamic_cast<const CDM::DehydrationData*>(&condition);
+  if (dehydrationData != nullptr)
+  {
+    if (HasDehydration())
+    {
+      Error("Cannot have multiple Dehydration conditions");
+      return false;
+    }
+    m_Dehydration = new SEDehydration();
+    m_Dehydration->Load(*dehydrationData);
+    m_Conditions.push_back(m_Dehydration);
+    return true;
+  }
+
+  const CDM::DiabetesType1Data* diabetes1Data = dynamic_cast<const CDM::DiabetesType1Data*>(&condition);
+  if (diabetes1Data != nullptr)
+  {
+    if (HasDiabetesType1())
+    {
+      Error("Cannot have multiple DiabetesType1 conditions");
+      return false;
+    }
+    m_DiabetesType1 = new SEDiabetesType1();
+    m_DiabetesType1->Load(*diabetes1Data);
+    m_Conditions.push_back(m_DiabetesType1);
+    return true;
+  }
+
+  const CDM::DiabetesType2Data* diabetes2Data = dynamic_cast<const CDM::DiabetesType2Data*>(&condition);
+  if (diabetes2Data != nullptr)
+  {
+    if (HasDiabetesType2())
+    {
+      Error("Cannot have multiple DiabetesType2 conditions");
+      return false;
+    }
+    m_DiabetesType2 = new SEDiabetesType2();
+    m_DiabetesType2->Load(*diabetes2Data);
+    m_Conditions.push_back(m_DiabetesType2);
+    return true;
+  }
+
+  const CDM::StarvationData* starvationData = dynamic_cast<const CDM::StarvationData*>(&condition);
+	if (starvationData != nullptr)
 	{
-		if (HasConsumeMeal())
+		if (HasStarvation())
 		{
-			Error("Cannot have multiple Gut Nutrient conditions");
+			Error("Cannot have multiple Starvation conditions");
 			return false;
 		}		
-		m_ConsumeMeal = new SEConsumeMeal();
-    m_ConsumeMeal->Load(*g);
-		m_Conditions.push_back(m_ConsumeMeal);
+    m_Starvation = new SEStarvation();
+    m_Starvation->Load(*starvationData);
+		m_Conditions.push_back(m_Starvation);
 		return true;
 	}
 
-  const CDM::ImpairedAlveolarExchangeData* iae = dynamic_cast<const CDM::ImpairedAlveolarExchangeData*>(&condition);
-  if (iae != nullptr)
+  const CDM::ImpairedAlveolarExchangeData* impairedAlvioliData = dynamic_cast<const CDM::ImpairedAlveolarExchangeData*>(&condition);
+  if (impairedAlvioliData != nullptr)
   {
     if (HasImpairedAlveolarExchange())
     {
@@ -191,13 +243,13 @@ bool SEConditionManager::ProcessCondition(const CDM::ConditionData& condition)
       return false;
     }
     m_ImpairedAlveolarExchange = new SEImpairedAlveolarExchange();
-    m_ImpairedAlveolarExchange->Load(*iae);
+    m_ImpairedAlveolarExchange->Load(*impairedAlvioliData);
     m_Conditions.push_back(m_ImpairedAlveolarExchange);
     return true;
   }
 
-  const CDM::LobarPneumoniaData* lp = dynamic_cast<const CDM::LobarPneumoniaData*>(&condition);
-	if (lp != nullptr)
+  const CDM::LobarPneumoniaData* pneumoniaData = dynamic_cast<const CDM::LobarPneumoniaData*>(&condition);
+	if (pneumoniaData != nullptr)
 	{
 		if (HasLobarPneumonia())
 		{
@@ -205,14 +257,14 @@ bool SEConditionManager::ProcessCondition(const CDM::ConditionData& condition)
 			return false;
 		}
 		m_LobarPneumonia = new SELobarPneumonia();
-    m_LobarPneumonia->Load(*lp);
+    m_LobarPneumonia->Load(*pneumoniaData);
 		m_Conditions.push_back(m_LobarPneumonia);
 		return true;
 	}
   
 
-  const CDM::InitialEnvironmentData* ie = dynamic_cast<const CDM::InitialEnvironmentData*>(&condition);
-	if (ie != nullptr)
+  const CDM::InitialEnvironmentData* environmentData = dynamic_cast<const CDM::InitialEnvironmentData*>(&condition);
+	if (environmentData != nullptr)
 	{
 		if (HasInitialEnvironment())
 		{
@@ -220,7 +272,7 @@ bool SEConditionManager::ProcessCondition(const CDM::ConditionData& condition)
 			return false;
 		}
 		m_InitialEnvironment = new SEInitialEnvironment(m_Substances);
-    m_InitialEnvironment->Load(*ie);
+    m_InitialEnvironment->Load(*environmentData);
 		m_Conditions.push_back(m_InitialEnvironment);
 		return true;
 	}
@@ -288,13 +340,31 @@ SEDehydration* SEConditionManager::GetDehydration() const
 	return m_Dehydration;
 }
 
-bool SEConditionManager::HasConsumeMeal() const
+bool SEConditionManager::HasDiabetesType1() const
 {
-	return m_ConsumeMeal != nullptr;
+  return m_DiabetesType1 != nullptr;
 }
-SEConsumeMeal* SEConditionManager::GetConsumeMeal() const
+SEDiabetesType1* SEConditionManager::GetDiabetesType1() const
 {
-	return m_ConsumeMeal;
+  return m_DiabetesType1;
+}
+
+bool SEConditionManager::HasDiabetesType2() const
+{
+  return m_DiabetesType2 != nullptr;
+}
+SEDiabetesType2* SEConditionManager::GetDiabetesType2() const
+{
+  return m_DiabetesType2;
+}
+
+bool SEConditionManager::HasStarvation() const
+{
+	return m_Starvation != nullptr;
+}
+SEStarvation* SEConditionManager::GetStarvation() const
+{
+	return m_Starvation;
 }
 
 bool SEConditionManager::HasImpairedAlveolarExchange() const

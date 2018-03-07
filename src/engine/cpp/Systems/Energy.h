@@ -44,7 +44,7 @@ public:
 protected:
   virtual void Unload(CDM::BioGearsEnergySystemData& data) const;
 
-  // Set pointers and other member varialbes common to both homeostatic initialization and loading a state
+  // Set pointers and other member variables common to both homeostatic initialization and loading a state
   void SetUp();
 
 public:
@@ -61,10 +61,10 @@ private:
   void UpdateHeatResistance();
   // Actions/Conditions
   void Exercise();
-  void OldExercise();
+
   // These are both part of the consume meal condition.
   //void Dehydration(double time); // Need to revisit
-  //void Starvation(double time); // Need to revisit
+
   // Used in Reset & Starvation
   void CalculateBasalMetabolicRate();
 
@@ -72,10 +72,6 @@ private:
   void CalculateVitalSigns();
 
   // Serializable member variables (Set in Initialize and in schema)
-  double m_UsableEnergyStore_J;
-  double m_PeakPowerEnergyStore_J;
-  double m_MediumPowerEnergyStore_J;
-  double m_EnduranceEnergyStore_J;
   RunningAverage m_BloodpH;
   RunningAverage m_BicarbonateMolarity_mmol_Per_L;
 
@@ -84,7 +80,10 @@ private:
   SEPatient*                  m_Patient;
   SEPatientActionCollection*  m_PatientActions;
   // Cmpts,Substance, and nodes
-  SELiquidSubstanceQuantity*  m_AortaHCO3;	
+  SELiquidSubstanceQuantity*  m_AortaHCO3;
+  SELiquidSubstanceQuantity* m_SkinSodium;
+  SELiquidSubstanceQuantity* m_SkinChloride;
+  SELiquidSubstanceQuantity* m_SkinPotassium;
 	//Nodes
 	SEThermalCircuitNode*       m_coreNode;
   SEThermalCircuitNode*       m_skinNode;

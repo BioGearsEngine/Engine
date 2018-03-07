@@ -502,6 +502,11 @@ public class DataSetReader
       substance.setName(value);
       return true;
     }
+    if(property.equals("Classification"))
+    {
+    	substance.setSubClass(EnumSubstanceClass.fromValue(value));
+    	return true;
+    }
     if(property.equals("State"))
     {
       substance.setState(EnumSubstanceState.fromValue(value));
@@ -527,6 +532,11 @@ public class DataSetReader
     {
       substance.getMichaelisCoefficient().setValue(Double.parseDouble(value),unit);
       return true;
+    }
+    if(property.equals("MembraneResistance"))
+    {
+    	substance.getMembraneResistance().setValue(Double.parseDouble(value),unit);
+    	return true;
     }
     // Aerosolization
     if(property.equals("BronchioleModifier"))

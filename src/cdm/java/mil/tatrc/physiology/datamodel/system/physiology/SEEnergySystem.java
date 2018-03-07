@@ -24,23 +24,27 @@ public class SEEnergySystem extends SEPhysiologySystem implements SESystem
   protected SEScalarAmountPerTime creatinineProductionRate;
   protected SEScalarPressure      exerciseMeanArterialPressureDelta;
   protected SEScalarFraction      fatigueLevel;
-  protected SEScalarAmountPerTime ketoneProductionRate;
   protected SEScalarAmountPerTime lactateProductionRate;
   protected SEScalarTemperature 	skinTemperature;
   protected SEScalarMassPerTime 	sweatRate;
   protected SEScalarPower 		    totalMetabolicRate;
   protected SEScalarFraction      totalWorkRateLevel;
+  protected SEScalarMass					sodiumLostToSweat;
+  protected SEScalarMass					potassiumLostToSweat;
+  protected SEScalarMass					chlorideLostToSweat;
 
   public SEEnergySystem()
   {
+  	achievedExerciseLevel = null;
+    chlorideLostToSweat = null;
     coreTemperature = null;
     creatinineProductionRate = null;
     exerciseMeanArterialPressureDelta = null;
-    achievedExerciseLevel = null;
     fatigueLevel = null;
-    ketoneProductionRate = null;
     lactateProductionRate = null;
+    potassiumLostToSweat = null;
     skinTemperature = null;
+    sodiumLostToSweat = null;
     sweatRate = null;
     totalMetabolicRate = null;
     totalWorkRateLevel = null;
@@ -48,55 +52,62 @@ public class SEEnergySystem extends SEPhysiologySystem implements SESystem
 
   public void reset()
   {		
+    if (achievedExerciseLevel != null)
+      achievedExerciseLevel.invalidate();
+    if (chlorideLostToSweat != null)
+      chlorideLostToSweat.invalidate(); 
     if (coreTemperature != null)
       coreTemperature.invalidate();
     if (creatinineProductionRate != null)
       creatinineProductionRate.invalidate();
     if (exerciseMeanArterialPressureDelta != null)
       exerciseMeanArterialPressureDelta.invalidate();
-    if (achievedExerciseLevel != null)
-      achievedExerciseLevel.invalidate();
     if (fatigueLevel != null)
       fatigueLevel.invalidate();
-    if (ketoneProductionRate != null)
-      ketoneProductionRate.invalidate();
     if (lactateProductionRate != null)
       lactateProductionRate.invalidate();
+    if (potassiumLostToSweat != null)
+      potassiumLostToSweat.invalidate(); 
     if (skinTemperature != null)
       skinTemperature.invalidate();
+    if (sodiumLostToSweat != null)
+      sodiumLostToSweat.invalidate();
     if (sweatRate != null)
       sweatRate.invalidate();
     if (totalMetabolicRate != null)
       totalMetabolicRate.invalidate();
     if (totalWorkRateLevel != null)
-      totalWorkRateLevel.invalidate();    
+      totalWorkRateLevel.invalidate();  
   }
 
   public boolean load(EnergySystemData in)
-  {		
+  {	
+    if (in.getAchievedExerciseLevel() != null)
+      getAchievedExerciseLevel().load(in.getAchievedExerciseLevel());
+    if (in.getChlorideLostToSweat() != null)
+    	getChlorideLostToSweat().load(in.getChlorideLostToSweat());
     if (in.getCoreTemperature() != null)
       getCoreTemperature().load(in.getCoreTemperature());
     if (in.getCreatinineProductionRate() != null)
       getCreatinineProductionRate().load(in.getCreatinineProductionRate());
     if (in.getExerciseMeanArterialPressureDelta() != null)
       getExerciseMeanArterialPressureDelta().load(in.getExerciseMeanArterialPressureDelta());
-    if (in.getAchievedExerciseLevel() != null)
-      getAchievedExerciseLevel().load(in.getAchievedExerciseLevel());
     if (in.getFatigueLevel() != null)
       getFatigueLevel().load(in.getFatigueLevel());
-    if (in.getKetoneProductionRate() != null)
-      getKetoneProductionRate().load(in.getKetoneProductionRate());
     if (in.getLactateProductionRate() != null)
       getLactateProductionRate().load(in.getLactateProductionRate());
+    if (in.getPotassiumLostToSweat() != null)
+    	getPotassiumLostToSweat().load(in.getPotassiumLostToSweat());
     if (in.getSkinTemperature() != null)
       getSkinTemperature().load(in.getSkinTemperature());
+    if (in.getSodiumLostToSweat() != null)
+    	getSodiumLostToSweat().load(in.getSodiumLostToSweat());
     if (in.getSweatRate() != null)
       getSweatRate().load(in.getSweatRate());
     if (in.getTotalMetabolicRate() != null)
       getTotalMetabolicRate().load(in.getTotalMetabolicRate());
     if (in.getTotalWorkRateLevel() != null)
       getTotalWorkRateLevel().load(in.getTotalWorkRateLevel());
-    
     return true;
   }
 
@@ -109,30 +120,56 @@ public class SEEnergySystem extends SEPhysiologySystem implements SESystem
 
   protected void unload(EnergySystemData data)
   {		
+  	if (hasAchievedExerciseLevel())
+      data.setAchievedExerciseLevel(achievedExerciseLevel.unload());
+    if(hasChlorideLostToSweat())
+    	data.setChlorideLostToSweat(chlorideLostToSweat.unload());
     if (hasCoreTemperature())
       data.setCoreTemperature(coreTemperature.unload());
     if (hasCreatinineProductionRate())
       data.setCreatinineProductionRate(creatinineProductionRate.unload());
     if (hasExerciseMeanArterialPressureDelta())
       data.setExerciseMeanArterialPressureDelta(exerciseMeanArterialPressureDelta.unload());
-    if (hasAchievedExerciseLevel())
-      data.setAchievedExerciseLevel(achievedExerciseLevel.unload());
     if (hasFatigueLevel())
       data.setFatigueLevel(fatigueLevel.unload());
-    if (hasKetoneProductionRate())
-      data.setKetoneProductionRate(ketoneProductionRate.unload());
     if (hasLactateProductionRate())
       data.setLactateProductionRate(lactateProductionRate.unload());
+    if(hasPotassiumLostToSweat())
+    	data.setPotassiumLostToSweat(potassiumLostToSweat.unload());
     if (hasSkinTemperature())
       data.setSkinTemperature(skinTemperature.unload());
+    if(hasSodiumLostToSweat())
+    	data.setSodiumLostToSweat(sodiumLostToSweat.unload());
     if (hasSweatRate())
       data.setSweatRate(sweatRate.unload());
     if (hasTotalMetabolicRate())
       data.setTotalMetabolicRate(totalMetabolicRate.unload());
     if (hasTotalWorkRateLevel())
-      data.setTotalWorkRateLevel(totalWorkRateLevel.unload());    
+      data.setTotalWorkRateLevel(totalWorkRateLevel.unload());
   }
-
+  
+  public boolean hasAchievedExerciseLevel()
+  {
+    return achievedExerciseLevel == null ? false : achievedExerciseLevel.isValid();
+  }
+  public SEScalarFraction getAchievedExerciseLevel()
+  {
+    if (achievedExerciseLevel == null)
+      achievedExerciseLevel = new SEScalarFraction();
+    return achievedExerciseLevel;
+  }
+  
+  public boolean hasChlorideLostToSweat()
+  {
+  	return chlorideLostToSweat == null ? false : chlorideLostToSweat.isValid();
+  }
+  public SEScalarMass getChlorideLostToSweat()
+  {
+  	if(chlorideLostToSweat==null)
+  		chlorideLostToSweat = new SEScalarMass();
+  	return chlorideLostToSweat;
+  }
+  
   public boolean hasCoreTemperature()
   {
     return coreTemperature == null ? false : coreTemperature.isValid();
@@ -166,17 +203,6 @@ public class SEEnergySystem extends SEPhysiologySystem implements SESystem
     return exerciseMeanArterialPressureDelta;
   }
   
-  public boolean hasAchievedExerciseLevel()
-  {
-    return achievedExerciseLevel == null ? false : achievedExerciseLevel.isValid();
-  }
-  public SEScalarFraction getAchievedExerciseLevel()
-  {
-    if (achievedExerciseLevel == null)
-      achievedExerciseLevel = new SEScalarFraction();
-    return achievedExerciseLevel;
-  }
-  
   public boolean hasFatigueLevel()
   {
     return fatigueLevel == null ? false : fatigueLevel.isValid();
@@ -186,17 +212,6 @@ public class SEEnergySystem extends SEPhysiologySystem implements SESystem
     if (fatigueLevel == null)
       fatigueLevel = new SEScalarFraction();
     return fatigueLevel;
-  }
-
-  public boolean hasKetoneProductionRate()
-  {
-    return ketoneProductionRate == null ? false : ketoneProductionRate.isValid();
-  }
-  public SEScalarAmountPerTime getKetoneProductionRate()
-  {
-    if (ketoneProductionRate == null)
-      ketoneProductionRate = new SEScalarAmountPerTime();
-    return ketoneProductionRate;
   }
 
   public boolean hasLactateProductionRate()
@@ -210,6 +225,18 @@ public class SEEnergySystem extends SEPhysiologySystem implements SESystem
     return lactateProductionRate;
   }
 
+ 
+  public boolean hasPotassiumLostToSweat()
+  {
+  	return potassiumLostToSweat == null ? false : potassiumLostToSweat.isValid();
+  }
+  public SEScalarMass getPotassiumLostToSweat()
+  {
+  	if(potassiumLostToSweat==null)
+  		potassiumLostToSweat = new SEScalarMass();
+  	return potassiumLostToSweat;
+  }
+  
   public boolean hasSkinTemperature()
   {
     return skinTemperature == null ? false : skinTemperature.isValid();
@@ -219,6 +246,17 @@ public class SEEnergySystem extends SEPhysiologySystem implements SESystem
     if (skinTemperature == null)
       skinTemperature = new SEScalarTemperature();
     return skinTemperature;
+  }
+  
+  public boolean hasSodiumLostToSweat()
+  {
+  	return sodiumLostToSweat == null ? false : sodiumLostToSweat.isValid();
+  }
+  public SEScalarMass getSodiumLostToSweat()
+  {
+  	if(sodiumLostToSweat==null)
+  		sodiumLostToSweat = new SEScalarMass();
+  	return sodiumLostToSweat;
   }
 
   public boolean hasSweatRate()

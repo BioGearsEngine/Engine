@@ -38,6 +38,7 @@ public class SEBloodChemistrySystem extends SEPhysiologySystem implements SESyst
   protected SEScalarFraction               volumeFractionNeutralLipidInPlasma;
   protected SEScalarFraction               volumeFractionNeutralPhospholipidInPlasma;
   protected SEScalarAmountPerVolume        whiteBloodCellCount;
+  protected SEScalarAmountPerVolume				redBloodCellAcetylcholinesterase;
 
   protected SEScalarPressure               arterialCarbonDioxidePressure;
   protected SEScalarPressure               arterialOxygenPressure;
@@ -62,6 +63,7 @@ public class SEBloodChemistrySystem extends SEPhysiologySystem implements SESyst
     phosphate = null;
     plasmaVolume = null;
     pulseOximetry = null;
+    redBloodCellAcetylcholinesterase = null;
     redBloodCellCount = null;
     shuntFraction = null;
     strongIonDifference = null;
@@ -69,6 +71,7 @@ public class SEBloodChemistrySystem extends SEPhysiologySystem implements SESyst
     volumeFractionNeutralLipidInPlasma = null;
     volumeFractionNeutralPhospholipidInPlasma = null;
     whiteBloodCellCount = null;
+   
 
     arterialCarbonDioxidePressure = null;
     arterialOxygenPressure = null;
@@ -106,6 +109,8 @@ public class SEBloodChemistrySystem extends SEPhysiologySystem implements SESyst
       plasmaVolume.invalidate();
     if (pulseOximetry != null)
     	pulseOximetry.invalidate();
+    if (redBloodCellAcetylcholinesterase != null)
+      redBloodCellAcetylcholinesterase.invalidate();
     if (redBloodCellCount != null)
       redBloodCellCount.invalidate();
     if (shuntFraction != null)
@@ -120,6 +125,7 @@ public class SEBloodChemistrySystem extends SEPhysiologySystem implements SESyst
       volumeFractionNeutralPhospholipidInPlasma.invalidate();
     if (whiteBloodCellCount != null)
       whiteBloodCellCount.invalidate();
+
 
     if (arterialCarbonDioxidePressure != null)
       arterialCarbonDioxidePressure.invalidate();
@@ -165,6 +171,8 @@ public class SEBloodChemistrySystem extends SEPhysiologySystem implements SESyst
       getPlasmaVolume().load(in.getPlasmaVolume());  
     if (in.getPulseOximetry() != null)
     	getPulseOximetry().load(in.getPulseOximetry());  
+    if (in.getRedBloodCellAcetylcholinesterase() != null)
+      getRedBloodCellAcetylcholinesterase().load(in.getRedBloodCellAcetylcholinesterase());
     if (in.getRedBloodCellCount() != null)
       getRedBloodCellCount().load(in.getRedBloodCellCount());
     if (in.getShuntFraction() != null)
@@ -179,6 +187,7 @@ public class SEBloodChemistrySystem extends SEPhysiologySystem implements SESyst
       getVolumeFractionNeutralPhospholipidInPlasma().load(in.getVolumeFractionNeutralPhospholipidInPlasma());
     if (in.getWhiteBloodCellCount() != null)
       getWhiteBloodCellCount().load(in.getWhiteBloodCellCount());
+
 
     if (in.getArterialCarbonDioxidePressure() != null)
       getArterialCarbonDioxidePressure().load(in.getArterialCarbonDioxidePressure());
@@ -233,6 +242,8 @@ public class SEBloodChemistrySystem extends SEPhysiologySystem implements SESyst
       data.setPlasmaVolume(plasmaVolume.unload());
     if (pulseOximetry != null)
       data.setPulseOximetry(pulseOximetry.unload());
+    if (redBloodCellAcetylcholinesterase != null)
+      data.setRedBloodCellAcetylcholinesterase(redBloodCellAcetylcholinesterase.unload());
     if (redBloodCellCount != null)
       data.setRedBloodCellCount(redBloodCellCount.unload());
     if (shuntFraction != null)
@@ -394,6 +405,17 @@ public class SEBloodChemistrySystem extends SEPhysiologySystem implements SESyst
     return pulseOximetry;
   }
 
+  public boolean hasRedBloodCellAcetylcholinesterase()
+  {
+    return redBloodCellAcetylcholinesterase == null ? false : redBloodCellAcetylcholinesterase.isValid();
+  }
+  public SEScalarAmountPerVolume getRedBloodCellAcetylcholinesterase()
+  {
+    if (redBloodCellAcetylcholinesterase == null)
+      redBloodCellAcetylcholinesterase = new SEScalarAmountPerVolume();
+    return redBloodCellAcetylcholinesterase;
+  }
+  
   public boolean hasRedBloodCellCount()
   {
     return redBloodCellCount == null ? false : redBloodCellCount.isValid();

@@ -19,15 +19,18 @@ import mil.tatrc.physiology.datamodel.bind.*;
 import mil.tatrc.physiology.datamodel.properties.*;
 import mil.tatrc.physiology.utilities.StringUtils;
 
+
 public class SESubstance
 {
 	protected EnumSubstanceState               state;
+	protected EnumSubstanceClass							 subClass;
 	protected String                           name;
 	protected SEScalarMassPerVolume            density;
   protected SEScalarMassPerAmount            molarMass;
   // Diffusion related-ish
   protected SEScalarMassPerAreaTime          maximumDiffusionFlux;
   protected SEScalar                         michaelisCoefficient;
+  protected SEScalarElectricResistance			 membraneResistance;
   // Liquid related-ish
   protected SESubstanceAerosolization        aerosolization;
   protected SEScalarMassPerVolume            bloodConcentration;
@@ -58,6 +61,7 @@ public class SESubstance
 	public void reset()
 	{
 		this.name=null;
+		this.subClass=null;
 		this.state=null;
 		if(this.density!=null)
       this.density.invalidate();
@@ -68,6 +72,8 @@ public class SESubstance
 			this.maximumDiffusionFlux.invalidate();
     if(this.michaelisCoefficient!=null)
 			this.michaelisCoefficient.invalidate();
+    if(this.membraneResistance!=null)
+    	this.membraneResistance.invalidate();
 		
 		if(this.aerosolization!=null)
       this.aerosolization.reset();
@@ -116,6 +122,8 @@ public class SESubstance
 			this.setName(data.getName());
 		if(data.getState()!=null)
 			this.setState(data.getState());
+		if(data.getClassification()!=null)
+			this.setSubClass(data.getClassification());
 		if(data.getDensity()!=null)
       this.getDensity().load(data.getDensity());    
 		if(data.getMolarMass()!=null)
@@ -125,6 +133,8 @@ public class SESubstance
 			this.getMaximumDiffusionFlux().load(data.getMaximumDiffusionFlux());
 		if(data.getMichaelisCoefficient()!=null)
 			this.getMichaelisCoefficient().load(data.getMolarMass());
+		if(data.getMembraneResistance()!=null)
+			this.getMembraneResistance().load(data.getMembraneResistance());
 				
 		if(data.getAerosolization()!=null)
 		  this.getAerosolization().load(data.getAerosolization());
@@ -181,6 +191,8 @@ public class SESubstance
 			to.setName(this.name);
 		if(hasState())
 			to.setState(this.state);
+		if(hasSubClass())
+			to.setClassification(this.subClass);
 		if(hasDensity())
       to.setDensity(this.density.unload());    
 		if(hasMolarMass())
@@ -190,6 +202,8 @@ public class SESubstance
 			to.setMaximumDiffusionFlux(this.maximumDiffusionFlux.unload());
 		if(hasMichaelisCoefficient())
 			to.setMichaelisCoefficient(this.michaelisCoefficient.unload());
+		if(hasMembraneResistance())
+			to.setMembraneResistance(this.membraneResistance.unload());
 				 
 		if(hasAerosolization())
 		  to.setAerosolization(this.aerosolization.unload());
@@ -239,6 +253,10 @@ public class SESubstance
 	public void                setState(EnumSubstanceState state){this.state=state;}
 	public boolean             hasState(){return this.state==null?false:true;}
 	
+	public EnumSubstanceClass getSubClass() { return this.subClass;}
+	public void							  setSubClass(EnumSubstanceClass subClass){this.subClass=subClass;}
+	public boolean						hasSubClass() {return this.subClass==null?false:true;}
+	
 	public SEScalarMassPerVolume getDensity() 
   { 
     if(this.density==null)
@@ -275,6 +293,14 @@ public class SESubstance
 		return this.michaelisCoefficient;
 	}
 	public boolean hasMichaelisCoefficient() {return this.michaelisCoefficient==null?false:this.michaelisCoefficient.isValid();}
+	
+	public SEScalarElectricResistance getMembraneResistance()
+	{
+		if(this.membraneResistance==null)
+			this.membraneResistance=new SEScalarElectricResistance();
+		return this.membraneResistance;
+	}
+	public boolean hasMembraneResistance() {return this.membraneResistance==null?false:this.membraneResistance.isValid();}
 
 	////////////////
 	// Liquid-ish //

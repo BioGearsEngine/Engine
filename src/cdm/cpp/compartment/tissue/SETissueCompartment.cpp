@@ -27,6 +27,7 @@ SETissueCompartment::SETissueCompartment(const std::string& name, Logger* logger
 {
   m_AcidicPhospohlipidConcentration = nullptr;
   m_MatrixVolume = nullptr;
+  m_MembranePotential = nullptr;
   m_NeutralLipidsVolumeFraction = nullptr;
   m_NeutralPhospholipidsVolumeFraction = nullptr;
   m_TissueToPlasmaAlbuminRatio = nullptr;
@@ -45,6 +46,7 @@ void SETissueCompartment::Clear()
   SECompartment::Clear();
   SAFE_DELETE(m_AcidicPhospohlipidConcentration);
   SAFE_DELETE(m_MatrixVolume);
+  SAFE_DELETE(m_MembranePotential);
   SAFE_DELETE(m_NeutralLipidsVolumeFraction);
   SAFE_DELETE(m_NeutralPhospholipidsVolumeFraction);
   SAFE_DELETE(m_TissueToPlasmaAlbuminRatio);
@@ -61,6 +63,8 @@ bool SETissueCompartment::Load(const CDM::TissueCompartmentData& in, SESubstance
     GetAcidicPhospohlipidConcentration().Load(in.AcidicPhospohlipidConcentration().get());
   if (in.MatrixVolume().present())
     GetMatrixVolume().Load(in.MatrixVolume().get());
+  if (in.MembranePotential().present())
+	  GetMembranePotential().Load(in.MembranePotential().get());
   if (in.NeutralLipidsVolumeFraction().present())
     GetNeutralLipidsVolumeFraction().Load(in.NeutralLipidsVolumeFraction().get());
   if (in.NeutralPhospholipidsVolumeFraction().present())
@@ -89,6 +93,8 @@ void SETissueCompartment::Unload(CDM::TissueCompartmentData& data)
     data.AcidicPhospohlipidConcentration(std::unique_ptr<CDM::ScalarMassPerMassData>(m_AcidicPhospohlipidConcentration->Unload()));
   if (HasMatrixVolume())
     data.MatrixVolume(std::unique_ptr<CDM::ScalarVolumeData>(m_MatrixVolume->Unload())); 
+  if (HasMembranePotential())
+	  data.MembranePotential(std::unique_ptr<CDM::ScalarElectricPotentialData>(m_MembranePotential->Unload()));
   if (HasNeutralLipidsVolumeFraction())
     data.NeutralLipidsVolumeFraction(std::unique_ptr<CDM::ScalarFractionData>(m_NeutralLipidsVolumeFraction->Unload()));
   if (HasNeutralPhospholipidsVolumeFraction())
@@ -111,6 +117,8 @@ const SEScalar* SETissueCompartment::GetScalar(const std::string& name)
     return &GetAcidicPhospohlipidConcentration();
   if (name.compare("MatrixVolume") == 0)
     return &GetMatrixVolume();  
+  if (name.compare("MembranePotential") == 0)
+	  return &GetMembranePotential();
   if (name.compare("NeutralLipidsVolumeFraction") == 0)
     return &GetNeutralLipidsVolumeFraction();
   if (name.compare("NeutralPhospholipidsVolumeFraction") == 0)
@@ -163,6 +171,23 @@ double SETissueCompartment::GetMatrixVolume(const VolumeUnit& unit) const
   if (m_MatrixVolume == nullptr)
     return SEScalar::dNaN();
   return m_MatrixVolume->GetValue(unit);
+}
+
+bool SETissueCompartment::HasMembranePotential() const
+{
+	return m_MembranePotential == nullptr ? false : m_MembranePotential->IsValid();
+}
+SEScalarElectricPotential& SETissueCompartment::GetMembranePotential()
+{
+	if (m_MembranePotential == nullptr)
+		m_MembranePotential = new SEScalarElectricPotential();
+	return *m_MembranePotential;
+}
+double SETissueCompartment::GetMembranePotential(const ElectricPotentialUnit& unit) const
+{
+	if (m_MembranePotential == nullptr)
+		return SEScalar::dNaN();
+	return m_MembranePotential->GetValue(unit);
 }
 
 bool SETissueCompartment::HasNeutralLipidsVolumeFraction() const

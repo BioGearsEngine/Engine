@@ -13,6 +13,7 @@ specific language governing permissions and limitations under the License.
 #pragma once
 CDM_BIND_DECL(SubstanceData)
 #include "bind/enumSubstanceState.hxx"
+#include "bind/enumSubstanceClass.hxx"
 
 #include "substance/SESubstanceAerosolization.h"
 #include "substance/SESubstanceClearance.h"
@@ -47,6 +48,11 @@ public:
 	virtual bool HasState() const;
 	virtual void InvalidateState();
 
+	virtual CDM::enumSubstanceClass::value GetClassification() const;
+	virtual void SetClassification(CDM::enumSubstanceClass::value subClass);
+	virtual bool HasClassification() const;
+	virtual void InvalidateClassification();
+
 	virtual bool HasDensity() const;
 	virtual SEScalarMassPerVolume& GetDensity();
   virtual double GetDensity(const MassPerVolumeUnit& unit) const;
@@ -63,6 +69,10 @@ public:
   virtual bool HasMichaelisCoefficient() const;
   virtual SEScalar& GetMichaelisCoefficient();
   virtual double GetMichaelisCoefficient() const;
+
+  virtual bool HasMembraneResistance() const;
+  virtual SEScalarElectricResistance& GetMembraneResistance();
+  virtual double GetMembraneResistance(const ElectricResistanceUnit& unit) const;
 
 	// Liquid-ish
 	virtual bool HasAerosolization() const;
@@ -146,12 +156,14 @@ public:
 protected: 
 
 	std::string                       m_Name;
+	CDM::enumSubstanceClass::value	 m_Classification;
 	CDM::enumSubstanceState::value    m_State;
 	SEScalarMassPerVolume*            m_Density;
 	SEScalarMassPerAmount*            m_MolarMass;
 
   SEScalarMassPerAreaTime*          m_MaximumDiffusionFlux;
   SEScalar*                         m_MichaelisCoefficient;
+  SEScalarElectricResistance*		m_MembraneResistance;
 
 	SESubstanceAerosolization*        m_Aerosolization;
   SEScalarMassPerVolume*   	        m_BloodConcentration;

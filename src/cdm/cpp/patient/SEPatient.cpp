@@ -70,6 +70,7 @@ SEPatient::SEPatient(Logger* logger) : Loggable(logger)
 	m_InspiratoryCapacity = nullptr;
 	m_InspiratoryReserveVolume = nullptr;
 	m_LeanBodyMass = nullptr;
+  m_MuscleMass = nullptr;
   m_MeanArterialPressureBaseline = nullptr;
 	m_ResidualVolume = nullptr;
 	m_RespirationRateBaseline = nullptr;
@@ -128,6 +129,7 @@ void SEPatient::Clear()
 	SAFE_DELETE(m_InspiratoryCapacity);
 	SAFE_DELETE(m_InspiratoryReserveVolume);
 	SAFE_DELETE(m_LeanBodyMass);
+  SAFE_DELETE(m_MuscleMass);
   SAFE_DELETE(m_MeanArterialPressureBaseline);
 	SAFE_DELETE(m_ResidualVolume);
 	SAFE_DELETE(m_RespirationRateBaseline);
@@ -176,6 +178,8 @@ const SEScalar* SEPatient::GetScalar(const std::string& name)
 		return &GetInspiratoryReserveVolume();
 	if (name.compare("LeanBodyMass") == 0)
 		return &GetLeanBodyMass();
+  if (name.compare("MuscleMass") == 0)
+    return &GetMuscleMass();
   if (name.compare("MeanArterialPressureBaseline") == 0)
 		return &GetMeanArterialPressureBaseline();
 	if (name.compare("ResidualVolume") == 0)
@@ -240,6 +244,8 @@ bool SEPatient::Load(const CDM::PatientData& in)
     GetInspiratoryReserveVolume().Load(in.InspiratoryReserveVolume().get());
   if (in.LeanBodyMass().present())
 	  GetLeanBodyMass().Load(in.LeanBodyMass().get());
+  if (in.MuscleMass().present())
+    GetMuscleMass().Load(in.MuscleMass().get());
   if(in.MeanArterialPressureBaseline().present())
 		GetMeanArterialPressureBaseline().Load(in.MeanArterialPressureBaseline().get());
 	if (in.ResidualVolume().present())
@@ -318,6 +324,8 @@ void SEPatient::Unload(CDM::PatientData& data) const
 		data.InspiratoryReserveVolume(std::unique_ptr<CDM::ScalarVolumeData>(m_InspiratoryReserveVolume->Unload()));
 	if (m_LeanBodyMass != nullptr)
 		data.LeanBodyMass(std::unique_ptr<CDM::ScalarMassData>(m_LeanBodyMass->Unload()));
+  if (m_MuscleMass != nullptr)
+    data.MuscleMass(std::unique_ptr<CDM::ScalarMassData>(m_MuscleMass->Unload()));
   if(m_MeanArterialPressureBaseline!=nullptr)
 		data.MeanArterialPressureBaseline(std::unique_ptr<CDM::ScalarPressureData>(m_MeanArterialPressureBaseline->Unload())); 
 	if (m_ResidualVolume != nullptr)
@@ -468,6 +476,9 @@ void SEPatient::SetEvent(CDM::enumPatientEvent::value type, bool active, const S
       case CDM::enumPatientEvent::ModerateAcuteRespiratoryDistress:
         m_ss << " The patient has Moderate Acute Respiratory Distress";
         break;
+      case CDM::enumPatientEvent::MuscleCatabolism:
+        m_ss << " Patient has begun muscle catabolism";
+        break;
       case CDM::enumPatientEvent::MuscleGlycogenDepleted:
         m_ss << " Patient's muscle glycogen is depleted";
         break;
@@ -496,7 +507,7 @@ void SEPatient::SetEvent(CDM::enumPatientEvent::value type, bool active, const S
 				m_ss << " Patient has Tachypnea";
 				break;
 			case CDM::enumPatientEvent::Fatigue:
-				m_ss << "Patient has fatigue";
+				m_ss << " Patient has fatigue";
 				break;
 			case CDM::enumPatientEvent::StartOfCardiacCycle:
 			case CDM::enumPatientEvent::StartOfExhale:
@@ -542,7 +553,7 @@ void SEPatient::SetEvent(CDM::enumPatientEvent::value type, bool active, const S
 				m_ss << " Patient no longer has Diuresis";
 				break;
 			case CDM::enumPatientEvent::Fasciculation:
-				m_ss << "Patient no longer has fasciculations";
+				m_ss << "Patient no longer has Fasciculation";
 				break;
 			case CDM::enumPatientEvent::FunctionalIncontinence:
 				m_ss << " Patient has an empty bladder";
@@ -635,7 +646,7 @@ void SEPatient::SetEvent(CDM::enumPatientEvent::value type, bool active, const S
 				m_ss << " Patient no longer has Tachypnea";
 				break;
 			case CDM::enumPatientEvent::Fatigue:
-				m_ss << "Patient is no longer fatigued";
+				m_ss << " Patient is no longer fatigued";
 				break;
 			case CDM::enumPatientEvent::StartOfCardiacCycle:
 			case CDM::enumPatientEvent::StartOfExhale:
@@ -1003,6 +1014,23 @@ double SEPatient::GetLeanBodyMass(const MassUnit& unit) const
 	if (m_LeanBodyMass == nullptr)
 		return SEScalar::dNaN();
 	return m_LeanBodyMass->GetValue(unit);
+}
+
+bool SEPatient::HasMuscleMass() const
+{
+  return m_MuscleMass == nullptr ? false : m_MuscleMass->IsValid();
+}
+SEScalarMass& SEPatient::GetMuscleMass()
+{
+  if (m_MuscleMass == nullptr)
+    m_MuscleMass = new SEScalarMass();
+  return *m_MuscleMass;
+}
+double SEPatient::GetMuscleMass(const MassUnit& unit) const
+{
+  if (m_MuscleMass == nullptr)
+    return SEScalar::dNaN();
+  return m_MuscleMass->GetValue(unit);
 }
 
 bool SEPatient::HasMeanArterialPressureBaseline() const

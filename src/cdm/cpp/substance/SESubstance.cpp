@@ -30,16 +30,19 @@ specific language governing permissions and limitations under the License.
 #include "properties/SEScalarMassPerVolume.h"
 #include "properties/SEScalarVolumePerTime.h"
 #include "properties/SEScalarVolumePerTimePressure.h"
+#include "properties/SEScalarElectricResistance.h"
 
 SESubstance::SESubstance(Logger* logger) : Loggable(logger)
 {
 	m_Name = "";
 	m_State = (CDM::enumSubstanceState::value) - 1;
+	m_Classification = (CDM::enumSubstanceClass::value) - 1;
 	m_Density = nullptr;
 	m_MolarMass = nullptr;
 
   m_MaximumDiffusionFlux = nullptr;
   m_MichaelisCoefficient = nullptr;
+  m_MembraneResistance = nullptr;
 
 	m_Aerosolization = nullptr;
   m_BloodConcentration = nullptr;
@@ -72,11 +75,13 @@ void SESubstance::Clear()
 {
 	m_Name = "";
 	m_State = (CDM::enumSubstanceState::value) - 1;
+	m_Classification = (CDM::enumSubstanceClass::value) - 1;
   SAFE_DELETE(m_Density); 
   SAFE_DELETE(m_MolarMass);
 	
   SAFE_DELETE(m_MaximumDiffusionFlux);
   SAFE_DELETE(m_MichaelisCoefficient);
+  SAFE_DELETE(m_MembraneResistance);
 
   SAFE_DELETE(m_BloodConcentration);
 	SAFE_DELETE(m_MassInBody);
@@ -113,6 +118,8 @@ const SEScalar* SESubstance::GetScalar(const std::string& name)
     return &GetMaximumDiffusionFlux();
   if (name.compare("MichaelisCoefficient") == 0)
     return &GetMichaelisCoefficient();
+  if (name.compare("MembraneConductivity") == 0)
+	  return &GetMembraneResistance();
 
   if (name.compare("BloodConcentration") == 0)
     return &GetBloodConcentration();
@@ -169,6 +176,8 @@ bool SESubstance::Load(const CDM::SubstanceData& in)
 
 	if (in.State().present())
 		m_State = in.State().get();
+	if (in.Classification().present())
+		m_Classification = in.Classification().get();
 	if (in.Density().present())
 		GetDensity().Load(in.Density().get());
 	if (in.MolarMass().present())
@@ -178,6 +187,8 @@ bool SESubstance::Load(const CDM::SubstanceData& in)
     GetMaximumDiffusionFlux().Load(in.MaximumDiffusionFlux().get());
   if (in.MichaelisCoefficient().present())
     GetMichaelisCoefficient().Load(in.MichaelisCoefficient().get());
+  if (in.MembraneResistance().present())
+	  GetMembraneResistance().Load(in.MembraneResistance().get());
   
   if (in.BloodConcentration().present())
     GetBloodConcentration().Load(in.BloodConcentration().get());
@@ -241,6 +252,8 @@ void SESubstance::Unload(CDM::SubstanceData& data) const
 		data.Name(m_Name);
 	if (HasState())
 		data.State(m_State);
+	if (HasClassification())
+		data.Classification(m_Classification);
 	if (HasDensity())
 		data.Density(std::unique_ptr<CDM::ScalarMassPerVolumeData>(m_Density->Unload()));
 	if (HasMolarMass())
@@ -250,6 +263,8 @@ void SESubstance::Unload(CDM::SubstanceData& data) const
     data.MaximumDiffusionFlux(std::unique_ptr<CDM::ScalarMassPerAreaTimeData>(m_MaximumDiffusionFlux->Unload()));
   if (HasMichaelisCoefficient())
     data.MichaelisCoefficient(std::unique_ptr<CDM::ScalarData>(m_MichaelisCoefficient->Unload()));
+  if (HasMembraneResistance())
+	  data.MembraneResistance(std::unique_ptr<CDM::ScalarElectricResistanceData>(m_MembraneResistance->Unload()));
  
   if (HasBloodConcentration())
     data.BloodConcentration(std::unique_ptr<CDM::ScalarMassPerVolumeData>(m_BloodConcentration->Unload()));
@@ -325,6 +340,23 @@ void SESubstance::InvalidateState()
 	m_State = (CDM::enumSubstanceState::value) - 1;
 }
 
+CDM::enumSubstanceClass::value SESubstance::GetClassification() const
+{
+	return m_Classification;
+}
+void SESubstance::SetClassification(CDM::enumSubstanceClass::value subClass)
+{
+	m_Classification = subClass;
+}
+bool SESubstance::HasClassification() const
+{
+	return m_Classification == ((CDM::enumSubstanceState::value) - 1) ? false : true;
+}
+void SESubstance::InvalidateClassification()
+{
+	m_Classification = (CDM::enumSubstanceClass::value) - 1;
+}
+
 bool SESubstance::HasDensity() const
 {
 	return (m_Density == nullptr) ? false : m_Density->IsValid();
@@ -392,6 +424,24 @@ double SESubstance::GetMichaelisCoefficient() const
     return SEScalar::dNaN();
   return m_MichaelisCoefficient->GetValue();
 }
+
+bool SESubstance::HasMembraneResistance() const
+{
+	return (m_MembraneResistance == nullptr) ? false : m_MembraneResistance->IsValid();
+}
+SEScalarElectricResistance& SESubstance::GetMembraneResistance()
+{
+	if (m_MembraneResistance == nullptr)
+		m_MembraneResistance = new SEScalarElectricResistance();
+	return *m_MembraneResistance;
+}
+double SESubstance::GetMembraneResistance(const ElectricResistanceUnit& unit) const
+{
+	if (m_MembraneResistance == nullptr)
+		return SEScalarElectricResistance::dNaN();
+	return m_MembraneResistance->GetValue(unit);
+}
+
 
 bool SESubstance::HasAerosolization() const
 {

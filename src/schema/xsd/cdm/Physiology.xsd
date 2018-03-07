@@ -57,6 +57,7 @@ specific language governing permissions and limitations under the License.
                     <xs:element name="VolumeFractionNeutralLipidInPlasma" type="ScalarFractionData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Fraction of the plasma that is made up of neutral lipids.-->
                     <xs:element name="VolumeFractionNeutralPhospholipidInPlasma" type="ScalarFractionData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Fraction of the plasma that is made up of neutral phospholipids.-->
                     <xs:element name="WhiteBloodCellCount" type="ScalarAmountPerVolumeData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Total number of white blood cells in the blood.-->
+                    <xs:element name="RedBloodCellAcetylcholinesterase" type="ScalarAmountPerVolumeData" minOccurs="0" maxOccurs="1"/> <!--<<@brief Concentration of acetylcholinesterase associated with red blood cells-->
                     <!-- Substance Pressures -->
                     <xs:element name="ArterialCarbonDioxidePressure" type="ScalarPressureData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Partial pressure of carbon dioxide in the aorta.-->
                     <xs:element name="ArterialOxygenPressure" type="ScalarPressureData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Partial pressure of oxygen in the aorta.-->
@@ -178,13 +179,15 @@ specific language governing permissions and limitations under the License.
                     <xs:element name="CoreTemperature" type="ScalarTemperatureData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The internal body temperature.-->
                     <xs:element name="CreatinineProductionRate" type="ScalarAmountPerTimeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The generation of creatinine in the muscle tissue per -->                    
                     <xs:element name="ExerciseMeanArterialPressureDelta" type="ScalarPressureData" minOccurs="0" maxOccurs="1"/><!--<< @brief The pressure delta that occurs during exercise. Used to modify the baroreceptor set-point -->
-                    <xs:element name="FatigueLevel" type="ScalarFractionData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The exhaustion level of the body, or inability to perform physical exercise @details The amount of energy available for activity divided by the normal rested energy -->
-                    <xs:element name="KetoneProductionRate" type="ScalarAmountPerTimeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The molar amount of ketones generated in the liver -->                            
+                    <xs:element name="FatigueLevel" type="ScalarFractionData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The exhaustion level of the body, or inability to perform physical exercise @details The amount of energy available for activity divided by the normal rested energy -->                            
                     <xs:element name="LactateProductionRate" type="ScalarAmountPerTimeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The molar amount of lactate generated on the tissue level from anaerobic metabolism -->
                     <xs:element name="SkinTemperature" type="ScalarTemperatureData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The skin surface temperature.-->
                     <xs:element name="SweatRate" type="ScalarMassPerTimeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief Mass of sweat generated per unit time due to elevated core temperature -->
                     <xs:element name="TotalMetabolicRate" type="ScalarPowerData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The basal metabolic rate plus additional energy expenditure rates due to activity.-->
-                    <xs:element name="TotalWorkRateLevel" type="ScalarFractionData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The current patient work rate above basal over the maximum work rate capable by the patient -->                    
+                    <xs:element name="TotalWorkRateLevel" type="ScalarFractionData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The current patient work rate above basal over the maximum work rate capable by the patient -->
+                    <xs:element name="SodiumLostToSweat" type="ScalarMassData" minOccurs="0" maxOccurs="1"/> <!--<<@brief Tracks the total amount of sodium lost while sweating during exercise -->
+                    <xs:element name="PotassiumLostToSweat" type="ScalarMassData" minOccurs="0" maxOccurs="1"/> <!--<<@brief Tracks the total amount of potassium lost while sweating during exercise --> 
+                    <xs:element name="ChlorideLostToSweat" type="ScalarMassData" minOccurs="0" maxOccurs="1"/> <!--<<@brief Tracks the total amount of chloride lost while sweating during exercise -->                    
                 </xs:sequence>    
             </xs:extension>
         </xs:complexContent>
@@ -214,7 +217,8 @@ specific language governing permissions and limitations under the License.
         <xs:complexContent>
             <xs:extension base="SystemData">
                 <xs:sequence>
-                    
+                    <xs:element name="KetoneProductionRate" type="ScalarAmountPerTimeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The rate of ketone production in the liver -->
+                    <xs:element name="HepaticGluconeogenesisRate" type="ScalarMassPerTimeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The rate of glucose production in the liver -->
                 </xs:sequence>  
             </xs:extension>
         </xs:complexContent>
@@ -354,10 +358,12 @@ specific language governing permissions and limitations under the License.
             <xs:extension base="SystemData">
                 <xs:sequence>
                     <xs:element name="CarbonDioxideProductionRate" type="ScalarVolumePerTimeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The carbon dioxide generated on the tissue level from aerobic metabolism-->
+                    <xs:element name="DehydrationFraction" type="ScalarFractionData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The fraction of body weight lost as fluid since initialization -->
                     <xs:element name="ExtracellularFluidVolume" type="ScalarVolumeData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Volume of fluid outside of cells AND outside of the blood vessels-->
                     <xs:element name="ExtravascularFluidVolume" type="ScalarVolumeData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Total fluid volume outside of the blood vessels. -->
                     <xs:element name="IntracellularFluidPH" type="ScalarData" minOccurs="0"  maxOccurs="1"/><!--<< @brief The acidity or alkalinity of the extravascular intercellular fluid.-->
-                    <xs:element name="IntracellularFluidVolume" type="ScalarVolumeData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Volume of fluid in the cells outside of the blood vessels. -->                    
+                    <xs:element name="IntracellularFluidVolume" type="ScalarVolumeData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Volume of fluid in the cells outside of the blood vessels. --> 
+                    <xs:element name="TotalBodyFluidVolume" type="ScalarVolumeData" minOccurs="0"  maxOccurs="1"/><!--<< @brief Total fluid volume inside the body. -->                   
                     <xs:element name="OxygenConsumptionRate" type="ScalarVolumePerTimeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The oxygen consumed on the tissue level from aerobic metabolism-->
                     <xs:element name="RespiratoryExchangeRatio" type="ScalarData" minOccurs="0"  maxOccurs="1"/> <!--<< @brief The true ratio of carbon dioxide produced to oxygen consumed -->    
                     <xs:element name="LiverInsulinSetPoint" type="ScalarAmountPerVolumeData" minOccurs="0" maxOccurs="1"/> <!--<< @brief The insulin molarity in the liver vasculature after stabilization -->

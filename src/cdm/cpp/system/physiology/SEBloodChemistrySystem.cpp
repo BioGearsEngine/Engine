@@ -43,6 +43,7 @@ SEBloodChemistrySystem::SEBloodChemistrySystem(Logger* logger) : SESystem(logger
   m_Phosphate = nullptr;
 	m_PlasmaVolume = nullptr;
   m_PulseOximetry = nullptr;
+  m_RedBloodCellAcetylcholinesterase = nullptr;
 	m_RedBloodCellCount = nullptr;
 	m_ShuntFraction = nullptr;
   m_StrongIonDifference = nullptr;
@@ -82,6 +83,7 @@ void SEBloodChemistrySystem::Clear()
   SAFE_DELETE(m_Phosphate);
 	SAFE_DELETE(m_PlasmaVolume);
   SAFE_DELETE(m_PulseOximetry);
+  SAFE_DELETE(m_RedBloodCellAcetylcholinesterase);
 	SAFE_DELETE(m_RedBloodCellCount);
 	SAFE_DELETE(m_ShuntFraction);
   SAFE_DELETE(m_StrongIonDifference);
@@ -126,6 +128,8 @@ const SEScalar* SEBloodChemistrySystem::GetScalar(const std::string& name)
     return &GetPlasmaVolume();
   if (name.compare("PulseOximetry") == 0)
     return &GetPulseOximetry();
+  if (name.compare("RedBloodCellAcetylcholinesterase") == 0)
+	  return &GetRedBloodCellAcetylcholinesterase();
   if (name.compare("RedBloodCellCount") == 0)
 		return &GetRedBloodCellCount();
 	if (name.compare("ShuntFraction") == 0)
@@ -189,6 +193,8 @@ bool SEBloodChemistrySystem::Load(const CDM::BloodChemistrySystemData& in)
 		GetPlasmaVolume().Load(in.PlasmaVolume().get());
   if (in.PulseOximetry().present())
     GetPulseOximetry().Load(in.PulseOximetry().get());
+  if (in.RedBloodCellAcetylcholinesterase().present())
+	  GetRedBloodCellAcetylcholinesterase().Load(in.RedBloodCellAcetylcholinesterase().get());
   if (in.RedBloodCellCount().present())
 		GetRedBloodCellCount().Load(in.RedBloodCellCount().get());
 	if(in.ShuntFraction().present())
@@ -259,6 +265,8 @@ void SEBloodChemistrySystem::Unload(CDM::BloodChemistrySystemData& data) const
 		data.PlasmaVolume(std::unique_ptr<CDM::ScalarVolumeData>(m_PlasmaVolume->Unload()));
   if (m_PulseOximetry != nullptr)
     data.PulseOximetry(std::unique_ptr<CDM::ScalarFractionData>(m_PulseOximetry->Unload()));
+  if (m_RedBloodCellAcetylcholinesterase != nullptr)
+	  data.RedBloodCellAcetylcholinesterase(std::unique_ptr<CDM::ScalarAmountPerVolumeData>(m_RedBloodCellAcetylcholinesterase->Unload()));
   if (m_RedBloodCellCount != nullptr)
 		data.RedBloodCellCount(std::unique_ptr<CDM::ScalarAmountPerVolumeData>(m_RedBloodCellCount->Unload()));
 	if(m_ShuntFraction!=nullptr)
@@ -494,6 +502,23 @@ double SEBloodChemistrySystem::GetPulseOximetry() const
   if (m_PulseOximetry == nullptr)
     return SEScalar::dNaN();
   return m_PulseOximetry->GetValue();
+}
+
+bool SEBloodChemistrySystem::HasRedBloodCellAcetylcholinesterase() const
+{
+	return m_RedBloodCellAcetylcholinesterase == nullptr ? false : m_RedBloodCellAcetylcholinesterase->IsValid();
+}
+SEScalarAmountPerVolume& SEBloodChemistrySystem::GetRedBloodCellAcetylcholinesterase()
+{
+	if (m_RedBloodCellAcetylcholinesterase == nullptr)
+		m_RedBloodCellAcetylcholinesterase = new SEScalarAmountPerVolume();
+	return *m_RedBloodCellAcetylcholinesterase;
+}
+double SEBloodChemistrySystem::GetRedBloodCellAcetylcholinesterase(const AmountPerVolumeUnit& unit) const
+{
+	if (m_RedBloodCellCount == nullptr)
+		return SEScalar::dNaN();
+	return m_RedBloodCellAcetylcholinesterase->GetValue(unit);
 }
 
 bool SEBloodChemistrySystem::HasRedBloodCellCount() const

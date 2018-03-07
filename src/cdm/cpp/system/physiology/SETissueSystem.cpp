@@ -15,6 +15,8 @@ specific language governing permissions and limitations under the License.
 #include "substance/SESubstanceManager.h"
 #include "properties/SEScalarVolume.h"
 #include "bind/ScalarVolumeData.hxx"
+#include "properties/SEScalarFraction.h"
+#include "bind/ScalarFractionData.hxx"
 #include "properties/SEScalarVolumePerTime.h"
 #include "bind/ScalarVolumePerTimeData.hxx"
 #include "properties/SEScalarAmountPerVolume.h"
@@ -23,14 +25,18 @@ specific language governing permissions and limitations under the License.
 #include "bind/ScalarMassPerVolumeData.hxx"
 #include "properties/SEScalarMass.h"
 #include "bind/ScalarMassData.hxx"
+#include "properties/SEScalarElectricPotential.h"
+#include "bind/ScalarElectricPotentialData.hxx"
 
 
 SETissueSystem::SETissueSystem(Logger* logger) : SESystem(logger)
 {
   m_CarbonDioxideProductionRate = nullptr;
+  m_DehydrationFraction = nullptr;
   m_ExtracellularFluidVolume = nullptr;
   m_ExtravascularFluidVolume = nullptr;
   m_IntracellularFluidVolume = nullptr;
+  m_TotalBodyFluidVolume = nullptr;
   m_IntracellularFluidPH = nullptr;
   m_OxygenConsumptionRate = nullptr;
   m_RespiratoryExchangeRatio = nullptr;
@@ -54,9 +60,11 @@ SETissueSystem::~SETissueSystem()
 void SETissueSystem::Clear()
 {
   SAFE_DELETE(m_CarbonDioxideProductionRate);
+  SAFE_DELETE(m_DehydrationFraction);
   SAFE_DELETE(m_ExtracellularFluidVolume);
   SAFE_DELETE(m_ExtravascularFluidVolume);
   SAFE_DELETE(m_IntracellularFluidVolume);
+  SAFE_DELETE(m_TotalBodyFluidVolume);
   SAFE_DELETE(m_IntracellularFluidPH);
   SAFE_DELETE(m_OxygenConsumptionRate);
   SAFE_DELETE(m_RespiratoryExchangeRatio);
@@ -76,6 +84,8 @@ const SEScalar* SETissueSystem::GetScalar(const std::string& name)
 {
   if (name.compare("CarbonDioxideProductionRate") == 0)
     return &GetCarbonDioxideProductionRate();
+  if (name.compare("DehydrationFraction") == 0)
+    return &GetDehydrationFraction();
   if (name.compare("ExtracellularFluidVolume") == 0)
     return &GetExtracellularFluidVolume();
   if (name.compare("ExtravascularFluidVolume") == 0)
@@ -84,6 +94,8 @@ const SEScalar* SETissueSystem::GetScalar(const std::string& name)
     return &GetIntracellularFluidPH();
   if (name.compare("IntracellularFluidVolume") == 0)
     return &GetIntracellularFluidVolume();
+  if (name.compare("TotalBodyFluidVolume") == 0)
+    return &GetTotalBodyFluidVolume();
   if (name.compare("OxygenConsumptionRate") == 0)
     return &GetOxygenConsumptionRate();
   if (name.compare("RespiratoryExchangeRatio") == 0)
@@ -117,6 +129,8 @@ bool SETissueSystem::Load(const CDM::TissueSystemData& in)
 	SESystem::Load(in);
   if (in.CarbonDioxideProductionRate().present())
     GetCarbonDioxideProductionRate().Load(in.CarbonDioxideProductionRate().get());
+  if (in.DehydrationFraction().present())
+    GetDehydrationFraction().Load(in.DehydrationFraction().get());
   if (in.ExtracellularFluidVolume().present())
     GetExtracellularFluidVolume().Load(in.ExtracellularFluidVolume().get());
   if (in.ExtravascularFluidVolume().present())
@@ -125,6 +139,8 @@ bool SETissueSystem::Load(const CDM::TissueSystemData& in)
     GetIntracellularFluidPH().Load(in.IntracellularFluidPH().get());
   if (in.IntracellularFluidVolume().present())
     GetIntracellularFluidVolume().Load(in.IntracellularFluidVolume().get());
+  if (in.TotalBodyFluidVolume().present())
+    GetTotalBodyFluidVolume().Load(in.TotalBodyFluidVolume().get());
   if (in.OxygenConsumptionRate().present())
     GetOxygenConsumptionRate().Load(in.OxygenConsumptionRate().get());
   if (in.RespiratoryExchangeRatio().present())
@@ -164,6 +180,8 @@ void SETissueSystem::Unload(CDM::TissueSystemData& data) const
 {	
   if (m_CarbonDioxideProductionRate != nullptr)
     data.CarbonDioxideProductionRate(std::unique_ptr<CDM::ScalarVolumePerTimeData>(m_CarbonDioxideProductionRate->Unload()));
+  if (m_DehydrationFraction != nullptr)
+    data.DehydrationFraction(std::unique_ptr<CDM::ScalarFractionData>(m_DehydrationFraction->Unload()));
   if (m_ExtracellularFluidVolume != nullptr)
     data.ExtracellularFluidVolume(std::unique_ptr<CDM::ScalarVolumeData>(m_ExtracellularFluidVolume->Unload()));
   if (m_ExtravascularFluidVolume != nullptr)
@@ -172,6 +190,8 @@ void SETissueSystem::Unload(CDM::TissueSystemData& data) const
     data.IntracellularFluidPH(std::unique_ptr<CDM::ScalarData>(m_IntracellularFluidPH->Unload()));
   if (m_IntracellularFluidVolume != nullptr)
     data.IntracellularFluidVolume(std::unique_ptr<CDM::ScalarVolumeData>(m_IntracellularFluidVolume->Unload()));
+  if (m_TotalBodyFluidVolume != nullptr)
+    data.TotalBodyFluidVolume(std::unique_ptr<CDM::ScalarVolumeData>(m_TotalBodyFluidVolume->Unload()));
   if (m_OxygenConsumptionRate != nullptr)
     data.OxygenConsumptionRate(std::unique_ptr<CDM::ScalarVolumePerTimeData>(m_OxygenConsumptionRate->Unload()));
   if (m_RespiratoryExchangeRatio != nullptr)
@@ -215,6 +235,23 @@ double SETissueSystem::GetCarbonDioxideProductionRate(const VolumePerTimeUnit& u
   if (m_CarbonDioxideProductionRate == nullptr)
     return SEScalar::dNaN();
   return m_CarbonDioxideProductionRate->GetValue(unit);
+}
+
+bool SETissueSystem::HasDehydrationFraction() const
+{
+  return m_DehydrationFraction == nullptr ? false : m_DehydrationFraction->IsValid();
+}
+SEScalarFraction& SETissueSystem::GetDehydrationFraction()
+{
+  if (m_DehydrationFraction == nullptr)
+    m_DehydrationFraction = new SEScalarFraction();
+  return *m_DehydrationFraction;
+}
+double SETissueSystem::GetDehydrationFraction() const
+{
+  if (m_DehydrationFraction == nullptr)
+    return SEScalar::dNaN();
+  return m_DehydrationFraction->GetValue();
 }
 
 bool SETissueSystem::HasExtracellularFluidVolume() const
@@ -266,6 +303,23 @@ double SETissueSystem::GetIntracellularFluidVolume(const VolumeUnit& unit) const
   if (m_IntracellularFluidVolume == nullptr)
     return SEScalar::dNaN();
   return m_IntracellularFluidVolume->GetValue(unit);
+}
+
+bool SETissueSystem::HasTotalBodyFluidVolume() const
+{
+  return m_TotalBodyFluidVolume == nullptr ? false : m_TotalBodyFluidVolume->IsValid();
+}
+SEScalarVolume& SETissueSystem::GetTotalBodyFluidVolume()
+{
+  if (m_TotalBodyFluidVolume == nullptr)
+    m_TotalBodyFluidVolume = new SEScalarVolume();
+  return *m_TotalBodyFluidVolume;
+}
+double SETissueSystem::GetTotalBodyFluidVolume(const VolumeUnit& unit) const
+{
+  if (m_TotalBodyFluidVolume == nullptr)
+    return SEScalar::dNaN();
+  return m_TotalBodyFluidVolume->GetValue(unit);
 }
 
 bool SETissueSystem::HasIntracellularFluidPH() const

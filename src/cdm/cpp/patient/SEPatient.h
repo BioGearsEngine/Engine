@@ -136,6 +136,10 @@ public:
   virtual SEScalarMass& GetLeanBodyMass();
   virtual double GetLeanBodyMass(const MassUnit& unit) const;
 
+  virtual bool HasMuscleMass() const;
+  virtual SEScalarMass& GetMuscleMass();
+  virtual double GetMuscleMass(const MassUnit& unit) const;
+
 	virtual bool HasMeanArterialPressureBaseline() const;
 	virtual SEScalarPressure& GetMeanArterialPressureBaseline();
   virtual double GetMeanArterialPressureBaseline(const PressureUnit& unit) const;		
@@ -187,6 +191,7 @@ protected:
   SEScalarMassPerVolume*     m_BodyDensity;
   SEScalarFraction*		       m_BodyFatFraction;
   SEScalarMass*              m_LeanBodyMass;
+  SEScalarMass*              m_MuscleMass;
 
   SEScalarArea*              m_AlveoliSurfaceArea;
   SEScalarFraction*          m_RightLungRatio;

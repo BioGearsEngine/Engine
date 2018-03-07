@@ -28,6 +28,7 @@ import java.util.*;
 import mil.tatrc.physiology.datamodel.CDMSerializer;
 import mil.tatrc.physiology.datamodel.bind.TissueCompartmentData;
 import mil.tatrc.physiology.datamodel.properties.SEScalar;
+import mil.tatrc.physiology.datamodel.properties.SEScalarElectricPotential;
 import mil.tatrc.physiology.datamodel.properties.SEScalarFraction;
 import mil.tatrc.physiology.datamodel.properties.SEScalarMass;
 import mil.tatrc.physiology.datamodel.properties.SEScalarMassPerMass;
@@ -37,6 +38,7 @@ public class SETissueCompartment extends SECompartment
 {
 	protected SEScalarMassPerMass acidicPhospohlipidConcentration;	
 	protected SEScalarVolume      matrixVolume;
+  protected SEScalarElectricPotential		membranePotential;
   protected SEScalarFraction    neutralLipidsVolumeFraction;
   protected SEScalarFraction    neutralPhospholipidsVolumeFraction;  
   protected SEScalar            tissueToPlasmaAlbuminRatio;
@@ -48,6 +50,7 @@ public class SETissueCompartment extends SECompartment
 	{
 		acidicPhospohlipidConcentration = null;
 		matrixVolume = null;
+    membranePotential = null;
 		neutralLipidsVolumeFraction = null;
 		neutralPhospholipidsVolumeFraction = null;    
 		tissueToPlasmaAlbuminRatio = null;
@@ -63,6 +66,8 @@ public class SETissueCompartment extends SECompartment
 			acidicPhospohlipidConcentration.invalidate();
 		if (matrixVolume != null)
 			matrixVolume.invalidate();
+    if(membranePotential != null)
+    	membranePotential.invalidate();
 		if (neutralLipidsVolumeFraction != null)
 			neutralLipidsVolumeFraction.invalidate();
 		if (neutralPhospholipidsVolumeFraction != null)
@@ -84,6 +89,8 @@ public class SETissueCompartment extends SECompartment
 			getAcidicPhospohlipidConcentration().load(in.getAcidicPhospohlipidConcentration());
 		if(in.getMatrixVolume()!=null)
 			getMatrixVolume().load(in.getMatrixVolume());
+		if(in.getMembranePotential()!=null)
+    	getMembranePotential().load(in.getMembranePotential());
 		if(in.getNeutralLipidsVolumeFraction()!=null)
 			getNeutralLipidsVolumeFraction().load(in.getNeutralLipidsVolumeFraction());
 		if(in.getNeutralPhospholipidsVolumeFraction()!=null)
@@ -114,6 +121,8 @@ public class SETissueCompartment extends SECompartment
 	  	data.setAcidicPhospohlipidConcentration(this.acidicPhospohlipidConcentration.unload());
 	  if(hasMatrixVolume())
 	  	data.setMatrixVolume(this.matrixVolume.unload());
+	  if (hasMembranePotential())
+    	data.setMembranePotential(membranePotential.unload());
 	  if(hasNeutralLipidsVolumeFraction())
 	  	data.setNeutralLipidsVolumeFraction(this.neutralLipidsVolumeFraction.unload());
 	  if(hasNeutralPhospholipidsVolumeFraction())
@@ -148,6 +157,17 @@ public class SETissueCompartment extends SECompartment
   public boolean hasMatrixVolume()
   {
     return matrixVolume == null ? false : matrixVolume.isValid();
+  }
+  
+  public boolean hasMembranePotential()
+  {
+    return membranePotential == null ? false : membranePotential.isValid();
+  }
+  public SEScalarElectricPotential getMembranePotential()
+  {
+    if (membranePotential == null)
+    	membranePotential = new SEScalarElectricPotential();
+    return membranePotential;
   }
   
   public SEScalarFraction getNeutralLipidsVolumeFraction() 

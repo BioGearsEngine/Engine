@@ -18,8 +18,10 @@ class SEChronicObstructivePulmonaryDisease;
 class SEChronicPericardialEffusion;
 class SEChronicVentricularSystolicDysfunction;
 class SEChronicRenalStenosis;
-class SEConsumeMeal;
+class SEStarvation;
 class SEDehydration;
+class SEDiabetesType1;
+class SEDiabetesType2;
 class SEFasting; 
 class SEImpairedAlveolarExchange;
 class SELobarPneumonia;
@@ -62,11 +64,17 @@ public:
 	bool HasChronicRenalStenosis() const;
 	SEChronicRenalStenosis* GetChronicRenalStenosis() const;
 
-	bool HasConsumeMeal() const;
-	SEConsumeMeal* GetConsumeMeal() const;
+	bool HasStarvation() const;
+	SEStarvation* GetStarvation() const;
 
 	bool HasDehydration() const;
 	SEDehydration* GetDehydration() const;
+
+  bool HasDiabetesType1() const;
+  SEDiabetesType1* GetDiabetesType1() const;
+
+  bool HasDiabetesType2() const;
+  SEDiabetesType2* GetDiabetesType2() const;
 
   bool HasImpairedAlveolarExchange() const;
   SEImpairedAlveolarExchange* GetImpairedAlveolarExchange() const;
@@ -84,9 +92,11 @@ protected:
 
   SESubstanceManager&                   m_Substances;
 	SEChronicAnemia*                      m_Anemia;
-	SEConsumeMeal*                        m_ConsumeMeal;
+	SEStarvation*                        m_Starvation;
 	SEChronicObstructivePulmonaryDisease* m_COPD;
 	SEDehydration*                        m_Dehydration;
+  SEDiabetesType1*                      m_DiabetesType1;
+  SEDiabetesType2*                      m_DiabetesType2;
 	SEChronicHeartFailure*                m_HeartFailure;
   SEImpairedAlveolarExchange*	          m_ImpairedAlveolarExchange;
 	SEChronicPericardialEffusion*         m_PericardialEffusion;

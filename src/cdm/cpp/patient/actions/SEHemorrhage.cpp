@@ -17,25 +17,25 @@ specific language governing permissions and limitations under the License.
 #include "bind/ScalarVolumePerTimeData.hxx"
 #include "bind/IntegerArray.hxx"
 #include "bind/IntegerList.hxx"
+#include "properties/SEScalar0To1.h"
 
 SEHemorrhage::SEHemorrhage() : SEPatientAction()
 {
   m_Compartment = ""; //This is the compartment we use to store information about hemorrhage
   m_MCIS;
   m_BleedName = "";	  //This is the name of the pathway in circuit that will have its resistance changed
+  m_Severity = nullptr;
 
-  //Place organs in a map so that we don't get too messy with nested conditionals.  Each vector is digits 2-4 of the MCIS code
-  organMap[{6, 4}] = std::make_pair("AortaBleed", "Major Artery");
-  organMap[{6, 6}] = std::make_pair("VenaCavaBleed", "Vena Cava");
-  organMap[{6, 5}] = std::make_pair("AortaBleed", "Major Artery");
-  organMap[{7, 1}] = std::make_pair("LungBleed", "Lungs");
-  organMap[{7, 2}] = std::make_pair("HeartBleed", "Heart");
-  organMap[{8, 1}] = std::make_pair("LiverBleed", "Liver");
-  organMap[{8, 2}] = std::make_pair("SpleenBleed", "Spleen");
-  organMap[{8, 3}] = std::make_pair("SplanchnicBleed", "Splanchnic");
-  organMap[{8, 4}] = std::make_pair("KidneyBleed", "Kidney");
-  organMap[{8, 5}] = std::make_pair("SmallIntestineBleed", "Small Intestine");
-  organMap[{8, 6}] = std::make_pair("LargeIntestineBleed", "Large Intestine");
+  //Place paths in torso in a map so that we don't get too messy with nested conditionals.  Each vector is digits 2-4 of the MCIS code
+  organMap["Vena Cava"] = std::make_pair("VenaCavaBleed", std::vector<unsigned int>{6, 6, 0});
+  organMap["Lung"] = std::make_pair("LungBleed", std::vector<unsigned int>{7, 1, 0});
+  organMap["Myocardium"] = std::make_pair("HeartBleed", std::vector<unsigned int>{7, 2, 0});
+  organMap["Liver"] = std::make_pair("LiverBleed", std::vector<unsigned int>{8, 1, 0});
+  organMap["Spleen"] = std::make_pair("SpleenBleed", std::vector<unsigned int>{8, 2, 0});
+  organMap["Splanchnic"] = std::make_pair("SplanchnicBleed", std::vector<unsigned int>{8, 3, 0});
+  organMap["Kidney"] = std::make_pair("KidneyBleed", std::vector<unsigned int>{8, 4, 0});
+  organMap["Small Intestine"] = std::make_pair("SmallIntestineBleed", std::vector<unsigned int>{8, 5, 0});
+  organMap["Large Intestine"] = std::make_pair("LargeIntestineBleed", std::vector<unsigned int>{8, 6, 0});
 }
 
 SEHemorrhage::~SEHemorrhage()
@@ -46,6 +46,7 @@ SEHemorrhage::~SEHemorrhage()
 void SEHemorrhage::Clear()
 {
 	SEPatientAction::Clear();
+	SAFE_DELETE(m_Severity);
     m_Compartment = "";
 	m_MCIS.clear();
 	m_BleedName = "";
@@ -53,35 +54,20 @@ void SEHemorrhage::Clear()
 
 bool SEHemorrhage::IsValid() const
 {
-	return SEPatientAction::IsValid() && HasCompartment() && HasMCIS() && HasBleedName();
+	return SEPatientAction::IsValid() && HasCompartment() && HasBleedName();
 }
 
 bool SEHemorrhage::IsActive() const
 {
-	return IsValid() ? !m_MCIS[0]==0 : false;
+	return IsValid() ? !(m_Severity->GetValue()<=ZERO_APPROX) : false;
 }
 
 bool SEHemorrhage::Load(const CDM::HemorrhageData& in)
 {
 	SEPatientAction::Load(in);
-	if (in.MCIS().present())
-	{
-		for (size_t i = 0; i < in.MCIS().get().IntegerList().size(); i++)
-		{
-			m_MCIS.push_back(in.MCIS().get().IntegerList()[i]);
-		}
-		if ((m_MCIS[0] < 0) || (m_MCIS[0] > 5)) //check to make sure no one puts in a severity of a million
-		{
-			SetComment("Invalid MCIS Code: Severity out of bounds (0-5).  Defaulting to 3");
-			m_MCIS[0] = 3;
-		}
-		if (m_MCIS.size() != 5)	//make sure mcis code is proper length
-		{
-			SetComment("Invalid MCIS Code:  Code must be 5 digits.  Defaulting to aorta with bleeding severity = 3");
-			m_MCIS = { 3,2,6,3,0 };
-		}
-	}
-	ProcessMCIS();
+	GetSeverity().Load(in.Severity());
+	m_Compartment = in.Compartment();
+	SetBleedPath();
 
 	return true;
 }
@@ -96,68 +82,64 @@ CDM::HemorrhageData* SEHemorrhage::Unload() const
 void SEHemorrhage::Unload(CDM::HemorrhageData& data) const
 {
 	SEPatientAction::Unload(data);
-	//Create Integer Array that stores Integer List and pass m_MCIS values to it (modeled after GetActiveIndices in electrocardiogram-
-	//interpolatorWaveform.cpp)
-	data.MCIS(std::unique_ptr<CDM::IntegerArray>(new CDM::IntegerArray()));
-	data.MCIS().get().IntegerList(std::unique_ptr<CDM::IntegerList>(new CDM::IntegerList()));
-	for (int i : m_MCIS)
-		data.MCIS().get().IntegerList().push_back(i);
+	if(HasSeverity())
+		data.Severity(std::unique_ptr<CDM::Scalar0To1Data>(m_Severity->Unload()));
+	if (HasCompartment())
+		data.Compartment(m_Compartment);
 }
 
-void SEHemorrhage::ProcessMCIS()
+void SEHemorrhage::SetBleedPath()
 {
-	switch (m_MCIS[1]) {
-	case Head:
-		//Note that this assumes that the third digit is 6 (for vessels).
-		if (m_MCIS[3] == 1) //If bleeding is intracranial 
-		{
-			SetBleedName("BrainBleed");
-			SetCompartment("Head");
-		}
-		else
-		{	//If the bleeding is from the carotid artery/jugular vein			
-			SetBleedName("AortaBleed");
-			SetCompartment("Major Artery");
-		}
-		break;
-	case Torso:
-		if (organMap.find({ m_MCIS.begin() + 2, m_MCIS.end()-1}) != organMap.end()) //extract the two digits that map to an organ
-		{
-			SetBleedName(organMap[{m_MCIS.begin() + 2, m_MCIS.end()-1}].first);
-			SetCompartment(organMap[{m_MCIS.begin() + 2, m_MCIS.end()-1}].second);
-		}
-		else
-		{
-			SetComment("Invalid MCIS Code: Does not map to BioGears compartment.  Defaulting to Aorta");
-			SetBleedName("AortaBleed");
-			SetCompartment("Major Artery");
-		}
-		break;
-	case Arms:
-		SetBleedName("ArmBleed");
-		SetCompartment("Arm");
-		break;
-	case Legs:
-		SetBleedName("LegBleed");
-		SetCompartment("Leg");
-		break;
-	default:
-		SetComment("Invalid MCIS Code: Does not map to BioGears compartment.  Defaulting to Aorta");
-		SetBleedName("AortaBleed");
-		SetCompartment("Major Artery");
-		break;
+	bool found = false;
+	int sev = (int)ceil(5.0*m_Severity->GetValue());
+	m_MCIS.push_back(sev);
+	if (m_Compartment == "Head")
+	{
+		m_MCIS.insert(m_MCIS.end(), { 1,6,1,0 });
+		m_BleedName = "BrainBleed";
+		found = true;
+	}
+	else if (m_Compartment == "Major Artery")
+	{
+		m_MCIS.insert(m_MCIS.end(), { 2,6,4,0 });
+		m_BleedName = "AortaBleed";
+		found = true;
+	}
+	else if (m_Compartment == "Arm")
+	{
+		m_MCIS.insert(m_MCIS.end(), { 3,0,0,0 });
+		m_BleedName = "ArmBleed";
+		found = true;
+	}
+	else if (m_Compartment == "Leg")
+	{
+		m_MCIS.insert(m_MCIS.end(), { 4,0,0,0 });
+		m_BleedName = "LegBleed";
+		found = true;
+	}
+	else
+	{
+		m_MCIS.push_back(2);
+		//This inserts the code of integers stored in the organ map (associated with the compartment) at the end of the mcis vector
+		m_MCIS.insert(m_MCIS.end(), organMap[m_Compartment].second.begin(),organMap[m_Compartment].second.end());
+		m_BleedName = organMap[m_Compartment].first;
+		found = true;
+	}
+	if (!found)
+	{
+		SetComment("Could not find compartment, defaulting to Aorta");
+		m_MCIS.insert(m_MCIS.end(), { 2,6,4,0 });
+		m_BleedName = "AortaBleed";
 	}
 }
-
-
+bool SEHemorrhage::HasMCIS() const
+{
+	return !m_MCIS.empty();
+}
 
 std::string SEHemorrhage::GetBleedName() const
 {
 	return m_BleedName;
-}
-void SEHemorrhage::SetBleedName(const std::string& name)
-{
-	m_BleedName = name;
 }
 bool SEHemorrhage::HasBleedName() const
 {
@@ -168,45 +150,50 @@ std::string SEHemorrhage::GetCompartment() const
 {
 	return m_Compartment;
 }
-
-void SEHemorrhage::SetCompartment(const std::string& name)
-{
-  m_Compartment = name;
-}
-
 bool SEHemorrhage::HasCompartment() const
 {
 	return !m_Compartment.empty();
 }
-
+void SEHemorrhage::SetCompartment(const std::string& name)
+{
+	m_Compartment = name;
+}
 void SEHemorrhage::InvalidateCompartment()
 {
   m_Compartment = "";
 }
 
-bool SEHemorrhage::HasMCIS() const
+bool SEHemorrhage::HasSeverity() const
 {
-	return !m_MCIS.empty();
+	return m_Severity == nullptr ? false : true;
+}
+SEScalar0To1& SEHemorrhage::GetSeverity()
+{
+	if (m_Severity == nullptr)
+		m_Severity = new SEScalar0To1();
+	return *m_Severity;
 }
 
-void SEHemorrhage::SetMCIS(const std::vector<unsigned int>& mcisIn)
-{
-	if (mcisIn.size() != 5)
-		Error("MCIS code must be five digits");
-	else
-		m_MCIS = mcisIn;
-}
 
 void SEHemorrhage::ToString(std::ostream &str) const
 {
-	str << "Patient Action : Hemorrhage";
-	if (HasComment())
-		str << "\n\tComment: " << m_Comment;
-	str << "\n\tInjury Code: ";
-	for (int i : m_MCIS)
-		str << i;
-	str << "\n\tCompartment: "; HasCompartment() ? str << GetCompartment() : str << "No Compartment Set";
-	str << "\n\tSeverity:  ";  str << m_MCIS[0];
-	str << std::flush;
-	
+	if (m_Severity->GetValue() == 0.0)
+	{
+		str << "Patient Action : Stop Hemorrhage";
+		if (HasComment())
+			str << "\n\tComment: "; str << m_Comment;
+		str << "\n\tCompartment: "; HasCompartment() ? str << GetCompartment() : str << "No Compartment Set";
+	}
+	else
+	{
+		str << "Patient Action : Hemorrhage";
+		if (HasComment())
+			str << "\n\tComment: " << m_Comment;
+		str << "\n\tSeverity:  ";  str << *m_Severity;
+		str << "\n\tCompartment: "; HasCompartment() ? str << GetCompartment() : str << "No Compartment Set";
+		str << "\n\tInjury Code: ";
+		for (int i : m_MCIS)
+			str << i;
+		str << std::flush;
+	}
 }

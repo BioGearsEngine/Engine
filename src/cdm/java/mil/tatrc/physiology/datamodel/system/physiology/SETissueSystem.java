@@ -20,9 +20,11 @@ import mil.tatrc.physiology.datamodel.system.SESystem;
 public class SETissueSystem extends SEPhysiologySystem implements SESystem
 {
   protected SEScalarVolumePerTime 			carbonDioxideProductionRate;
+  protected SEScalarFraction			 			dehydrationFraction;
   protected SEScalarVolume        			extracellularFluidVolume;
   protected SEScalarVolume        			extravascularFluidVolume;
   protected SEScalarVolume        			intracellularFluidVolume;
+  protected SEScalarVolume        			TotalBodyFluidVolume;
   protected SEScalar              			intracellularFluidPH;  
   protected SEScalarVolumePerTime 			oxygenConsumptionRate;
   protected SEScalar				      			respiratoryExchangeRatio;
@@ -40,9 +42,11 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
   public SETissueSystem()
   {
     carbonDioxideProductionRate = null;
+    dehydrationFraction = null;
     extracellularFluidVolume = null;
     extravascularFluidVolume = null;
     intracellularFluidVolume = null;
+    TotalBodyFluidVolume = null;
     intracellularFluidPH = null;
     oxygenConsumptionRate = null;
     respiratoryExchangeRatio = null;
@@ -60,6 +64,8 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
 
   public void reset()
   {		
+    if (dehydrationFraction != null)
+    	dehydrationFraction.invalidate();
     if (carbonDioxideProductionRate != null)
       carbonDioxideProductionRate.invalidate();
     if (extracellularFluidVolume != null)
@@ -68,6 +74,8 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
       extravascularFluidVolume.invalidate();
     if (intracellularFluidVolume != null)
       intracellularFluidVolume.invalidate(); 
+    if (TotalBodyFluidVolume != null)
+        TotalBodyFluidVolume.invalidate(); 
     if (intracellularFluidPH != null)
       	intracellularFluidPH.invalidate();
     if (oxygenConsumptionRate != null)
@@ -100,12 +108,16 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
   {		
     if (in.getCarbonDioxideProductionRate() != null)
       getCarbonDioxideProductionRate().load(in.getCarbonDioxideProductionRate());   
+    if (in.getDehydrationFraction() != null)
+      getDehydrationFraction().load(in.getDehydrationFraction()); 
     if (in.getExtracellularFluidVolume() != null)
       getExtracellularFluidVolume().load(in.getExtracellularFluidVolume());
     if (in.getExtravascularFluidVolume() != null)
       getExtravascularFluidVolume().load(in.getExtravascularFluidVolume());
     if (in.getIntracellularFluidVolume() != null)
       getIntracellularFluidVolume().load(in.getIntracellularFluidVolume());
+    if (in.getTotalBodyFluidVolume() != null)
+        getTotalBodyFluidVolume().load(in.getTotalBodyFluidVolume());
     if (in.getIntracellularFluidPH() != null)
       getIntracellularFluidPH().load(in.getIntracellularFluidPH());
     if (in.getOxygenConsumptionRate() != null)
@@ -146,13 +158,17 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
   protected void unload(TissueSystemData data)
   {		
     if (hasCarbonDioxideProductionRate())
-      data.setCarbonDioxideProductionRate(carbonDioxideProductionRate.unload());    
+      data.setCarbonDioxideProductionRate(carbonDioxideProductionRate.unload());   
+    if (hasDehydrationFraction())
+      data.setDehydrationFraction(dehydrationFraction.unload()); 
     if (extracellularFluidVolume != null)
       data.setExtracellularFluidVolume(extracellularFluidVolume.unload());
     if (extravascularFluidVolume != null)
       data.setExtravascularFluidVolume(extravascularFluidVolume.unload());
     if (intracellularFluidVolume != null)
       data.setIntracellularFluidVolume(intracellularFluidVolume.unload());
+    if (TotalBodyFluidVolume != null)
+        data.setTotalBodyFluidVolume(TotalBodyFluidVolume.unload());
     if (intracellularFluidPH != null)
       data.setIntracellularFluidPH(intracellularFluidPH.unload());
     if (hasOxygenConsumptionRate())
@@ -171,7 +187,6 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
       data.setFatInsulinSetPoint(fatInsulinSetPoint.unload());  
     if (hasFatGlucagonSetPoint())
       data.setFatGlucagonSetPoint(fatGlucagonSetPoint.unload()); 
-    
     if (hasLiverGlycogen())
       data.setLiverGlycogen(liverGlycogen.unload()); 
     if (hasMuscleGlycogen())
@@ -191,6 +206,17 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
     if (carbonDioxideProductionRate == null)
       carbonDioxideProductionRate = new SEScalarVolumePerTime();
     return carbonDioxideProductionRate;
+  }
+  
+  public boolean hasDehydrationFraction()
+  {
+    return dehydrationFraction == null ? false : dehydrationFraction.isValid();
+  }
+  public SEScalarFraction getDehydrationFraction()
+  {
+    if (dehydrationFraction == null)
+    	dehydrationFraction = new SEScalarFraction();
+    return dehydrationFraction;
   }
   
   public boolean hasExtracellularFluidVolume()
@@ -226,6 +252,17 @@ public class SETissueSystem extends SEPhysiologySystem implements SESystem
     return intracellularFluidVolume;
   }
 
+  public boolean hasTotalBodyFluidVolume()
+  {
+    return TotalBodyFluidVolume == null ? false : TotalBodyFluidVolume.isValid();
+  }
+  public SEScalarVolume getTotalBodyFluidVolume()
+  {
+    if (TotalBodyFluidVolume == null)
+      TotalBodyFluidVolume = new SEScalarVolume();
+    return TotalBodyFluidVolume;
+  }
+  
   public boolean hasIntracellularFluidPH()
   {
     return intracellularFluidPH == null ? false : intracellularFluidPH.isValid();

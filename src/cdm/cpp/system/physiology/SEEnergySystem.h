@@ -34,6 +34,10 @@ public:
   virtual bool HasAchievedExerciseLevel() const;
   virtual SEScalarFraction& GetAchievedExerciseLevel();
   virtual double GetAchievedExerciseLevel() const;
+
+  virtual bool HasChlorideLostToSweat() const;
+  virtual SEScalarMass& GetChlorideLostToSweat();
+  virtual double GetChlorideLostToSweat(const MassUnit& unit) const;
 		
 	virtual bool HasCoreTemperature() const;
 	virtual SEScalarTemperature& GetCoreTemperature();
@@ -50,18 +54,22 @@ public:
 	virtual bool HasFatigueLevel() const;
 	virtual SEScalarFraction& GetFatigueLevel();
 	virtual double GetFatigueLevel() const;
-	
-	virtual bool HasKetoneProductionRate() const;
-	virtual SEScalarAmountPerTime& GetKetoneProductionRate();
-  virtual double GetKetoneProductionRate(const AmountPerTimeUnit& unit) const;
 
   virtual bool HasLactateProductionRate() const;
   virtual SEScalarAmountPerTime& GetLactateProductionRate();
   virtual double GetLactateProductionRate(const AmountPerTimeUnit& unit) const;
 
+  virtual bool HasPotassiumLostToSweat() const;
+  virtual SEScalarMass& GetPotassiumLostToSweat();
+  virtual double GetPotassiumLostToSweat(const MassUnit& unit) const;
+
 	virtual bool HasSkinTemperature() const;
 	virtual SEScalarTemperature& GetSkinTemperature();
   virtual double GetSkinTemperature(const TemperatureUnit& unit) const;
+
+  virtual bool HasSodiumLostToSweat() const;
+  virtual SEScalarMass& GetSodiumLostToSweat();
+  virtual double GetSodiumLostToSweat(const MassUnit& unit) const;
 
 	virtual bool HasSweatRate() const;
 	virtual SEScalarMassPerTime& GetSweatRate();
@@ -78,13 +86,15 @@ public:
 protected:
 
   SEScalarFraction*       m_AchievedExerciseLevel;
+  SEScalarMass*				m_ChlorideLostToSweat;
 	SEScalarTemperature*	  m_CoreTemperature;
   SEScalarAmountPerTime*  m_CreatinineProductionRate;
   SEScalarPressure*		    m_ExerciseMeanArterialPressureDelta;
   SEScalarFraction*		    m_FatigueLevel;
-  SEScalarAmountPerTime*	m_KetoneProductionRate;
 	SEScalarAmountPerTime*	m_LactateProductionRate;
+	SEScalarMass*			m_PotassiumLostToSweat;
   SEScalarTemperature*	  m_SkinTemperature;
+  SEScalarMass*				m_SodiumLostToSweat;
 	SEScalarMassPerTime*	  m_SweatRate;
 	SEScalarPower*			    m_TotalMetabolicRate;
   SEScalarFraction*		    m_TotalWorkRateLevel;

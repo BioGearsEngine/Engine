@@ -48,6 +48,10 @@ public:
   virtual SEScalarVolume& GetMatrixVolume();
   virtual double GetMatrixVolume(const VolumeUnit& unit) const;
 
+  virtual bool HasMembranePotential() const;
+  virtual SEScalarElectricPotential& GetMembranePotential();
+  virtual double GetMembranePotential(const ElectricPotentialUnit& unit) const;
+
   virtual bool HasNeutralLipidsVolumeFraction() const;
   virtual SEScalarFraction& GetNeutralLipidsVolumeFraction();
   virtual double GetNeutralLipidsVolumeFraction() const;
@@ -76,6 +80,7 @@ protected:
   
   SEScalarMassPerMass*   m_AcidicPhospohlipidConcentration;
   SEScalarVolume*        m_MatrixVolume;
+  SEScalarElectricPotential*		m_MembranePotential;
   SEScalarFraction*      m_NeutralLipidsVolumeFraction;
   SEScalarFraction*      m_NeutralPhospholipidsVolumeFraction;
   SEScalar*              m_TissueToPlasmaAlbuminRatio;

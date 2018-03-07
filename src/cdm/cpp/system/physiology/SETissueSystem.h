@@ -36,6 +36,10 @@ public:
   virtual SEScalarVolumePerTime& GetCarbonDioxideProductionRate();
   virtual double GetCarbonDioxideProductionRate(const VolumePerTimeUnit& unit) const;
 
+  virtual bool HasDehydrationFraction() const;
+  virtual SEScalarFraction& GetDehydrationFraction();
+  virtual double GetDehydrationFraction() const;
+
   virtual bool HasExtracellularFluidVolume() const;
   virtual SEScalarVolume& GetExtracellularFluidVolume();
   virtual double GetExtracellularFluidVolume(const VolumeUnit& unit) const;
@@ -47,6 +51,10 @@ public:
   virtual bool HasIntracellularFluidVolume() const;
   virtual SEScalarVolume& GetIntracellularFluidVolume();
   virtual double GetIntracellularFluidVolume(const VolumeUnit& unit) const;
+
+  virtual bool HasTotalBodyFluidVolume() const;
+  virtual SEScalarVolume& GetTotalBodyFluidVolume();
+  virtual double GetTotalBodyFluidVolume(const VolumeUnit& unit) const;
 
   virtual bool HasIntracellularFluidPH() const;
   virtual SEScalar& GetIntracellularFluidPH();
@@ -103,9 +111,11 @@ public:
 
 protected:
   SEScalarVolumePerTime*    m_CarbonDioxideProductionRate;
-  SEScalarVolume*           m_ExtracellularFluidVolume;//planned
-  SEScalarVolume*           m_ExtravascularFluidVolume;//planned
-  SEScalarVolume*           m_IntracellularFluidVolume;//planned
+  SEScalarFraction*         m_DehydrationFraction;
+  SEScalarVolume*           m_ExtracellularFluidVolume;
+  SEScalarVolume*           m_ExtravascularFluidVolume;
+  SEScalarVolume*           m_IntracellularFluidVolume;
+  SEScalarVolume*           m_TotalBodyFluidVolume;
   SEScalar*                 m_IntracellularFluidPH;
   SEScalarVolumePerTime*	  m_OxygenConsumptionRate;
   SEScalar*				          m_RespiratoryExchangeRatio;

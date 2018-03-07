@@ -13,10 +13,13 @@ specific language governing permissions and limitations under the License.
 #include "stdafx.h"
 #include "Hepatic.h"
 
+#include "patient/conditions/SEDiabetesType1.h"
+#include "patient/conditions/SEDiabetesType2.h"
 #include "properties/SEScalarMassPerVolume.h"
 #include "properties/SEScalarAmountPerVolume.h"
 #include "properties/SEScalarMassPerAmount.h"
 #include "properties/SEScalarAmountPerTime.h"
+#include "properties/SEScalar0To1.h"
 
 Hepatic::Hepatic(BioGears& bg) : SEHepaticSystem(bg.GetLogger()), m_data(bg)
 {
@@ -67,6 +70,11 @@ void Hepatic::Clear()
 void Hepatic::Initialize()
 {
   BioGearsSystem::Initialize();
+
+  /// \cite garber1974ketone
+  GetKetoneProductionRate().SetValue(300.0, AmountPerTimeUnit::umol_Per_min);
+  /// \cite boron2012medical
+  GetHepaticGluconeogenesisRate().SetValue(180, MassPerTimeUnit::g_Per_day);
 }
 
 bool Hepatic::Load(const CDM::BioGearsHepaticSystemData& in)
@@ -134,9 +142,8 @@ void Hepatic::SetUp()
   //Glycogen can make up 5-8% of liver's weight, and average liver is 1.5 kg, so max glycogen should be around 97.5 g (guyton)
   m_maxLiverGlycogen_g = .065 * m_data.GetCompartments().GetTissueCompartment(BGE::TissueCompartment::Liver)->GetTotalMass(MassUnit::g);
 
-  //Glycogen in muscles can make up 1-3% of their weight, but this glycogen can't diffuse out of the muscle (guyton); Average male has ~35% muscle mass, giving ~539g glycogen
-  //\todo get muscle mass from patient file directly
-  m_maxMuscleGlycogen_g = .02 * m_Patient->GetWeight(MassUnit::g) * .35;
+  //Glycogen in muscles can make up 1-3% of their weight, but this glycogen can't diffuse out of the muscle (guyton);
+  m_maxMuscleGlycogen_g = .02 * m_Patient->GetMuscleMass(MassUnit::g);
 
   m_AlbuminProdutionRate_g_Per_s = 1.5e-4; /// \cite jarnum1972plasma
 }
@@ -220,7 +227,7 @@ void Hepatic::ProduceAlbumin(double duration_s)
 //--------------------------------------------------------------------------------------------------
 void Hepatic::Glycogenesis()
 {
-  double hormoneFactor = CalculateRelativeHormoneChange(m_tsu->GetLiverInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, m_tsu->GetLiverGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_liverInsulin, m_liverGlucagon);
+  double hormoneFactor = CalculateRelativeHormoneChange(m_tsu->GetLiverInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, m_tsu->GetLiverGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_liverInsulin, m_liverGlucagon, m_data);
 
    //Useful debugging information
   /*
@@ -230,6 +237,10 @@ void Hepatic::Glycogenesis()
   m_data.GetDataTrack().Probe("LiverHormoneFactor", hormoneFactor);
   m_data.GetDataTrack().Probe("LiverInsulinDeviation", insulinDeviation);
   m_data.GetDataTrack().Probe("LiverGlucagonDeviation", glucagonDeviation);
+  m_data.GetDataTrack().Probe("LiverGlucagonSetPoint_pg_Per_mL", m_tsu->GetLiverGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9);
+  m_data.GetDataTrack().Probe("LiverInsulinSetPoint_pmol_Per_L", m_tsu->GetLiverInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9);
+  m_data.GetDataTrack().Probe("LiverGlucagon_pg_Per_mL", m_liverGlucagon->GetConcentration(MassPerVolumeUnit::mg_Per_mL)*1e9);
+  m_data.GetDataTrack().Probe("LiverInsulin_pmol_Per_L", m_liverInsulin->GetMolarity(AmountPerVolumeUnit::mmol_Per_L)*1e9);
   */
   
 
@@ -258,7 +269,7 @@ void Hepatic::Glycogenesis()
   }
 
   //Now check the hormone factor in the muscle for storage of muscle glycogen
-  hormoneFactor = CalculateRelativeHormoneChange(m_tsu->GetMuscleInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, m_tsu->GetMuscleGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_muscleInsulin, m_muscleGlucagon);
+  hormoneFactor = CalculateRelativeHormoneChange(m_tsu->GetMuscleInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, m_tsu->GetMuscleGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_muscleInsulin, m_muscleGlucagon, m_data);
 
    //Useful debugging information
   /*
@@ -298,7 +309,7 @@ void Hepatic::Glycogenesis()
 //--------------------------------------------------------------------------------------------------
 void Hepatic::Glycogenolysis()
 {
-  double hormoneFactor = CalculateRelativeHormoneChange(m_tsu->GetLiverInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, m_tsu->GetLiverGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_liverInsulin, m_liverGlucagon);
+  double hormoneFactor = CalculateRelativeHormoneChange(m_tsu->GetLiverInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, m_tsu->GetLiverGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_liverInsulin, m_liverGlucagon, m_data);
 
   //Glycogenolysis rate
   double glycogenolysisLowerRate_g_Per_s = .000926;  //\cite rothman1991quantitation
@@ -338,9 +349,12 @@ void Hepatic::Gluconeogenesis()
   double ketoneProductionRate_mol_Per_s = 0;
   double totalO2Consumed_mol = 0;
   double totalGlucoseFromGluconeogenesis_mol = 0;
+  double glucoseFromLactate_mol = 0;
+  double glucoseFromGlycerol_mol = 0;
+  double glucoseFromAA_mol = 0;
 
   //Determine hormone factor for activity control
-  double hormoneFactor = CalculateRelativeHormoneChange(m_tsu->GetLiverInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, m_tsu->GetLiverGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_liverInsulin, m_liverGlucagon);
+  double hormoneFactor = CalculateRelativeHormoneChange(m_tsu->GetLiverInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, m_tsu->GetLiverGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_liverInsulin, m_liverGlucagon, m_data);
 
   //Handle lactate conversion
   //TODO should this only be done when hormone factor is negative? This would allow for some lactate excretion and maybe make it so that the blood maintains the expected 2-23 mg/dL
@@ -358,6 +372,7 @@ void Hepatic::Gluconeogenesis()
     m_liverExtracellularLactate->GetMass().IncrementValue(-rateLimitingTuningFactor*liverLactate_mol*m_Lactate->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
   m_liverExtracellularGlucose->GetMass().IncrementValue(rateLimitingTuningFactor*reconvertedGlucose_mol*m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
   totalGlucoseFromGluconeogenesis_mol += rateLimitingTuningFactor*reconvertedGlucose_mol;
+  glucoseFromLactate_mol += rateLimitingTuningFactor*reconvertedGlucose_mol;
 
   //Handle fat conversion (glycerol to glucose and ketogenesis)
   //One TAG breaks down to one glycerol (which converts to glucose) and 3 palmitic acids
@@ -367,10 +382,10 @@ void Hepatic::Gluconeogenesis()
   //A fasting person will have low levels of oxaloacetate, meaning it can't aid in converting acetyl-COA for Citric Acid Cycle
   //Thus, Acetyl-COA converts to ketones instead
   double TAGBreakdownLowerRate_g_Per_s = .0001;
-  double TAGBreakdownUpperRate_g_Per_s = .006;
+  double TAGBreakdownUpperRate_g_Per_s = .001;
 
-  //https://www.wolframalpha.com/input/?i=y%3D.0001%2B.0059%2F(1%2Be%5E(-8(x-.5)))+from+0%3Cy%3C.006+and+0%3Cx%3C2
-  double TAGBreakdownRate_g_Per_s = TAGBreakdownLowerRate_g_Per_s + GeneralMath::LogisticFunction(TAGBreakdownUpperRate_g_Per_s - TAGBreakdownLowerRate_g_Per_s, .5, 8, -hormoneFactor);
+  //https://www.wolframalpha.com/input/?i=y%3D.0001%2B.0009%2F(1%2Be%5E(-8(x-.4)))+from+0%3Cy%3C.001and+0%3Cx%3C1
+  double TAGBreakdownRate_g_Per_s = TAGBreakdownLowerRate_g_Per_s + GeneralMath::LogisticFunction(TAGBreakdownUpperRate_g_Per_s - TAGBreakdownLowerRate_g_Per_s, .4, 8, -hormoneFactor);
 
   double glucosePerTAG_mol = 1; //one glycerol backbone
   double ketonesPerTAG_mol = 12; //8*3 acetyl-COAs -> 12 acetoacetate (in reality, there's also acetone and B-hydroxybutyrate)
@@ -391,6 +406,7 @@ void Hepatic::Gluconeogenesis()
       ketoneProductionRate_mol_Per_s += TAGBrokenDown_mol * ketonesPerTAG_mol / m_dt_s;
       totalO2Consumed_mol += TAGBrokenDown_mol * O2ConsumedToMakeKetones;
       totalGlucoseFromGluconeogenesis_mol += TAGBrokenDown_mol * glucosePerTAG_mol;
+      glucoseFromGlycerol_mol += TAGBrokenDown_mol * glucosePerTAG_mol;
     }
     //Else we're running out of O2, it limits
     else
@@ -403,6 +419,7 @@ void Hepatic::Gluconeogenesis()
       ketoneProductionRate_mol_Per_s += TAGActuallyBrokenDown_mol * ketonesPerTAG_mol / m_dt_s;
       totalO2Consumed_mol += TAGActuallyBrokenDown_mol * O2ConsumedToMakeKetones;
       totalGlucoseFromGluconeogenesis_mol += TAGActuallyBrokenDown_mol * glucosePerTAG_mol;
+      glucoseFromGlycerol_mol += TAGActuallyBrokenDown_mol * glucosePerTAG_mol;
     }
   }
   //If we don't have enough TAG in the liver, break down what's there
@@ -420,6 +437,7 @@ void Hepatic::Gluconeogenesis()
       ketoneProductionRate_mol_Per_s += TAGActuallyBrokenDown_mol * ketonesPerTAG_mol / m_dt_s;
       totalO2Consumed_mol += TAGActuallyBrokenDown_mol * O2ConsumedToMakeKetones;
       totalGlucoseFromGluconeogenesis_mol += TAGActuallyBrokenDown_mol * glucosePerTAG_mol;
+      glucoseFromGlycerol_mol += TAGActuallyBrokenDown_mol * glucosePerTAG_mol;
     }
     //Otherwise, we don't have enough O2 for even this limited amount of TAG
     else
@@ -432,6 +450,7 @@ void Hepatic::Gluconeogenesis()
       ketoneProductionRate_mol_Per_s += TAGReallyActuallyBrokenDown_mol * ketonesPerTAG_mol / m_dt_s;
       totalO2Consumed_mol += TAGReallyActuallyBrokenDown_mol * O2ConsumedToMakeKetones;
       totalGlucoseFromGluconeogenesis_mol += TAGReallyActuallyBrokenDown_mol * glucosePerTAG_mol;
+      glucoseFromGlycerol_mol += TAGReallyActuallyBrokenDown_mol * glucosePerTAG_mol;
     }
   }
 
@@ -442,7 +461,7 @@ void Hepatic::Gluconeogenesis()
   //TODO figure out O2 consumption, if any
   if (hormoneFactor < 0)
   {
-    double AAConversionRate_g_Per_s = .001; //May need to be tuned to maintain brain glucose levels
+    double AAConversionRate_g_Per_s = .0003; //May need to be tuned to maintain brain glucose levels
     double glucosePerAA_mol = .5;
     double ureaPerAA_mol = .5;
 
@@ -458,6 +477,7 @@ void Hepatic::Gluconeogenesis()
         m_liverExtracellularUrea->GetMass().IncrementValue(AAConverted_mol * ureaPerAA_mol * m_Urea->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
         //O2 decrement here, don't forget to track totalO2Consumed
         totalGlucoseFromGluconeogenesis_mol += AAConverted_mol * glucosePerAA_mol;
+        glucoseFromAA_mol += AAConverted_mol * glucosePerAA_mol;
       }
       //If O2 is limiting
       else
@@ -476,6 +496,7 @@ void Hepatic::Gluconeogenesis()
         m_liverExtracellularUrea->GetMass().IncrementValue(AAActuallyConverted_mol * ureaPerAA_mol * m_Urea->GetMolarMass(MassPerAmountUnit::g_Per_mol), MassUnit::g);
         //O2 decrement here, don't forget to track totalO2Consumed
         totalGlucoseFromGluconeogenesis_mol += AAActuallyConverted_mol * glucosePerAA_mol;
+        glucoseFromAA_mol += AAActuallyConverted_mol * glucosePerAA_mol;
       }
       //O2 is limiting
       else
@@ -485,10 +506,21 @@ void Hepatic::Gluconeogenesis()
     }
   }
   m_data.GetCompartments().GetLiquidCompartment(BGE::ExtravascularCompartment::LiverExtracellular)->Balance(BalanceLiquidBy::Mass);
-  m_energy->GetKetoneProductionRate().SetValue(ketoneProductionRate_mol_Per_s, AmountPerTimeUnit::mol_Per_s);
+  if(ketoneProductionRate_mol_Per_s < .0001138)  //don't record values greater than 1000 g/day to eliminate initial spikes in ketogenesis and gluconeogenesis
+    GetKetoneProductionRate().SetValue(ketoneProductionRate_mol_Per_s, AmountPerTimeUnit::mol_Per_s); 
+  if(totalGlucoseFromGluconeogenesis_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol) * (1 / m_dt_s) * 3600 * 24 < 1000)
+    GetHepaticGluconeogenesisRate().SetValue(totalGlucoseFromGluconeogenesis_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol) * (1 / m_dt_s) * 3600 * 24, MassPerTimeUnit::g_Per_day);
   Tissue::m_hepaticO2Consumed_mol += totalO2Consumed_mol;
-  //TODO Add Gluconeogenesis rate to CDM
-  //m_data.GetDataTrack().Probe("GluconeogenesisRate_g_Per_day", totalGlucoseFromGluconeogenesis_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol) * (1 / m_dt_s) * 3600 * 24);
+
+  /*
+  if (totalGlucoseFromGluconeogenesis_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol) * (1 / m_dt_s) * 3600 * 24 < 1000)
+    m_data.GetDataTrack().Probe("GluconeogenesisRate_g_Per_day", totalGlucoseFromGluconeogenesis_mol * m_Glucose->GetMolarMass(MassPerAmountUnit::g_Per_mol) * (1 / m_dt_s) * 3600 * 24);
+  if (ketoneProductionRate_mol_Per_s < .0001138)
+    m_data.GetDataTrack().Probe("KetogenesisRate_g_Per_day", ketoneProductionRate_mol_Per_s * m_Ketones->GetMolarMass(MassPerAmountUnit::g_Per_mol) * 3600 * 24);
+  m_data.GetDataTrack().Probe("GluconeogenesisLactateFraction", glucoseFromLactate_mol/totalGlucoseFromGluconeogenesis_mol);
+  m_data.GetDataTrack().Probe("GluconeogenesisGlycerolFraction", glucoseFromGlycerol_mol / totalGlucoseFromGluconeogenesis_mol);
+  m_data.GetDataTrack().Probe("GluconeogenesisAAFraction", glucoseFromAA_mol / totalGlucoseFromGluconeogenesis_mol);
+  */
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -501,10 +533,20 @@ void Hepatic::Gluconeogenesis()
 /// did, and vice versa. A zero value means insulin and glucagon didn't change or stayed the same
 /// relative to each other.
 //--------------------------------------------------------------------------------------------------
-double Hepatic::CalculateRelativeHormoneChange(double insulinSetPoint_pmol_Per_L, double glucagonSetPoint_pg_Per_mL, SELiquidSubstanceQuantity* currentInsulin, SELiquidSubstanceQuantity* currentGlucagon)
+double Hepatic::CalculateRelativeHormoneChange(double insulinSetPoint_pmol_Per_L, double glucagonSetPoint_pg_Per_mL, SELiquidSubstanceQuantity* currentInsulin, SELiquidSubstanceQuantity* currentGlucagon, BioGears& m_data)
 {
   double currentInsulin_pmol_Per_L = currentInsulin->GetMolarity(AmountPerVolumeUnit::mmol_Per_L)*1e9;
   double currentGlucagon_pg_Per_mL = currentGlucagon->GetConcentration(MassPerVolumeUnit::mg_Per_mL)*1e9;
+
+  //Patients with diabetes type 2 can have insulin resistance, which in essence means they require more insulin to achieve a normal effect
+  if (m_data.GetConditions().HasDiabetesType2())
+  {
+    if (m_data.GetConditions().GetDiabetesType2()->HasInsulinResistanceSeverity())
+    {
+      double insulinScale = 1 - (.986189 - .9820614 * exp(-6.808106 * m_data.GetConditions().GetDiabetesType2()->GetInsulinResistanceSeverity().GetValue()));
+      currentInsulin_pmol_Per_L *= insulinScale;
+    }
+  }
 
   // Insulin can deviate a lot from set point, even as high as 20 times, and still be in acceptable ranges
   // Glucagon doesn't vary as much, expect a max of about 7 times
@@ -526,7 +568,7 @@ double Hepatic::CalculateRelativeHormoneChange(double insulinSetPoint_pmol_Per_L
 //--------------------------------------------------------------------------------------------------
 void Hepatic::Lipogenesis()
 {
-  double hormoneFactor = CalculateRelativeHormoneChange(m_tsu->GetLiverInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, m_tsu->GetLiverGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_liverInsulin, m_liverGlucagon);
+  double hormoneFactor = CalculateRelativeHormoneChange(m_tsu->GetLiverInsulinSetPoint().GetValue(AmountPerVolumeUnit::mmol_Per_L)*1e9, m_tsu->GetLiverGlucagonSetPoint().GetValue(MassPerVolumeUnit::mg_Per_mL)*1e9, m_liverInsulin, m_liverGlucagon, m_data);
 
   double TAGGenerated_g = 0;
   double CO2Generated_mol = 0;

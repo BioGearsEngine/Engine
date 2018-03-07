@@ -169,11 +169,12 @@ public:
   void SimpleDiffusionFourCompartmentTest(const std::string& rptDirectory);
   void SimpleDiffusionHierarchyTest(const std::string& rptDirectory);
   void FacilitatedDiffusionTest(const std::string& rptDirectory);
+  void ActiveIonTransportTest(const std::string& rptDirectory);
 protected:
   void DistributeMass(SETestSuite& testSuite);
   void PerfusionLimitedDiffusionTest(SETestSuite& testSuite);
   void InstantDiffusionTest(SETestSuite& testSuite);
-  void ActiveTransportTest(SETestSuite& testSuite);
+
   void GenericClearanceTest(SETestSuite& testSuite);
   void GenericExcretionTest(SETestSuite& testSuite);
 
@@ -190,14 +191,16 @@ public:
   void FourCompartmentTestSimple(const std::string& sOutputDirectory);
   void AcidBaseFourCompartmentTest(const std::string& sOutputDirectory);
   void FiveCompartmentTestWithDiffusion(const std::string& sOutputDirectory);
+  void FiveCompartmentTestWithActiveDiffusion(const std::string& sOutputDirectory);
   void AcidBaseFourCompartmentTestWithProductionConsumption(const std::string& sOutputDirectory);
   void AcidBaseFiveCompartmentTestWithDiffusion(const std::string& sOutputDirectory);
   void AcidBaseFiveCompartmentTestWithProductionConsumptionAndDiffusion(const std::string& sOutputDirectory);
  protected:
-   void FourCompartmentTest(bool usingAcidBase, bool usingProductionConsumption, bool usingDiffusion, const std::string& sOutputDirectory);
+   void FourCompartmentTest(bool usingAcidBase, bool usingProductionConsumption, bool usingDiffusion, bool activeDiffusion,  const std::string& sOutputDirectory);
    bool usingAcidBase;
    bool usingProductionConsumption;
    bool usingDiffusion;
+   bool activeDiffusion;	//Flag to determine whether we are testing active diffusion of ionic species (needs to be used in conjunction with usingDiffusion)
 
    /////////////////////
    // Acid Base Tests //

@@ -85,6 +85,7 @@ public:
   void CalculateGenericClearance(double volumeCleared_mL, SELiquidCompartment& cmpt, SESubstance& sub, SEScalarMass* cleared = nullptr);
   void CalculateGenericClearance(double volumeCleared_mL, SETissueCompartment& cmpt, SESubstance& sub, SEScalarMass* cleared = nullptr);
   void CalculateGenericExcretion(double VascularFlow_mL_Per_s, SETissueCompartment& cmpt, SESubstance& sub, double FractionExcreted, double timestep_s, SEScalarMass* excreted = nullptr);
+  void SetLiquidCompartmentNonGasesForStarvation(double time_h);
 
   const SizeIndependentDepositionEfficencyCoefficient& GetSizeIndependentDepositionEfficencyCoefficient(SESubstance& substance);
 

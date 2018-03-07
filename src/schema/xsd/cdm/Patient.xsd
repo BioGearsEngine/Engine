@@ -40,11 +40,19 @@ specific language governing permissions and limitations under the License.
       <xs:enumeration value="FunctionalIncontinence"/><!--<< @brief Uncontrolled bladder release due to a full bladder. -->
       <xs:enumeration value="Hypercapnia"/><!--<< @brief State at which the arterial carbon dioxide partial pressure has exceeded 60 mmHg. -->
       <xs:enumeration value="Hyperglycemia"/><!--<< @brief An excess of glucose in the bloodstream (> 200 mg/dL). -->
+      <xs:enumeration value="MildHyperkalemia"/><!--<<@brief An excess of potassium in the bloodstream (>5.5 mM). -->
+      <xs:enumeration value="SevereHyperkalemia"/><!--<<@brief An excess of potassium in the bloodstream (>6.2 mM). -->
+      <xs:enumeration value="MildHypernatremia"/><!--<<@brief An excess of sodium in the bloodstream (>148 mM). -->
+      <xs:enumeration value="SevereHypernatremia"/><!--<<@brief An excess of sodium in the bloodstream (>160 mM). -->
       <xs:enumeration value="Hyperthermia"/><!--<< @brief The condition of having a body temperature greatly above normal (> 38° C). -->
       <xs:enumeration value="Hypoglycemia"/><!--<< @brief Low glucose in the bloodstream (< 70 mg/dL). -->
       <xs:enumeration value="HypoglycemicShock"/><!--<< @brief Very low glucose in the bloodstream (< 50 mg/dL). -->
       <xs:enumeration value="HypoglycemicComa"/><!--<< @brief Dangerously low glucose in the bloodstream (< 20 mg/dL). -->
       <xs:enumeration value="Hypothermia"/><!--<< @brief The condition of having a body temperature greatly below normal (< 35° C). -->
+      <xs:enumeration value="MildHypokalemia"/><!--<<@brief An deficit of potassium in the bloodstream (<3.2 mM). -->
+      <xs:enumeration value="SevereHypokalemia"/><!--<<@brief An deficit of potassium in the bloodstream (<2.5 mM). -->
+      <xs:enumeration value="MildHyponatremia"/><!--<<@brief An deficit of sodium in the bloodstream (<136 mM). -->
+      <xs:enumeration value="SevereHyponatremia"/><!--<<@brief An deficit of sodium in the bloodstream (<120 mM). -->
       <xs:enumeration value="Hypoxia"/><!--<< @brief State at which the arterial oxygen partial pressure has fallen below 65 mmHg. -->       
       <xs:enumeration value="HypovolemicShock"/><!--<< @brief The blood volume has dropped below 65% of its normal value. -->
       <xs:enumeration value="IntracranialHypertension"/><!--<< @brief Intracranial pressure is greater than 25 mmHg. -->
@@ -58,6 +66,7 @@ specific language governing permissions and limitations under the License.
       <xs:enumeration value="MetabolicAlkalosis"/><!--<< @brief A condition where the body is producing excess bases. (pH > 7.45). -->
       <xs:enumeration value="MildAcuteRespiratoryDistress"/><!--<< @brief Mild impairment of the alveoli, reducing gas exchange within the lungs. (CarricoIndex [201,300] mmHg) -->
       <xs:enumeration value="ModerateAcuteRespiratoryDistress"/><!--<< @brief Moderate impairment of the alveoli, reducing gas exchange within the lungs. (CarricoIndex [101,200] mmHg)-->
+      <xs:enumeration value="MuscleCatabolism"/><!--<< @brief The temporary protein stores have been used, and the patient is now consuming their muscle tissue for protein. -->
       <xs:enumeration value="MuscleGlycogenDepleted"/><!--<< @brief The glycogen stored in the muscle tissue has been used up. -->
       <xs:enumeration value="MyocardiumOxygenDeficit"/><!--<< @brief The myocardium oxygen level has decreased below 5 mmHg. -->
       <xs:enumeration value="Natriuresis"/><!--<< @brief Sodium excretion above normal levels. -->
@@ -96,6 +105,7 @@ specific language governing permissions and limitations under the License.
           <xs:element name="BodyDensity" type="ScalarMassPerVolumeData" minOccurs="0" maxOccurs="1"/><!--<< @brief  The mass of the body divided by the volume of the body. -->
           <xs:element name="BodyFatFraction" type="ScalarFractionData" minOccurs="0" maxOccurs="1"/><!--<< @brief Total mass of fat divided by total body mass; body fat includes essential body fat and storage body fat. -->
           <xs:element name="LeanBodyMass" type="ScalarMassData" minOccurs="0" maxOccurs="1"/><!--<< @brief Component of body composition after subtracting body fat weight. -->     
+          <xs:element name="MuscleMass" type="ScalarMassData" minOccurs="0" maxOccurs="1"/><!--<< @brief The mass of muscle only. --> 
           <!-- Physical Characteristics that can change and should be change due to a condition -->
           <xs:element name="AlveoliSurfaceArea" type="ScalarAreaData" minOccurs="0" maxOccurs="1"/><!--<< @brief The surface area of the alveoli for gas diffusion-->  
           <xs:element name="RightLungRatio" type="ScalarFractionData" minOccurs="0"  maxOccurs="1"/> <!--<< @brief The ratio of total lung surface area that is associated with the right lung. -->  

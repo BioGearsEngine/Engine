@@ -148,6 +148,16 @@ public:
   virtual double GetPulseOximetry() const;
   //@}
 
+  /** @name RedBloodCellAcetylcholinesteraseConcentration
+  *  @brief @copybrief Physiology_BloodChemistrySystemData_RedBloodCellAcetylcholinesteraseConcentration
+  *  @{*/
+  /// %Test if member has been allocated
+  virtual bool HasRedBloodCellAcetylcholinesterase() const;
+  /// Get member class, allocate if nullptr
+  virtual SEScalarAmountPerVolume& GetRedBloodCellAcetylcholinesterase();
+  virtual double GetRedBloodCellAcetylcholinesterase(const AmountPerVolumeUnit& unit) const;
+  //@}
+
 	/** @name RedBloodCellCount
 	 *  @brief @copybrief Physiology_BloodChemistrySystemData_RedBloodCellCount
 	 *  @{*/
@@ -312,6 +322,7 @@ protected:
   SEScalarAmountPerVolume*        m_Phosphate;
 	SEScalarVolume*                 m_PlasmaVolume;
   SEScalarFraction*               m_PulseOximetry;
+  SEScalarAmountPerVolume*			m_RedBloodCellAcetylcholinesterase;
 	SEScalarAmountPerVolume*        m_RedBloodCellCount;
 	SEScalarFraction*               m_ShuntFraction;
   SEScalarAmountPerVolume*        m_StrongIonDifference;

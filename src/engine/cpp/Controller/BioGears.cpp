@@ -395,6 +395,23 @@ bool BioGears::SetupPatient()
   ss << "Patient lean body mass computed and set to " << leanBodyMass_kg << " kg.";
   Info(ss);
 
+  //Muscle Mass ---------------------------------------------------------------
+  // \cite janssen2000skeletal
+  if (m_Patient->HasMuscleMass())
+  {
+    ss << "Patient muscle mass cannot be set directly. It is determined by a percentage of weight.";
+    Error(ss);
+    err = true;
+  }
+
+  if (m_Patient->GetSex() == CDM::enumSex::Female)
+    m_Patient->GetMuscleMass().SetValue(weight_kg * .306, MassUnit::kg);
+  else
+    m_Patient->GetMuscleMass().SetValue(weight_kg * .384, MassUnit::kg);
+
+  ss << "Patient muscle mass computed and set to " << m_Patient->GetMuscleMass().GetValue(MassUnit::kg) << " kg.";
+  Info(ss);
+
   //Body Density ---------------------------------------------------------------
   if (m_Patient->HasBodyDensity())
   {
@@ -1494,7 +1511,7 @@ void BioGears::SetupCardiovascular()
   LiverBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
   SEFluidCircuitPath& PortalBleed = cCardiovascular.CreatePath(PortalVein, Ground, BGE::CardiovascularPath::PortalBleed);
   PortalBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_min_Per_L);
-  //Set up kidney hemorrhage path in renal circuit
+  //Note: kidney hemorrhage path is set below in renal circuit
   SEFluidCircuitPath& LegBleed = cCardiovascular.CreatePath(RightLeg1, Ground, BGE::CardiovascularPath::LegBleed);
   LegBleed.GetResistanceBaseline().SetValue(m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL), FlowResistanceUnit::mmHg_s_Per_mL);
 
@@ -2035,8 +2052,9 @@ void BioGears::SetupRenal()
   ///// Circuit Parameters//////
   double openSwitch_mmHg_s_Per_mL = m_Config->GetDefaultOpenFlowResistance(FlowResistanceUnit::mmHg_s_Per_mL);
   //Resistances with some tuning multipliers
-  double urineTuningMultiplier = 0.50;
-  double arteryTuningMultiplier = 1.2;
+  double urineTuningMultiplier = 0.58;
+  double arteryTuningMultiplier = 0.8;
+  double reabsorptionTuningMultiplier = 0.8;
 
   double renalArteryResistance_mmHg_s_Per_mL = Convert(0.0250 * arteryTuningMultiplier, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
   double afferentResistance_mmHg_s_Per_mL = Convert(0.0417, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
@@ -2046,9 +2064,9 @@ void BioGears::SetupRenal()
   double renalVeinResistance_mmHg_s_Per_mL = Convert(0.0066, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
   double glomerularFilterResistance_mmHg_s_Per_mL = Convert(0.1600 * urineTuningMultiplier, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
   double tubulesResistance_mmHg_s_Per_mL = Convert(0.1920 * urineTuningMultiplier, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
-  double reabsoprtionResistance_mmHg_s_Per_mL = Convert(0.1613 * urineTuningMultiplier, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
+  double reabsoprtionResistance_mmHg_s_Per_mL = Convert(0.1613 * reabsorptionTuningMultiplier, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
   //This one is tuned
-  double ureterTuningMultiplier = 0.48;
+  double ureterTuningMultiplier = 0.59;
   double ureterResistance_mmHg_s_Per_mL = Convert(30.0*ureterTuningMultiplier, FlowResistanceUnit::mmHg_min_Per_mL, FlowResistanceUnit::mmHg_s_Per_mL);
   double urethraResistance_mmHg_s_Per_mL = openSwitch_mmHg_s_Per_mL;
   //Compliances
@@ -2995,6 +3013,7 @@ void BioGears::SetupTissue()
   FatTissue.GetTissueToPlasmaAlphaAcidGlycoproteinRatio().SetValue(AdiposeAAGRatio);
   FatTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(AdiposeLRatio);
   FatTissue.GetTotalMass().SetValue(AdiposeTissueMass, MassUnit::kg);
+  FatTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& FatVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::Fat),
     FatExtracellular, BGE::VascularLink::FatVascularToTissue);
@@ -3042,6 +3061,7 @@ void BioGears::SetupTissue()
   BoneTissue.GetTissueToPlasmaAlbuminRatio().SetValue(BoneARatio);
   BoneTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(BoneLRatio);
   BoneTissue.GetTotalMass().SetValue(BoneTissueMass, MassUnit::kg);
+  BoneTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& BoneVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::Bone),
     BoneExtracellular, BGE::VascularLink::BoneVascularToTissue);
@@ -3089,6 +3109,7 @@ void BioGears::SetupTissue()
   BrainTissue.GetTissueToPlasmaAlbuminRatio().SetValue(BrainARatio);
   BrainTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(BrainLRatio);
   BrainTissue.GetTotalMass().SetValue(BrainTissueMass, MassUnit::kg);
+  BrainTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& BrainVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::Brain),
     BrainExtracellular, BGE::VascularLink::BrainVascularToTissue);
@@ -3142,6 +3163,7 @@ void BioGears::SetupTissue()
   GutTissue.GetTissueToPlasmaAlbuminRatio().SetValue(GutARatio);
   GutTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(GutLRatio);
   GutTissue.GetTotalMass().SetValue(GutTissueMass, MassUnit::kg);
+  GutTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink&  SmallIntestineVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::SmallIntestine),
     GutExtracellular, BGE::VascularLink::SmallIntestineVascularToTissue);
@@ -3202,6 +3224,7 @@ void BioGears::SetupTissue()
   LeftKidneyTissue.GetTissueToPlasmaAlbuminRatio().SetValue(LKidneyARatio);
   LeftKidneyTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(LKidneyLRatio);
   LeftKidneyTissue.GetTotalMass().SetValue(LKidneyTissueMass, MassUnit::kg);
+  LeftKidneyTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& LeftKidneyVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::LeftKidney),
     LeftKidneyExtracellular, BGE::VascularLink::LeftKidneyVascularToTissue);
@@ -3249,6 +3272,7 @@ void BioGears::SetupTissue()
   LeftLungTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(LLungLRatio);
   LeftLungTissue.GetTissueToPlasmaAlphaAcidGlycoproteinRatio().SetValue(LLungAAGRatio);
   LeftLungTissue.GetTotalMass().SetValue(LLungTissueMass, MassUnit::kg);
+  LeftLungTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& LeftLungVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::LeftLung),
     LeftLungExtracellular, BGE::VascularLink::LeftLungVascularToTissue);
@@ -3296,6 +3320,7 @@ void BioGears::SetupTissue()
   LiverTissue.GetTissueToPlasmaAlbuminRatio().SetValue(LiverARatio);
   LiverTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(LiverLRatio);
   LiverTissue.GetTotalMass().SetValue(LiverTissueMass, MassUnit::kg);
+  LiverTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& LiverVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::Liver),
     LiverExtracellular, BGE::VascularLink::LiverVascularToTissue);
@@ -3343,6 +3368,7 @@ void BioGears::SetupTissue()
   MuscleTissue.GetTissueToPlasmaAlbuminRatio().SetValue(MuscleARatio);
   MuscleTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(MuscleLRatio);
   MuscleTissue.GetTotalMass().SetValue(MuscleTissueMass, MassUnit::kg);
+  MuscleTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& MuscleVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::Muscle),
     MuscleExtracellular, BGE::VascularLink::MuscleVascularToTissue);
@@ -3390,6 +3416,7 @@ void BioGears::SetupTissue()
   MyocardiumTissue.GetTissueToPlasmaAlbuminRatio().SetValue(MyocardiumARatio);
   MyocardiumTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(MyocardiumLRatio);
   MyocardiumTissue.GetTotalMass().SetValue(MyocardiumTissueMass, MassUnit::kg);
+  MyocardiumTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& MyocardiumVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::Myocardium),
     MyocardiumExtracellular, BGE::VascularLink::MyocardiumVascularToTissue);
@@ -3442,6 +3469,7 @@ void BioGears::SetupTissue()
   RightKidneyTissue.GetTissueToPlasmaAlbuminRatio().SetValue(RKidneyARatio);
   RightKidneyTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(RKidneyLRatio);
   RightKidneyTissue.GetTotalMass().SetValue(RKidneyTissueMass, MassUnit::kg);
+  RightKidneyTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& RightKidneyVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::RightKidney),
     RightKidneyExtracellular, BGE::VascularLink::RightKidneyVascularToTissue);
@@ -3489,6 +3517,7 @@ void BioGears::SetupTissue()
   RightLungTissue.GetTissueToPlasmaAlbuminRatio().SetValue(RLungARatio);
   RightLungTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(RLungLRatio);
   RightLungTissue.GetTotalMass().SetValue(RLungTissueMass, MassUnit::kg);
+  RightLungTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& RightLungVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::RightLung),
     RightLungExtracellular, BGE::VascularLink::RightLungVascularToTissue);
@@ -3539,6 +3568,7 @@ void BioGears::SetupTissue()
   SkinTissue.GetTissueToPlasmaAlbuminRatio().SetValue(SkinARatio);
   SkinTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(SkinLRatio);
   SkinTissue.GetTotalMass().SetValue(SkinTissueMass, MassUnit::kg);
+  SkinTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& SkinVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::Skin),
     SkinExtracellular, BGE::VascularLink::SkinVascularToTissue);
@@ -3586,6 +3616,7 @@ void BioGears::SetupTissue()
   SpleenTissue.GetTissueToPlasmaAlbuminRatio().SetValue(SpleenARatio);
   SpleenTissue.GetTissueToPlasmaLipoproteinRatio().SetValue(SpleenLRatio);
   SpleenTissue.GetTotalMass().SetValue(SpleenTissueMass, MassUnit::kg);
+  SpleenTissue.GetMembranePotential().SetValue(-85.0, ElectricPotentialUnit::mV);
 
   SELiquidCompartmentLink& SpleenVascularToTissue = m_Compartments->CreateLiquidLink(*m_Compartments->GetLiquidCompartment(BGE::VascularCompartment::Spleen), 
     SpleenExtracellular, BGE::VascularLink::SpleenVascularToTissue);
@@ -3609,11 +3640,11 @@ void BioGears::SetupRespiratory()
   cRespiratory.AddReferenceNode(*Ambient);
                                      
   //Tuning parameters
-  double AlveoliCompliance = 0.037;
-  double DeadSpaceCompliance = 0.014;
+  double AlveoliCompliance = 0.037;  //0.025
+  double DeadSpaceCompliance = 0.014;//0.016;
   //This is the min compliance when the volume is the baseline volume, since it scales with volume
   double ChestWallCompliance = 0.004;
-  double TotalAirwayResistance = 1.5;
+  double TotalAirwayResistance = 1.5;//0.95;
   double UnstressedDeadSpaceVolume = 0.001;
 
   //Should add up to 100% of total airway resistance
@@ -3627,8 +3658,8 @@ void BioGears::SetupRespiratory()
   double AlveoliDuctResistance = 2 * (TotalAirwayResistance - TracheaResistance) - BronchiResistance;
 
   //Values from standard
-  double FunctionalResidualCapacity_L = 2.313;
-  double LungResidualVolume_L = 1.234;
+  double FunctionalResidualCapacity_L = 2.313; //2.5;
+  double LungResidualVolume_L = 1.234;//1.45;
 
   double DefaultRespDrivePressure = -55.0; //This shouldn't really matter, since the pressure source is set in the Respiratory System
   double AmbientPresure = 1033.23; // = 1 atm

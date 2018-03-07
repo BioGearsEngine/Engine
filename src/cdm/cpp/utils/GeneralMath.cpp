@@ -199,6 +199,25 @@ void GeneralMath::CalculateSpecificGravity(const SEScalarMass& mass, const SESca
     specificGravity.SetValue((totalmass_g / volume_mL) / waterDensity_g_mL);
 }
 
+//--------------------------------------------------------------------------------------------------
+/// \brief
+// Calculates the density of water at a given temperature using DIPPR105 equation, valid from 32-707F  
+//--------------------------------------------------------------------------------------------------
+void GeneralMath::CalculateWaterDensity(const SEScalarTemperature& temp, SEScalarMassPerVolume& density)
+{
+  //DIPPR105 equation, see http://ddbonline.ddbst.de/DIPPR105DensityCalculation/DIPPR105CalculationCGI.exe
+  double A = .14395;
+  double B = .0112;
+  double C = 649.727;
+  double D = .05107;
+  double temp_K = temp.GetValue(TemperatureUnit::K);
+  
+  double density_kg_Per_m3 = A / (pow(B, 1 + pow(1 - (temp_K / C), D)));
+
+  density.SetValue(density_kg_Per_m3, MassPerVolumeUnit::kg_Per_m3);
+
+}
+
 double GeneralMath::PercentDifference(double expected, double calculated)
 {
   if (calculated == 0.0&&expected == 0.0)
@@ -282,8 +301,8 @@ void GeneralMath::Combinations(std::vector<int> maxValues, std::vector<std::vect
 /// \brief
 /// Performs linear interpolation between two points
 ///
-/// \param  x1      value 1 on the x axis, must be smaller than x2
-/// \param  x2      value 2 on the x axis, must be larger than x1
+/// \param  x1      value 1 on the x axis
+/// \param  x2      value 2 on the x axis
 /// \param  y1      the y value corresponding to x1
 /// \param  y2      the y value corresponding to x2
 /// \param  xPrime  the interpolation point
@@ -291,7 +310,7 @@ void GeneralMath::Combinations(std::vector<int> maxValues, std::vector<std::vect
 /// \return the y value corresponding to xPrime
 ///
 /// \details
-/// Linear Interpolator finds the y value at xPrime, as long as xPrime is between x1 and x2. The slope
+/// Linear Interpolator finds the y value at xPrime. The slope
 /// and Y intercept of the line connecting (x1,y1) and (x2,y2) are then found so y = mx + b can be used 
 /// to find yPrime by inputting xPrime.
 //--------------------------------------------------------------------------------------------------
@@ -300,13 +319,6 @@ double GeneralMath::LinearInterpolator(double x1, double x2, double y1, double y
   double yPrime; // Initialize the output variable
   double slope;  // Initialize the variable used to determine the slope between x1 and x2
   double yInt;   // Initialize the variable used to determine the y intercept
-
-  if (xPrime < x1 || xPrime > x2) // make sure input x is within bounds set by x1 and x2
-  {
-    // Linear Interpolator requires that input x is within two other data points
-    yPrime = SEScalar::dNaN();
-    return yPrime;
-  }
 
   slope = (y2 - y1) / (x2 - x1); // linear slope equals dy/dx
 

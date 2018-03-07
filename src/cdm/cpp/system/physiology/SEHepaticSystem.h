@@ -13,8 +13,6 @@ specific language governing permissions and limitations under the License.
 #pragma once
 #include "system/SESystem.h"
 #include "bind/HepaticSystemData.hxx"
-#include "bind/enumOnOff.hxx"
-#include "system/physiology/SEPupillaryResponse.h"
 
 class DLL_DECL SEHepaticSystem : public SESystem
 {
@@ -29,12 +27,23 @@ public:
 	
   virtual bool Load(const CDM::HepaticSystemData& in);
   virtual CDM::HepaticSystemData* Unload() const;
+
 protected:
   virtual void Unload(CDM::HepaticSystemData& data) const;
+
 public:
+
+  virtual bool HasKetoneProductionRate() const;
+  virtual SEScalarAmountPerTime& GetKetoneProductionRate();
+  virtual double GetKetoneProductionRate(const AmountPerTimeUnit& unit) const;
+
+  virtual bool HasHepaticGluconeogenesisRate() const;
+  virtual SEScalarMassPerTime& GetHepaticGluconeogenesisRate();
+  virtual double GetHepaticGluconeogenesisRate(const MassPerTimeUnit& unit) const;
 
 	
 protected:
-
+  SEScalarAmountPerTime*	m_KetoneProductionRate;
+  SEScalarMassPerTime* m_HepaticGluconeogenesisRate;
 	
 };

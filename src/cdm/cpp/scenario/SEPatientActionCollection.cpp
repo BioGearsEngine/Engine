@@ -387,30 +387,20 @@ bool SEPatientActionCollection::ProcessAction(const CDM::PatientActionData& acti
 	const CDM::HemorrhageData* hem = dynamic_cast<const CDM::HemorrhageData*>(&action);
 	if(hem!=nullptr)
 	{
-		//We only store the MCIS on the CDM (so that our input is just one code and nothing else).  But we need the compartment information to 
-		//check if hemorrhage already exists in m_Hemorrhages map.  Thus we use a temporary variable to check.
-		SEHemorrhage* myHem;
-		SEHemorrhage* temp = new SEHemorrhage;
-		temp->Load(*hem);
-		if (m_Hemorrhages.find(temp->GetCompartment()) == m_Hemorrhages.end())
+		SEHemorrhage* myHem = m_Hemorrhages[hem->Compartment()];
+		if (myHem == nullptr)
 		{
-			myHem = new SEHemorrhage;
-			m_Hemorrhages[temp->GetCompartment()] = myHem;
-			myHem->Load(*hem);
+			myHem = new SEHemorrhage();
+			m_Hemorrhages[hem->Compartment()] = myHem;
 		}
-		else
+		myHem->Load(*hem);
+
+		if (!myHem->IsActive())
 		{
-			myHem = m_Hemorrhages[temp->GetCompartment()];
-			myHem->Load(*hem);
-		} 
-    if (!myHem->IsActive())
-    {
-      RemoveHemorrhage(myHem->GetCompartment());
-	  SAFE_DELETE(temp);
-      return true;
-    }
-	SAFE_DELETE(temp);
-    return IsValid(*myHem);
+			RemoveHemorrhage(myHem->GetCompartment());
+			return true;
+		}
+		return IsValid(*myHem);
 	}
 
   const CDM::IntubationData* intubation = dynamic_cast<const CDM::IntubationData*>(&action);
