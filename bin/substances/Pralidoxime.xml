@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Substance xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.1-beta" xsi:schemaLocation="">
+<Substance xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.3.0-beta" xsi:schemaLocation="">
     <Name>Pralidoxime</Name>
+    <Classification>ReversalAgent</Classification>
     <MolarMass value="176.6" unit="g/mol"/>
     <State>Liquid</State>
     <Clearance>
@@ -27,18 +28,18 @@
     </Pharmacokinetics>
     <Pharmacodynamics>
         <Bronchodilation value="0.0"/>
-        <DiastolicPressureModifier value="0.15"/>
+        <DiastolicPressureModifier value="0.0"/>
         <EC50 value="0.2855" unit="ug/mL"/>
         <EMaxShapeParameter value="1.0"/>
-        <HeartRateModifier value="0.45"/>
+        <HeartRateModifier value="0.0"/>
         <NeuromuscularBlock value="0.0"/>
         <PupillaryResponse>
             <ReactivityModifier value="0.0"/>
             <SizeModifier value="0.0"/>
         </PupillaryResponse>
-        <RespirationRateModifier value="0.3"/>
+        <RespirationRateModifier value="0.0"/>
         <Sedation value="0.0"/>
-        <SystolicPressureModifier value="0.15"/>
+        <SystolicPressureModifier value="0.0"/>
         <TidalVolumeModifier value="0.0"/>
         <TubularPermeabilityModifier value="0.0"/>
         <CentralNervousModifier value="0.0"/>

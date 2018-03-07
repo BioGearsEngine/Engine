@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Substance xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.1-beta" xsi:schemaLocation="">
+<Substance xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.3.0-beta" xsi:schemaLocation="">
     <Name>Calcium</Name>
+    <Classification>Ion</Classification>
     <MolarMass value="40.08" unit="g/mol"/>
     <State>Liquid</State>
+    <MembraneResistance value="248.0" unit="ohm"/>
     <Clearance>
         <Systemic>
             <FractionExcretedInFeces value="0.0"/>

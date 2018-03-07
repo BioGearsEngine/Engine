@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Substance xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.1.1-beta" xsi:schemaLocation="">
+<Substance xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.3.0-beta" xsi:schemaLocation="">
     <Name>Rocuronium</Name>
+    <Classification>Anesthetic</Classification>
     <MolarMass value="529.77" unit="g/mol"/>
     <State>Liquid</State>
     <Clearance>
@@ -42,6 +43,6 @@
         <TidalVolumeModifier value="0.0"/>
         <TubularPermeabilityModifier value="0.0"/>
         <CentralNervousModifier value="0.0"/>
-        <EffectSiteRateConstant value="0.0" unit="1/min"/>
+        <EffectSiteRateConstant value="0.1" unit="1/min"/>
     </Pharmacodynamics>
 </Substance>
