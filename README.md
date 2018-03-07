@@ -219,6 +219,45 @@ The BioGears source is structured as follows:
 	- sdk - Example code and scripts for the  Toolkit and  SDK
 	- utils - Various utilities used in validation
 
+## What's new in ver 6.3 (March 1, 2018)
+The latest deployment includes the following notable updates:
+
+- General bug fixes, system improvements, and tools/solver improvements
+- Fasciculation patient event flags 
+- Updated sweat methodology (fixes to ions lost in sweat)
+- Updated substance and compound infusion functionality
+  - Added Ringers lactate and updated 
+  - Saline compound ion concentrations corrected
+  - Hardened implementation 
+- MuscleMass new patient data request
+  - Muscle catabolism patient flag
+- Added dehydration condition 
+  - Implemented as scalar 0to1 representing fractional total body water lost
+  - Fluid removed from patient compartments 
+  - Updated patient flag for event and track body weight change (validated)
+  - Added totalbodyfluidVolume as data request
+  - Updated patient weight as a function of condition
+- Added starvation condition
+  - TimeSinceMeal determines how long since the patient's last meal 
+  - Scales internal nutrient storages from validated starvation data
+  - Removed ConsumeMeal condition, now replaced by starvation condition
+  - Validated blood concentrations for ketones, glucose, and amino acids
+  - Updated patient weight as a function of condition
+- Intracellular ion transport
+  - Model uses membrane potential  (see @ref TissueMethodology for details)
+  - Michaelis coefficient could support more ion regulation in the future
+  - Gated ion transport allows for differences between intra/extracellular spaces
+- COPD now supports elevated anaerobic metabolism
+- Ion transport model in the small intestine
+- Updated drug library so all drugs support an effects site transport rate
+- Diabetes type 1 and type 2 conditions
+  - insulin resistance and insulin production effects
+- Hemorrhage action now initialized with a 0-1 severity and a location (MCIS SDK example still exists)
+- New drug Vasopressin
+- New drug classifications in the CDM for better grouping in-code 
+  - Include anesthetic, sedative, opioid, and reversal agent
+  - More grouping in future work
+
 Tentative Near-Term Timeline
 ============================
 Planned model updates Oct 2, 2017:
