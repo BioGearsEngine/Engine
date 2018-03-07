@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.3.0-beta" xsi:schemaLocation="">
   <Name>VascularCompartments</Name>
   <Description>Validation scenario to make sure all compartment level data requests match up with the expected results</Description>
   <InitialParameters><PatientFile>StandardMale.xml</PatientFile></InitialParameters>
@@ -860,7 +860,7 @@
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftArmVasculature" Substance="CarbonDioxide"          Name="Molarity"        Unit="mmol/L" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftArmVasculature" Substance="CarbonDioxide"          Name="PartialPressure" Unit="mmHg"   Precision="0"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftArmVasculature" Substance="Hemoglobin"             Name="Concentration"   Unit="ug/mL"  Precision="2"/>
-	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftArmVasculature" Substance="Hemoglobin"             Name="Mass"            Unit="ug"     Precision="1"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftArmVasculature" Substance="Hemoglobin"             Name="Mass"            Unit="ug"     Precision="2"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftArmVasculature" Substance="Hemoglobin"             Name="Molarity"        Unit="mmol/L" Precision="2"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftArmVasculature" Substance="Oxyhemoglobin"          Name="Concentration"   Unit="ug/mL"  Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftArmVasculature" Substance="Oxyhemoglobin"          Name="Mass"            Unit="ug"     Precision="1"/>
@@ -889,7 +889,7 @@
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftLegVasculature" Substance="CarbonDioxide"          Name="Molarity"        Unit="mmol/L" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftLegVasculature" Substance="CarbonDioxide"          Name="PartialPressure" Unit="mmHg"   Precision="0"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftLegVasculature" Substance="Hemoglobin"             Name="Concentration"   Unit="ug/mL"  Precision="2"/>
-	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftLegVasculature" Substance="Hemoglobin"             Name="Mass"            Unit="ug"     Precision="1"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftLegVasculature" Substance="Hemoglobin"             Name="Mass"            Unit="ug"     Precision="2"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftLegVasculature" Substance="Hemoglobin"             Name="Molarity"        Unit="mmol/L" Precision="2"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftLegVasculature" Substance="Oxyhemoglobin"          Name="Concentration"   Unit="ug/mL"  Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftLegVasculature" Substance="Oxyhemoglobin"          Name="Mass"            Unit="ug"     Precision="1"/>
@@ -918,7 +918,7 @@
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightArmVasculature" Substance="CarbonDioxide"          Name="Molarity"        Unit="mmol/L" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightArmVasculature" Substance="CarbonDioxide"          Name="PartialPressure" Unit="mmHg"   Precision="0"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightArmVasculature" Substance="Hemoglobin"             Name="Concentration"   Unit="ug/mL"  Precision="2"/>
-	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightArmVasculature" Substance="Hemoglobin"             Name="Mass"            Unit="ug"     Precision="1"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightArmVasculature" Substance="Hemoglobin"             Name="Mass"            Unit="ug"     Precision="2"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightArmVasculature" Substance="Hemoglobin"             Name="Molarity"        Unit="mmol/L" Precision="2"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightArmVasculature" Substance="Oxyhemoglobin"          Name="Concentration"   Unit="ug/mL"  Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightArmVasculature" Substance="Oxyhemoglobin"          Name="Mass"            Unit="ug"     Precision="1"/>
@@ -947,7 +947,7 @@
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightLegVasculature" Substance="CarbonDioxide"          Name="Molarity"        Unit="mmol/L" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightLegVasculature" Substance="CarbonDioxide"          Name="PartialPressure" Unit="mmHg"   Precision="0"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightLegVasculature" Substance="Hemoglobin"             Name="Concentration"   Unit="ug/mL"  Precision="2"/>
-	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightLegVasculature" Substance="Hemoglobin"             Name="Mass"            Unit="ug"     Precision="1"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightLegVasculature" Substance="Hemoglobin"             Name="Mass"            Unit="ug"     Precision="2"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightLegVasculature" Substance="Hemoglobin"             Name="Molarity"        Unit="mmol/L" Precision="2"/>
   <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightLegVasculature" Substance="Oxyhemoglobin"          Name="Concentration"   Unit="ug/mL"  Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="RightLegVasculature" Substance="Oxyhemoglobin"          Name="Mass"            Unit="ug"     Precision="1"/>

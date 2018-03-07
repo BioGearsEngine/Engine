@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.3.0-beta" xsi:schemaLocation="">
     <Name>Fentanyl1p5ug</Name>
     <Description>Inject Nathan with Fentanyl!</Description>
 	<InitialParameters><PatientFile>Nathan.xml</PatientFile></InitialParameters>
@@ -114,7 +114,8 @@
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="SkinTissueIntracellular"        Substance="Fentanyl" Name="Concentration" Unit="ug/L" Precision="4"/> 	
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="SpleenTissueIntracellular"      Substance="Fentanyl" Name="Concentration" Unit="ug/L" Precision="4"/>
 	
-	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Fentanyl" Name="PlasmaConcentration" Unit="ug/L" Precision="6"/>	
+	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Fentanyl" Name="PlasmaConcentration" Unit="ug/L" Precision="6"/>
+	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Fentanyl"	Name="EffectSiteConcentration" Unit="ug/mL" Precision="6"/>	
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Fentanyl" Name="SystemicMassCleared" Unit="ug" Precision="2"/>	
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Fentanyl" Name="MassInBody" Unit="ug" Precision="2"/>	
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Fentanyl" Compartment="LeftKidneyTissue" Name="PartitionCoefficient" Precision="4"/>

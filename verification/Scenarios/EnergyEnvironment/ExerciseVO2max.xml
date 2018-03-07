@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.3.0-beta" xsi:schemaLocation="">
     <Name>ExerciseVO2max</Name>
     <Description>Exercise at about the anaerobic threshold.</Description>
     <InitialParameters><PatientFile>StandardMale.xml</PatientFile></InitialParameters>
     
 	<!-- Base system data required for all scenario verification -->
   <DataRequests>
-  <DataRequest xsi:type="PatientDataRequestData"    Name="Weight"                            Unit="kg"           Precision="1"/>
+  <DataRequest xsi:type="PatientDataRequestData"    Name="Weight"                            Unit="kg"           Precision="2"/>
   
   <DataRequest xsi:type="PhysiologyDataRequestData" Name="HeartRate"                         Unit="1/min"       Precision="2"/>
   <DataRequest xsi:type="PhysiologyDataRequestData" Name="HeartStrokeVolume"                 Unit="mL"          Precision="1"/>
@@ -90,6 +90,12 @@
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Name="InFlow" Compartment="LeftHeart" Unit="mL/min" Precision="0"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Name="Volume" Compartment="RightHeart" Unit="mL" Precision="0"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Name="InFlow" Compartment="RightHeart" Unit="mL/min" Precision="0"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="SkinTissueExtracellular"   Substance="Sodium" Name="Mass" Unit="mg" Precision="4"/> 	
+    <DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="SkinTissueExtracellular"   Substance="Potassium" Name="Concentration" Unit="ug/L" Precision="4"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="SkinTissueExtracellular"   Substance="Chloride" Name="Concentration" Unit="ug/L" Precision="4"/>
+	<DataRequest xsi:type="PhysiologyDataRequestData" Name="SodiumLostToSweat"	Unit="mg" Precision="2"/> <!--Amount is cumulative-->
+	<DataRequest xsi:type="PhysiologyDataRequestData" Name="PotassiumLostToSweat"	Unit="mg" Precision="2"/> <!--Amount is cumulative-->
+	<DataRequest xsi:type="PhysiologyDataRequestData" Name="ChlorideLostToSweat"	Unit="mg" Precision="2"/> <!--Amount is cumulative-->
   </DataRequests>
 	
 	

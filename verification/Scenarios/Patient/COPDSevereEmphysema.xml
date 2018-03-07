@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.3.0-beta" xsi:schemaLocation="">
     <Name>COPDSevereEmphysema</Name>
     <Description>GOLD Stage III Emphysema</Description>
     <InitialParameters>
@@ -78,6 +78,7 @@
 	<DataRequest xsi:type="GasCompartmentDataRequestData" Compartment="Carina" Name="OutFlow" Unit="L/s" Precision="2"/>
 	<DataRequest xsi:type="PhysiologyDataRequestData" Name="ExpiratoryFlow"                 Unit="L/s"       Precision="4"/>
     <DataRequest xsi:type="PhysiologyDataRequestData" Name="InspiratoryFlow"                Unit="L/s"       Precision="4"/>
+	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="Aorta" Substance="Lactate"        Name="Concentration" Unit="mg/dL" Precision="1"/>
   </DataRequests>
    
     <Action xsi:type="AdvanceTimeData">

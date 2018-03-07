@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.0.1-beta" xsi:schemaLocation="">
     <Name>Firefighter</Name>
-    <Description>Simulates a forest firefighter experiancing smoke and CO inhalation during work. Resiratory data is collected before and after smoke and CO inhalation</Description>
+    <Description>Simulates a forest firefighter experiencing smoke and CO inhalation during work. Resiratory data is collected before and after smoke and CO inhalation</Description>
     <InitialParameters>
       <PatientFile>StandardMale.xml</PatientFile>
       <Condition xsi:type="InitialEnvironmentData">

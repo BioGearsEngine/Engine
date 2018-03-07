@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.3.0-beta" xsi:schemaLocation="">
     <Name>BleedToDeath</Name>
     <Description>Moderate bleed from large intestine</Description>
     <InitialParameters><PatientFile>StandardMale.xml</PatientFile></InitialParameters>
@@ -85,36 +85,36 @@
   </DataRequests>
 
     
-<!--MCIS Code Brief:
-		Digit 1 = Severity
-		Digit 2 = Body Region (1 = Head, 2 = Torso, 3 = Arms, 4 = Legs, 5 = Multiple (not currently supported)
-		Digit 3 = Subregion (not requied for arms or legs)
-			In Head: 6 = Vessels
-			In Torso: 	6 = Vessels, 7 = Chest, 8 = Abdomen, 9 = Pelvis (not currently supported)
-		Digit 4
-			In Vessels:  1 = Intracranial, 3-5 = Carotid/Thoracic/Abdominal arteries (all currently removed from aorta compartment), 6 = VenaCava
-			In Chest:  1 = Lungs, 2 = Heart
-			In Abdomen:  1 = Liver, 2 = Spleen, 3 = Pancreas (Splanchnic), 4 = Kidney, 5 = SmallIntestine, 6 = LargeIntestine
-		Digit 5:  Wound information too specific for BioGears (any number fine, 0 used here)
-		
-	Stopping a hemorrhage requires Severity = 0 and remainder of code consistent with original wound
--->
+<!--Read me:
+	-To start a hemorrhage: provide the compartment and a severity (scale 0.0-1.0)
+	-Valid Compartments
+		-Head
+		-Major Artery
+		-Lung
+		-Myocardium
+		-Spleen
+		-Liver
+		-Kidney
+		-Splanchnic
+		-Small Intestine
+		-Large Intestine
+		-Arm
+		-Leg
+		-Vena Cava
+	-To stop a hemorrhage: enter compartment a severity of 0 
+-->    
 
 	<Action xsi:type="AdvanceTimeData">
         <Time value="30" unit="s"/>       
     </Action>
-    <Action xsi:type="HemorrhageData">
-		<MCIS>
-			<IntegerList>3 2 8 6 0</IntegerList> <!--Hemorrhage of large intestine-->
-		</MCIS>
+    <Action xsi:type="HemorrhageData" Compartment="Large Intestine">
+		<Severity value="0.6"/>
     </Action>
     <Action xsi:type="AdvanceTimeData">
         <Time value="30" unit="min"/>       
     </Action>
-    <Action xsi:type="HemorrhageData">
-		<MCIS>
-			<IntegerList>0 2 8 6 0 </IntegerList> <!--Stop large intestine hemorrhage-->
-		</MCIS>
+    <Action xsi:type="HemorrhageData" Compartment="Large Intestine">
+		<Severity value="0"/>
     </Action>
     <Action xsi:type="AdvanceTimeData">
         <Time value="60" unit="s"/>       

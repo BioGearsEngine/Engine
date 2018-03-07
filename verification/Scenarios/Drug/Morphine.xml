@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.2.0-beta" xsi:schemaLocation="">
+<Scenario xmlns="uri:/mil/tatrc/physiology/datamodel" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" contentVersion="BioGears_6.3.0-beta" xsi:schemaLocation="">
   <Name>Morphine</Name>
   <Description>Inject standard patient with safe amount of Morphine!</Description>
   <InitialParameters><PatientFile>StandardMale.xml</PatientFile></InitialParameters>
@@ -73,7 +73,7 @@
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Morphine"                          Name="PlasmaConcentration"           Unit="ug/mL" Precision="9"/>	
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Morphine"                          Name="SystemicMassCleared"  Unit="ug"    Precision="2"/>	
 	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Morphine"                          Name="MassInBody"                    Unit="ug"    Precision="2"/>	
-	
+	<DataRequest xsi:type="SubstanceDataRequestData" Substance="Morphine"	Name="EffectSiteConcentration" Unit="ug/mL" Precision="6"/>
 	
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LiverTissueIntracellular"       Substance="Morphine" Name="MassCleared" Unit="ug" Precision="2"/>
 	<DataRequest xsi:type="LiquidCompartmentDataRequestData" Compartment="LeftKidneyTissueIntracellular"  Substance="Morphine" Name="MassCleared" Unit="ug" Precision="2"/>
@@ -85,21 +85,13 @@
 	<Action xsi:type="AdvanceTimeData">
       <Time value="30" unit="s"/>       
 	</Action>
-	<Action xsi:type="SubstanceInfusionData">
+	<Action xsi:type="SubstanceBolusData" AdminRoute="Intravenous">
 		<Substance>Morphine</Substance>
 		<Concentration value="1000" unit="ug/mL"/>
-		<Rate value="2.75" unit="mL/min"/>
+		<Dose value="10.5" unit="mL"/>
 	</Action>
 	<Action xsi:type="AdvanceTimeData">
-        <Time value="4" unit="min"/>
-	</Action>
-	<Action xsi:type="SubstanceInfusionData">
-		<Substance>Morphine</Substance>
-		<Concentration value="1000" unit="ug/mL"/>
-		<Rate value="0" unit="mL/min"/>
-	</Action>
-	<Action xsi:type="AdvanceTimeData">
-        <Time value="90" unit="min"/>
+        <Time value="120" unit="min"/>
 	</Action>
 
 </Scenario>
