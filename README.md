@@ -126,16 +126,20 @@ PATH=$PATH:$JAVA_HOME_bin
 
 Replace the JAVA_HOME value with the correct installation directory.
 
-#### Build Xerces
+#### Build Xerces/Xsd
 
-Navigate in a terminal window to the xerces-3.1.2 directory in the BioGears lib directory.  Build Xerces by running
-`./configure --disable-threads --disable-network --enable-transcoder-gnuiconv --disable-pretty-make CXXFLAGS=-O3 CFLAGS=-O3` and then `make`. Note, this step may require administrative privileges, if you are getting an error here type `$ chmod +x configure` and re-run the command, this should fix things.
+Navigate in a terminal window to the xerces-3.1.2 directory in the BioGears lib directory. Allow privileges on the configuration file with `$ chmod +x configure`. Build Xerces by running `./configure --disable-threads --disable-network --enable-transcoder-gnuiconv --disable-pretty-make CXXFLAGS=-O3 CFLAGS=-O3` and then `make`.
 
+Next navigate to bin directory in xsd: `$ /lib/xsd-4.0.0-x86_64-linux-gnu/bin/` then enter `$ chmod +x xsd`  
 <br/>
 
 #### Building BioGears from the Command Line
 
-Navigate in a terminal window to the BioGears src directory and run `ant cmake -Denv=unixMake `. There may be a couple errors that pop up here due to lack of administrator privleges. These are tied to running the xsd file to auto-gen the schema classes. To get around this type `$ chmod +x ../lib/xsd-4.0.0-x86_64-linux-gnu/bin/xsd` which should give you the requirements you need to run the xsd code to generate the schema. To compile the code just type `ant compile -Denv=unixMake`.
+Navigate in a terminal window to the BioGears src directory and run `ant cmake -Denv=unixMake `. To compile the code just type `ant compile -Denv=unixMake`.
+
+#### Test the Build 
+
+Once the compile step has successfully completed, from the src folder, test the build by running the basic standard patient by typing: `ant runDebug`. Once the scenario has executed, check the simulation output by navigating to `/bin/Scenarios/Patient/BasicStandardResults`. This folder should contain plots of all requested data outputs.
 
 ### Cross-compiling with GCC for the Raspberry Pi  RPI
 
@@ -166,7 +170,7 @@ Deploy the Mac executable by running `deploy-unix-executable.sh` in the BioGears
 
 #### Mac SDK
 
-Deploy the Mac SDK by running `deploy-osx-library.sh` in the BioGears src directory.  This will deploy the necessay header files and .dylib files to the BioGears library directory.  The HowTo cpp files provide examples of how to use the BioGears API from your own software.  The build-osx.sh script will build all of the HowTo files and place the resulting executable in the library/bin directory.
+Deploy the Mac SDK by running `deploy-osx-library.sh` in the BioGears src directory.  This will deploy the necessary header files and .dylib files to the BioGears library directory.  The HowTo cpp files provide examples of how to use the BioGears API from your own software.  The build-osx.sh script will build all of the HowTo files and place the resulting executable in the library/bin directory.
 
 #### Linux Executable
 
@@ -174,7 +178,7 @@ Deploy the Linux executable by running `deploy-unix-executable.sh` in the BioGea
 
 #### Linux SDK
 
-Deploy the Linux SDK by running `deploy-linux-library.sh` in the BioGears src directory.  This will deploy the necessay header files and .so files to the BioGears library directory.  The HowTo cpp files provide examples of how to use the BioGears API from your own software.  The build-linux.sh script will build all of the HowTo files and place the resulting executable in the library/bin directory.
+Deploy the Linux SDK by running `deploy-linux-library.sh` in the BioGears src directory.  This will deploy the necessary header files and .so files to the BioGears library directory.  The HowTo cpp files provide examples of how to use the BioGears API from your own software.  The build-linux.sh script will build all of the HowTo files and place the resulting executable in the library/bin directory.
 
 Structure 
 ------------
@@ -260,11 +264,11 @@ The latest deployment includes the following notable updates:
 
 Tentative Near-Term Timeline
 ============================
-Planned model updates Oct 2, 2017:
+Planned model updates March 12, 2017:
 
-* Exocrine and secretory functions
-* Starvation and dehydration states
-* Nerve agent model
+* Thermal regulatory updates 
+* Better patient weight handling
+* More drug support
 
 Programmatics
 ===============
@@ -282,7 +286,7 @@ Additional Information
 
 Code of Conduct
 ------------------
-We support the [contibutor covenant](https://github.com/BioGearsEngine/Engine/blob/master/CODE_OF_CONDUCT.md) and the scope and enforcement it details. We reserve the right of enforment that we feel is appropriate given the nature of the offense up to and including a permanent ban from the project.
+We support the [contributor covenant](https://github.com/BioGearsEngine/Engine/blob/master/CODE_OF_CONDUCT.md) and the scope and enforcement it details. We reserve the right of enforcement that we feel is appropriate given the nature of the offense up to and including a permanent ban from the project.
 
 
 Contributing 
