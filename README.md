@@ -1,3 +1,18 @@
+Notice
+==========
+
+This branch is now depricated and is hosting legacy code. The new BioGears code base can be found at /BioGearsEngine/core (https://github.com/BioGearsEngine/core)
+
+
+
+
+
+
+
+
+
+
+
 Overview
 ==========
 
