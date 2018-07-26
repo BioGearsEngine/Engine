@@ -284,6 +284,7 @@ Planned model updates March 12, 2017:
 * Thermal regulatory updates 
 * Better patient weight handling
 * More drug support
+* Patient burn model
 
 Programmatics
 ===============
